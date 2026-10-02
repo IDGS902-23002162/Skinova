@@ -1,0 +1,1 @@
+export default function ModuloHabitosDesafios() { return <div>ModuloHabitosDesafios</div>; }

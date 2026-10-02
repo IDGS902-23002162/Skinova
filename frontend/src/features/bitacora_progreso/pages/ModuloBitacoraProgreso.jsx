@@ -1,0 +1,1 @@
+export default function ModuloBitacoraProgreso() { return <div>ModuloBitacoraProgreso</div>; }

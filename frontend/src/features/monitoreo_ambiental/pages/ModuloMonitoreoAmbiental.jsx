@@ -1,0 +1,1 @@
+export default function ModuloMonitoreoAmbiental() { return <div>ModuloMonitoreoAmbiental</div>; }

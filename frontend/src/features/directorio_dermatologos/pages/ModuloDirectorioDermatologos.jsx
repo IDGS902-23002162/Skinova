@@ -1,0 +1,1 @@
+export default function ModuloDirectorioDermatologos() { return <div>ModuloDirectorioDermatologos</div>; }

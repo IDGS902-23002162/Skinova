@@ -1,0 +1,1 @@
+export default function ModuloConsultaInteligente() { return <div>ModuloConsultaInteligente</div>; }

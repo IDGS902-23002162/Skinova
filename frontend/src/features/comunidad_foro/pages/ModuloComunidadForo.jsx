@@ -1,0 +1,1 @@
+export default function ModuloComunidadForo() { return <div>ModuloComunidadForo</div>; }

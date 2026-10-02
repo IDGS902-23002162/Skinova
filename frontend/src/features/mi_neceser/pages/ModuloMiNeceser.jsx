@@ -1,0 +1,1 @@
+export default function ModuloMiNeceser() { return <div>ModuloMiNeceser</div>; }

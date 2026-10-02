@@ -1,0 +1,1 @@
+export default function ModuloAutenticacion() { return <div>ModuloAutenticacion</div>; }
