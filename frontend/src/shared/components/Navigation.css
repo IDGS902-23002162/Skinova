@@ -248,41 +248,55 @@
 
   /* EXPANDED STATE (MOBILE) */
   .skinova-nav.expanded {
-    height: 80vh;
-    padding-top: 24px;
+    height: 70vh;
+    padding-top: 16px;
   }
 
   .skinova-nav.expanded .nav-content {
     flex-direction: column;
-    padding: 24px;
+    padding: 16px;
     overflow-y: auto;
-    gap: 32px;
+    gap: 24px;
   }
 
   .skinova-nav.expanded .nav-list {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 16px;
   }
 
   .skinova-nav.expanded .nav-item {
-    flex-direction: row;
+    flex-direction: column;
     justify-content: flex-start;
-    font-size: 1rem;
-    padding: 16px;
+    align-items: center;
+    font-size: 0.75rem;
+    padding: 8px;
+    width: 20%;
+    min-width: 70px;
+    text-align: center;
+    gap: 8px;
+    background-color: transparent !important;
+  }
+
+  .skinova-nav.expanded .nav-icon {
+    background-color: var(--arena);
+    padding: 14px;
+    border-radius: 50%;
+    margin-bottom: 4px;
+    box-sizing: content-box;
   }
 
   .skinova-nav.expanded .nav-item.active .nav-icon {
-    padding: 0;
-    background-color: transparent;
-  }
-
-  .skinova-nav.expanded .nav-item.active {
-    background-color: var(--salvia) !important;
+    background-color: var(--salvia);
+    color: var(--bosque-profundo);
   }
 
   .skinova-nav.expanded .section-title {
     display: block;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    width: 100%;
   }
 
   .skinova-nav.expanded .secondary-section {

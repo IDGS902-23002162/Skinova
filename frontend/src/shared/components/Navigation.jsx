@@ -38,6 +38,7 @@ const secondaryModules = [
 
 export default function Navigation() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [touchStartY, setTouchStartY] = useState(null);
   const location = useLocation();
 
   // Close extended menu on route change in mobile
@@ -45,11 +46,39 @@ export default function Navigation() {
     setIsExpanded(false);
   }, [location.pathname]);
 
-  const toggleExpand = () => setIsExpanded(!isExpanded);
+  const handleTouchStart = (e) => {
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStartY === null) return;
+    const currentY = e.touches[0].clientY;
+    const diff = touchStartY - currentY;
+
+    // Swipe up to expand
+    if (!isExpanded && diff > 50) {
+      setIsExpanded(true);
+      setTouchStartY(null);
+    }
+    // Swipe down to close
+    else if (isExpanded && diff < -50) {
+      setIsExpanded(false);
+      setTouchStartY(null);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStartY(null);
+  };
 
   return (
     <>
-      <nav className={`skinova-nav ${isExpanded ? "expanded" : ""}`}>
+      <nav
+        className={`skinova-nav ${isExpanded ? "expanded" : ""}`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Desktop Header */}
         <div className="nav-header">
           <div className="logo">
@@ -58,7 +87,7 @@ export default function Navigation() {
         </div>
 
         {/* Mobile drag indicator */}
-        <div className="mobile-drag-indicator" onClick={toggleExpand}>
+        <div className="mobile-drag-indicator">
           <div className="drag-bar"></div>
         </div>
 
