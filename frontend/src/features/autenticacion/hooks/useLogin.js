@@ -14,30 +14,27 @@ export function useLogin() {
   const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || !signIn) return;
+
     try {
-      if (typeof signIn.authenticateWithRedirect === 'function') {
-        await signIn.authenticateWithRedirect({
-          strategy: "oauth_google",
-          redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
-        });
-      } else if (typeof signIn.sso === 'function') {
-        await signIn.sso({
-          strategy: "oauth_google",
-          redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
-        });
-      } else {
-        await signIn.authenticateWithRedirect({
-          strategy: "oauth_google",
-          redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
-        });
+      const { error } = await signIn.sso({
+        strategy: "oauth_google",
+        redirectCallbackUrl: "/sso-callback",
+        redirectUrl: "/",
+      });
+
+      if (error) {
+        throw error;
       }
     } catch (err) {
       console.error("Google Auth Error:", err);
-      alert("Error al iniciar con Google: " + (err.errors?.[0]?.message || err.message || "Error desconocido."));
+
+      const msg =
+        err.errors?.[0]?.message ||
+        err.message ||
+        "Error desconocido.";
+
+      alert("Error al iniciar con Google: " + msg);
       setError("Error al iniciar con Google.");
     }
   };

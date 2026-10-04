@@ -46,8 +46,17 @@ export default function App() {
         path="/sso-callback"
         element={
           <>
-            <FullScreenLoader isVisible={true} text="Autenticando con Google..." />
-            <AuthenticateWithRedirectCallback />
+            <FullScreenLoader
+              isVisible={true}
+              text="Autenticando con Google..."
+            />
+
+            <AuthenticateWithRedirectCallback
+              transferable={true}
+              signInUrl="/sign-in"
+              signUpUrl="/sign-up"
+              signUpFallbackRedirectUrl="/"
+            />
           </>
         }
       />

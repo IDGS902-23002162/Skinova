@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSignUp, useAuth, useClerk } from "@clerk/react";
 import { useNavigate } from "react-router-dom";
 
@@ -16,31 +16,28 @@ export function useRegister() {
   const navigate = useNavigate();
 
   const handleGoogleSignUp = async () => {
-    if (!isLoaded) return;
+    if (!isLoaded || !signUp) return;
+
     try {
-      if (typeof signUp.authenticateWithRedirect === 'function') {
-        await signUp.authenticateWithRedirect({
-          strategy: "oauth_google",
-          redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
-        });
-      } else if (typeof signUp.sso === 'function') {
-        await signUp.sso({
-          strategy: "oauth_google",
-          redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
-        });
-      } else {
-        await signUp.authenticateWithRedirect({
-          strategy: "oauth_google",
-          redirectUrl: "/sso-callback",
-          redirectUrlComplete: "/",
-        });
+      const { error } = await signUp.sso({
+        strategy: "oauth_google",
+        redirectCallbackUrl: "/sso-callback",
+        redirectUrl: "/",
+      });
+
+      if (error) {
+        throw error;
       }
     } catch (err) {
-      console.error("Google Auth Error:", err);
-      alert("Error al registrar con Google: " + (err.errors?.[0]?.message || err.message || "Error desconocido."));
-      setError("Error al registrar con Google.");
+      console.error("Google Sign Up Error:", err);
+
+      const msg =
+        err.errors?.[0]?.message ||
+        err.message ||
+        "Error desconocido.";
+
+      alert("Error al registrarse con Google: " + msg);
+      setError("Error al registrarse con Google.");
     }
   };
 
