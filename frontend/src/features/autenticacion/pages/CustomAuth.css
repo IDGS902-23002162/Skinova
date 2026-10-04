@@ -1,0 +1,150 @@
+/* CustomAuth.css - Estilos personalizados para el formulario de Auth de Skinova */
+
+.custom-auth-form-container {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-auth-title {
+  font-family: var(--font-title);
+  color: var(--color-bosque-profundo);
+  font-size: 2.2rem;
+  font-weight: 500;
+  margin-bottom: 32px;
+  line-height: 1.1;
+  text-align: left;
+}
+
+/* Botón de Google similar al de la imagen */
+.custom-auth-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 52px;
+  background-color: var(--color-crema);
+  /* O blanco según el tema */
+  border: 1px solid rgba(22, 59, 53, 0.1);
+  /* Borde sutil del color bosque */
+  border-radius: 12px;
+  font-family: var(--font-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-carbon);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 24px;
+}
+
+.custom-auth-social-btn:hover {
+  background-color: #f0ede5;
+  /* Un crema un poco más oscuro */
+  border-color: rgba(22, 59, 53, 0.2);
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+}
+
+.custom-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.custom-auth-input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.custom-auth-input-group label {
+  font-family: var(--font-text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-carbon);
+  margin-bottom: 8px;
+}
+
+.custom-auth-input-group input {
+  width: 100%;
+  height: 52px;
+  padding: 0 16px;
+  border: 1px solid rgba(22, 59, 53, 0.15);
+  border-radius: 12px;
+  background-color: transparent;
+  font-family: var(--font-text);
+  font-size: 1rem;
+  color: var(--color-carbon);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+  /* IMPORTANTE: Asegura que el padding no rompa el ancho 100% */
+}
+
+.custom-auth-input-group input:focus {
+  outline: none;
+  border-color: var(--color-bosque-medio);
+  box-shadow: 0 0 0 3px rgba(45, 102, 88, 0.1);
+}
+
+.custom-auth-input-group input::placeholder {
+  color: rgba(29, 40, 37, 0.4);
+}
+
+.custom-auth-error {
+  font-size: 0.85rem;
+  color: var(--color-terracota);
+  margin-top: -8px;
+}
+
+.custom-auth-submit-btn {
+  width: 100%;
+  height: 52px;
+  background-color: var(--color-carbon);
+  /* Botón oscuro elegante como en la referencia */
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-family: var(--font-text);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  margin-top: 8px;
+}
+
+.custom-auth-submit-btn:hover {
+  background-color: var(--color-bosque-profundo);
+  /* Bosque profundo en el hover */
+}
+
+.custom-auth-submit-btn:active {
+  transform: scale(0.98);
+}
+
+.custom-auth-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.custom-auth-footer-text {
+  text-align: center;
+  font-family: var(--font-text);
+  font-size: 0.9rem;
+  color: var(--color-bosque-medio);
+  margin-top: 32px;
+}
+
+.custom-auth-footer-text a {
+  color: var(--color-bosque-profundo);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.custom-auth-footer-text a:hover {
+  text-decoration: underline;
+}

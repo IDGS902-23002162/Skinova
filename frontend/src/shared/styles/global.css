@@ -1,0 +1,20 @@
+/* Variables globales sugeridas por los Criterios de Diseño */
+:root {
+  --color-bosque-profundo: #163B35;
+  --color-bosque-medio: #2D6658;
+  --color-salvia: #A9C4B5;
+  --color-crema: #F6F3EC;
+  --color-arena: #E7DFD2;
+  --color-carbon: #1D2825;
+  --color-terracota: #C98268;
+
+  --font-title: "Fraunces", "Cormorant Garamond", serif;
+  --font-text: "Manrope", "DM Sans", sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-text);
+  background-color: var(--color-crema);
+  color: var(--color-carbon);
+}

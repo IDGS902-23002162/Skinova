@@ -1,0 +1,337 @@
+/* Variables de color de Skinova */
+:root {
+  --bosque-profundo: #163B35;
+  --bosque-medio: #2D6658;
+  --salvia: #A9C4B5;
+  --crema: #F6F3EC;
+  --arena: #E7DFD2;
+  --carbon: #1D2825;
+  --terracota: #C98268;
+}
+
+.skinova-nav {
+  background-color: var(--crema);
+  border-right: 1px solid var(--arena);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  z-index: 100;
+  box-shadow: 2px 0 10px rgba(29, 40, 37, 0.02);
+}
+
+.nav-header {
+  padding: 32px 24px;
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  background-color: var(--bosque-profundo);
+  color: var(--crema);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  font-family: 'DM Serif Display', 'Cormorant Garamond', serif;
+}
+
+.logo-text {
+  font-family: 'DM Serif Display', 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  color: var(--bosque-profundo);
+  font-weight: 600;
+}
+
+.nav-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 0 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.nav-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.section-title {
+  font-family: 'Manrope', 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  color: var(--bosque-medio);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0 16px 8px 16px;
+  margin: 0;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: var(--carbon);
+  text-decoration: none;
+  font-family: 'Manrope', 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.nav-item:hover {
+  background-color: var(--arena);
+  color: var(--bosque-profundo);
+  transform: translateY(-1px);
+}
+
+.nav-item.active {
+  background-color: var(--salvia);
+  color: var(--bosque-profundo);
+  font-weight: 600;
+}
+
+.nav-icon {
+  color: var(--bosque-medio);
+  transition: all 0.2s ease;
+}
+
+.nav-item:hover .nav-icon,
+.nav-item.active .nav-icon {
+  color: var(--bosque-profundo);
+}
+
+.mobile-drag-indicator {
+  display: none;
+}
+
+.mobile-close-btn {
+  display: none;
+}
+
+.nav-overlay {
+  display: none;
+}
+
+/* DESKTOP STYLES */
+@media (min-width: 769px) {
+  .skinova-nav {
+    width: 260px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+}
+
+/* MOBILE STYLES */
+@media (max-width: 768px) {
+  .skinova-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 80px; /* Base height for bottom bar */
+    border-right: none;
+    border-top: 1px solid var(--arena);
+    border-radius: 20px 20px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -4px 20px rgba(29, 40, 37, 0.05);
+  }
+
+  .nav-header {
+    display: none; /* Hide logo in mobile bottom bar */
+  }
+
+  .nav-content {
+    padding: 0;
+    flex-direction: row;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .nav-section {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .section-title {
+    display: none; /* Hide section titles in mobile initially */
+  }
+
+  .nav-list {
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 0 8px;
+    height: 100%;
+    align-items: center;
+  }
+
+  .nav-item {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    justify-content: center;
+    background-color: transparent !important; /* Overwrite active bg */
+  }
+  
+  .nav-item:hover {
+    transform: none;
+  }
+
+  .nav-icon {
+    margin-bottom: 2px;
+  }
+
+  .nav-item.active .nav-icon {
+    color: var(--bosque-profundo);
+    background-color: var(--salvia);
+    padding: 4px 12px;
+    border-radius: 16px;
+    width: auto;
+    box-sizing: content-box;
+  }
+
+  .nav-item.active .nav-label {
+    font-weight: 700;
+  }
+
+  .secondary-section {
+    display: none;
+  }
+
+  .mobile-drag-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0 4px 0;
+    cursor: pointer;
+  }
+
+  .drag-bar {
+    width: 40px;
+    height: 4px;
+    background-color: var(--arena);
+    border-radius: 2px;
+    margin-bottom: 2px;
+  }
+
+  .drag-icon {
+    color: var(--bosque-medio);
+    animation: bounce 2s infinite;
+  }
+
+  /* EXPANDED STATE (MOBILE) */
+  .skinova-nav.expanded {
+    height: 80vh;
+    padding-top: 24px;
+  }
+
+  .skinova-nav.expanded .nav-content {
+    flex-direction: column;
+    padding: 24px;
+    overflow-y: auto;
+    gap: 32px;
+  }
+
+  .skinova-nav.expanded .nav-list {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .skinova-nav.expanded .nav-item {
+    flex-direction: row;
+    justify-content: flex-start;
+    font-size: 1rem;
+    padding: 16px;
+  }
+
+  .skinova-nav.expanded .nav-item.active .nav-icon {
+    padding: 0;
+    background-color: transparent;
+  }
+
+  .skinova-nav.expanded .nav-item.active {
+    background-color: var(--salvia) !important;
+  }
+
+  .skinova-nav.expanded .section-title {
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .skinova-nav.expanded .secondary-section {
+    display: flex;
+  }
+
+  .skinova-nav.expanded .mobile-drag-indicator {
+    padding-top: 16px;
+  }
+  
+  .skinova-nav.expanded .drag-icon {
+    display: none;
+  }
+
+  .mobile-close-btn {
+    display: flex;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: var(--bosque-medio);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    background-color: var(--arena);
+  }
+
+  .nav-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(29, 40, 37, 0.4);
+    z-index: 90;
+    backdrop-filter: blur(2px);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(-2px);
+  }
+}
