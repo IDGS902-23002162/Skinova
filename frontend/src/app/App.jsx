@@ -56,6 +56,7 @@ export default function App() {
               signInUrl="/sign-in"
               signUpUrl="/sign-up"
               signUpFallbackRedirectUrl="/"
+              signInFallbackRedirectUrl="/"
             />
           </>
         }
