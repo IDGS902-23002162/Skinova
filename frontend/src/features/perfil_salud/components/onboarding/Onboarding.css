@@ -1,0 +1,119 @@
+/* Onboarding.css */
+
+.onboarding-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 9999;
+}
+
+.onboarding-card {
+  position: relative;
+  z-index: 1;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 900px;
+  min-height: 60vh;
+  max-height: 90vh;
+  /* Evita que crezca más allá de la pantalla */
+  overflow-y: auto;
+  /* Permite scroll si el contenido es muy largo */
+  box-shadow: 0 10px 40px rgba(22, 59, 53, 0.1);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.bienvenida-img {
+  width: 400px;
+  height: 360px;
+  margin-bottom: 2rem;
+  object-fit: cover;
+}
+
+/* Responsividad para móviles */
+@media (max-width: 600px) {
+  .onboarding-wrapper {
+    padding: 1.5rem;
+    /* Más margen exterior para que se vea el fondo y respire */
+  }
+
+  .onboarding-card {
+    border-radius: 20px;
+    /* Consistente con desktop */
+    min-height: auto;
+    max-height: 85vh;
+    padding: 1.5rem;
+    /* Más padding interno para que no quede pegado al borde */
+    width: 100%;
+  }
+
+  /* Ajustes para la tipografía en móvil */
+  .onboarding-card h2,
+  .onboarding-card h2[style] {
+    font-size: 1.3rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .onboarding-card h3,
+  .onboarding-card h3[style] {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .onboarding-card p,
+  .onboarding-card p[style] {
+    font-size: 0.85rem !important;
+  }
+
+  /* Ajuste de grillas a 1 columna o gap menor */
+  .grid-2-col {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .grid-3-col {
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 6px !important;
+  }
+
+  /* Reducir tamaño de opciones */
+  .grid-2-col>div,
+  .grid-3-col>div {
+    padding: 10px 4px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .goals-container {
+    gap: 6px !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .goals-item {
+    padding: 8px 12px !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Ajustar botones de continuar/atrás */
+  .onboarding-card button {
+    padding: 12px !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Imagen de Bienvenida responsive */
+  .bienvenida-img {
+    width: 250px !important;
+    height: 220px !important;
+    margin-bottom: 1rem !important;
+  }
+}

@@ -4,3 +4,5 @@ Flask-Migrate==4.0.5
 python-dotenv==1.0.0
 SQLAlchemy>=2.0.35
 PyMySQL==1.1.0
+clerk-backend-api>=7.0.0
+Flask-CORS>=5.0.0

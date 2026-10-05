@@ -1,10 +1,16 @@
 from flask import Flask
 from config import config
 from app.extensions import db, migrate
+from flask_cors import CORS
+from app.auth import require_auth
+from flask import g
 
 def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+    
+    # Initialize CORS for the React frontend
+    CORS(app, origins=["http://localhost:5173"], supports_credentials=True, allow_headers=["Authorization", "Content-Type"])
 
     # Initialize extensions
     db.init_app(app)
@@ -22,11 +28,22 @@ def create_app(config_name='default'):
     from app.modules.notificaciones import models as notificaciones_models
 
     # Register blueprints (to be done later)
+    from app.modules.users.routes import users_bp
+    app.register_blueprint(users_bp)
+    
     # from app.modules.perfil_salud.routes import perfil_salud_bp
     # app.register_blueprint(perfil_salud_bp, url_prefix='/api/perfil-salud')
 
     @app.route('/health')
     def health_check():
         return {'status': 'ok'}
+
+    @app.route('/api/auth/me')
+    @require_auth
+    def auth_me():
+        return {
+            'authenticated': True,
+            'clerk_user_id': g.user_id
+        }
 
     return app
