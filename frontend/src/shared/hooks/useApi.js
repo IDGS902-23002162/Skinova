@@ -4,7 +4,7 @@ export function useApi() {
   const { getToken } = useAuth();
 
   // Uses environment variable or default fallback to python backend
-  const BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8002/api';
+  const BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
   /**
    * Realiza una petición fetch autenticada agregando automáticamente el token JWT
