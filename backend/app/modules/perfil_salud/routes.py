@@ -79,3 +79,108 @@ def update_profile():
         return jsonify({"error": "Failed to update profile", "details": str(e)}), 500
 
     return jsonify({"message": "Profile updated successfully"}), 200
+
+@perfil_salud_bp.route('/evaluations', methods=['GET'])
+@require_auth
+def get_evaluations():
+    clerk_user_id = g.user_id
+    user = User.query.filter_by(clerk_user_id=clerk_user_id).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    from app.modules.perfil_salud.models import SkinEvaluation
+    evals = SkinEvaluation.query.filter_by(user_id=user.id).order_by(SkinEvaluation.created_at.desc()).all()
+    
+    return jsonify([{
+        "id": e.id,
+        "created_at": e.created_at.isoformat(),
+        "metrics": e.metrics_json,
+        "summary": e.summary,
+        "warnings": e.warnings_json,
+        "requires_professional_attention": e.requires_professional_attention,
+        "confirmed": e.confirmed
+    } for e in evals]), 200
+
+@perfil_salud_bp.route('/evaluations/latest', methods=['GET'])
+@require_auth
+def get_latest_evaluation():
+    clerk_user_id = g.user_id
+    user = User.query.filter_by(clerk_user_id=clerk_user_id).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    from app.modules.perfil_salud.models import SkinEvaluation
+    e = SkinEvaluation.query.filter_by(user_id=user.id).order_by(SkinEvaluation.created_at.desc()).first()
+    if not e:
+        return jsonify(None), 200
+        
+    return jsonify({
+        "id": e.id,
+        "created_at": e.created_at.isoformat(),
+        "metrics": e.metrics_json,
+        "summary": e.summary,
+        "warnings": e.warnings_json,
+        "requires_professional_attention": e.requires_professional_attention,
+        "confirmed": e.confirmed
+    }), 200
+
+@perfil_salud_bp.route('/evaluations/<id>', methods=['GET'])
+@require_auth
+def get_evaluation(id):
+    clerk_user_id = g.user_id
+    user = User.query.filter_by(clerk_user_id=clerk_user_id).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    from app.modules.perfil_salud.models import SkinEvaluation
+    e = SkinEvaluation.query.filter_by(id=id, user_id=user.id).first()
+    if not e:
+        return jsonify({"error": "Evaluation not found"}), 404
+        
+    return jsonify({
+        "id": e.id,
+        "created_at": e.created_at.isoformat(),
+        "metrics": e.metrics_json,
+        "summary": e.summary,
+        "warnings": e.warnings_json,
+        "requires_professional_attention": e.requires_professional_attention,
+        "confirmed": e.confirmed
+    }), 200
+
+@perfil_salud_bp.route('/evaluations', methods=['POST'])
+@require_auth
+def create_evaluation():
+    # Temporary mock endpoint to accept pre-generated structure for UI testing
+    clerk_user_id = g.user_id
+    user = User.query.filter_by(clerk_user_id=clerk_user_id).first()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.get_json()
+    if not data or 'metrics' not in data:
+        return jsonify({"error": "Invalid payload"}), 400
+
+    from app.modules.perfil_salud.models import SkinEvaluation
+    
+    e = SkinEvaluation(
+        user_id=user.id,
+        metrics_json=data.get('metrics', {}),
+        summary=data.get('summary', ''),
+        warnings_json=data.get('warnings', []),
+        requires_professional_attention=data.get('requires_professional_attention', False),
+        ai_provider=data.get('ai_provider', 'mock'),
+        ai_model=data.get('ai_model', 'mock')
+    )
+    db.session.add(e)
+    db.session.commit()
+    
+    return jsonify({
+        "id": e.id,
+        "created_at": e.created_at.isoformat(),
+        "metrics": e.metrics_json,
+        "summary": e.summary,
+        "warnings": e.warnings_json,
+        "requires_professional_attention": e.requires_professional_attention,
+        "confirmed": e.confirmed
+    }), 201
+
