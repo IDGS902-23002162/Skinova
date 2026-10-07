@@ -1,7 +1,10 @@
-import React from 'react';
+import { Camera } from 'lucide-react';
 import { useProfileData } from '../hooks/useProfileData';
 import SkinInfoCard from '../components/profile/SkinInfoCard';
 import GoalsSection from '../components/profile/GoalsSection';
+import RestrictionsSection from '../components/profile/RestrictionsSection';
+import DermatologicalHistorySection from '../components/profile/DermatologicalHistorySection';
+import '../components/profile/CardTranslucent.css';
 
 export default function MiPielTab() {
   const { profile, loading, saveProfile } = useProfileData();
@@ -15,39 +18,44 @@ export default function MiPielTab() {
   }
 
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "16px 0" }}>
-      <h2 style={{ 
-        color: "var(--bosque-profundo, #163B35)", 
-        fontFamily: "DM Serif Display, serif", 
-        fontSize: "2rem",
-        marginBottom: "24px"
-      }}>
-        {profile.preferred_name ? `Hola, ${profile.preferred_name}` : 'Mi Piel'}
-      </h2>
-
-      <SkinInfoCard profile={profile} onSave={saveProfile} />
-      <GoalsSection profile={profile} onSave={saveProfile} />
-
-      {/* AI Placeholder Card */}
-      <div style={{
-        background: "linear-gradient(135deg, var(--arena, #E7DFD2), var(--salvia, #A9C4B5))",
-        borderRadius: "16px",
-        padding: "24px",
-        textAlign: "center",
-        marginTop: "32px",
-        boxShadow: "0 4px 12px rgba(29,40,37,0.1)"
-      }}>
-        <h3 style={{ 
+    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "16px 0" }}>
+      <div style={{ marginBottom: "24px" }}>
+        <h2 style={{ 
           color: "var(--bosque-profundo, #163B35)", 
-          fontFamily: "DM Serif Display, serif",
-          fontSize: "1.4rem",
+          fontFamily: "DM Serif Display, serif", 
+          fontSize: "2rem",
           margin: "0 0 8px 0"
         }}>
-          Análisis inteligente próximamente
-        </h3>
-        <p style={{ color: "var(--carbon, #1D2825)", margin: 0, opacity: 0.8, fontSize: "0.95rem" }}>
-          Pronto podrás obtener un análisis avanzado de tu piel potenciado por IA.
+          {profile.preferred_name ? `Hola, ${profile.preferred_name}` : 'Mi Piel'}
+        </h2>
+        <p style={{ color: "var(--carbon, #1D2825)", opacity: 0.8, margin: 0, fontSize: "1rem" }}>
+          Así conocemos tu piel actualmente.
         </p>
+      </div>
+
+      <div className="translucent-card">
+        <div className="translucent-img">
+          <Camera size={24} />
+        </div>
+        <div className="translucent-textbox">
+          <div className="translucent-header">
+            <h1 className="translucent-title">Análisis de Piel</h1>
+            <span className="translucent-badge">Próximamente</span>
+          </div>
+          <p className="translucent-p">Tómate una foto para obtener una evaluación inteligente.</p>
+        </div>
+      </div>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+        gap: "16px",
+        marginBottom: "32px"
+      }}>
+        <SkinInfoCard profile={profile} onSave={saveProfile} />
+        <GoalsSection profile={profile} onSave={saveProfile} />
+        <RestrictionsSection profile={profile} onSave={saveProfile} />
+        <DermatologicalHistorySection profile={profile} onSave={saveProfile} />
       </div>
     </div>
   );

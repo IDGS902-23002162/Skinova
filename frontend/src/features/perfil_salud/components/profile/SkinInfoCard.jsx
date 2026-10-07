@@ -1,120 +1,96 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Heart, Edit2, X, Check, Loader2 } from 'lucide-react';
 import { skinTypes, sensitivityLevels } from '../../constants/perfilOpciones';
+import './cardsBonitas.css';
 
 export default function SkinInfoCard({ profile, onSave }) {
+  const [isEditing, setIsEditing] = useState(false);
   const [skinType, setSkinType] = useState(profile.skin_type || "");
   const [sensitivity, setSensitivity] = useState(profile.sensitivity_level || "");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Sync state if profile changes externally
-  useEffect(() => {
-    setSkinType(profile.skin_type || "");
-    setSensitivity(profile.sensitivity_level || "");
-  }, [profile.skin_type, profile.sensitivity_level]);
-
-  const isDirty = skinType !== (profile.skin_type || "") || sensitivity !== (profile.sensitivity_level || "");
+  const getLabel = (list, id) => list.find(item => item.id === id)?.label || id;
 
   const handleSave = async () => {
     setIsSaving(true);
     await onSave({ skin_type: skinType, sensitivity_level: sensitivity });
     setIsSaving(false);
+    setIsEditing(false);
   };
 
   const handleCancel = () => {
     setSkinType(profile.skin_type || "");
     setSensitivity(profile.sensitivity_level || "");
+    setIsEditing(false);
   };
 
-  return (
-    <div style={styles.card}>
-      <h3 style={styles.title}>Tipo y Sensibilidad</h3>
-      
-      <div style={styles.fieldGroup}>
-        <label style={styles.label}>Tipo de Piel</label>
-        <select value={skinType} onChange={(e) => setSkinType(e.target.value)} style={styles.select}>
-          <option value="">Selecciona...</option>
-          {skinTypes.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-        </select>
-      </div>
-      
-      <div style={styles.fieldGroup}>
-        <label style={styles.label}>Nivel de Sensibilidad</label>
-        <select value={sensitivity} onChange={(e) => setSensitivity(e.target.value)} style={styles.select}>
-          <option value="">Selecciona...</option>
-          {sensitivityLevels.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
-        </select>
-      </div>
+  if (isEditing) {
+    return (
+      <div className="bonita-card">
+        <div className="bonita-text">
+          <h3 className="bonita-title"><Heart size={20} /> Mi Piel</h3>
+          
+          <label className="bonita-label">Tipo de Piel</label>
+          <div className="bonita-badge-container">
+            {skinTypes.map(t => (
+              <div
+                key={t.id}
+                onClick={() => setSkinType(t.id)}
+                className="bonita-badge"
+                style={{
+                  background: skinType === t.id ? "var(--bosque-medio, #2D6658)" : "transparent",
+                  color: skinType === t.id ? "var(--crema, #F6F3EC)" : "var(--carbon, #1D2825)",
+                  borderColor: skinType === t.id ? "var(--bosque-medio, #2D6658)" : "var(--arena, #E7DFD2)"
+                }}
+              >
+                {t.label}
+              </div>
+            ))}
+          </div>
 
-      {isDirty && (
-        <div style={styles.actions}>
-          <button style={styles.cancelBtn} onClick={handleCancel} disabled={isSaving}>Cancelar</button>
-          <button style={styles.saveBtn} onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Guardando..." : "Guardar cambios"}
+          <label className="bonita-label">Sensibilidad</label>
+          <div className="bonita-badge-container" style={{ marginBottom: 0 }}>
+            {sensitivityLevels.map(s => (
+              <div
+                key={s.id}
+                onClick={() => setSensitivity(s.id)}
+                className="bonita-badge"
+                style={{
+                  background: sensitivity === s.id ? "var(--bosque-medio, #2D6658)" : "transparent",
+                  color: sensitivity === s.id ? "var(--crema, #F6F3EC)" : "var(--carbon, #1D2825)",
+                  borderColor: sensitivity === s.id ? "var(--bosque-medio, #2D6658)" : "var(--arena, #E7DFD2)"
+                }}
+              >
+                {s.label}
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="bonita-icons">
+          <button className="bonita-btn bonita-btn-cancel" onClick={handleCancel} disabled={isSaving}>
+            <X size={20} />
+          </button>
+          <button className="bonita-btn bonita-btn-save" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? <Loader2 size={20} className="bonita-spin" /> : <Check size={20} />}
           </button>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bonita-card">
+      <div className="bonita-text">
+        <h3 className="bonita-title"><Heart size={20} /> Mi Piel</h3>
+        <div className="bonita-info-text">{profile.skin_type ? getLabel(skinTypes, profile.skin_type) : "No registrado"}</div>
+        <div className="bonita-info-text">Sensibilidad {profile.sensitivity_level ? getLabel(sensitivityLevels, profile.sensitivity_level).toLowerCase() : "desconocida"}</div>
+      </div>
+      <div className="bonita-icons">
+        <button className="bonita-btn bonita-btn-edit" onClick={() => setIsEditing(true)}>
+          <Edit2 size={20} />
+        </button>
+      </div>
     </div>
   );
 }
-
-const styles = {
-  card: {
-    backgroundColor: "var(--crema, #F6F3EC)",
-    borderRadius: "16px",
-    padding: "24px",
-    marginBottom: "16px",
-    border: "1px solid var(--arena, #E7DFD2)",
-    boxShadow: "0 2px 8px rgba(29,40,37,0.05)"
-  },
-  title: {
-    margin: "0 0 20px 0",
-    color: "var(--bosque-profundo, #163B35)",
-    fontFamily: "DM Serif Display, serif",
-    fontSize: "1.4rem"
-  },
-  fieldGroup: {
-    marginBottom: "16px",
-    display: "flex",
-    flexDirection: "column"
-  },
-  label: {
-    fontSize: "0.95rem",
-    marginBottom: "8px",
-    color: "var(--carbon, #1D2825)",
-    fontWeight: "500"
-  },
-  select: {
-    padding: "12px",
-    borderRadius: "10px",
-    border: "1px solid var(--arena, #E7DFD2)",
-    backgroundColor: "#fff",
-    color: "var(--carbon, #1D2825)",
-    fontSize: "1rem",
-    outline: "none"
-  },
-  actions: {
-    display: "flex",
-    gap: "12px",
-    marginTop: "24px"
-  },
-  cancelBtn: {
-    flex: 1,
-    background: "transparent",
-    border: "1px solid var(--arena, #E7DFD2)",
-    padding: "12px",
-    borderRadius: "10px",
-    cursor: "pointer",
-    color: "var(--carbon, #1D2825)",
-    fontWeight: "500"
-  },
-  saveBtn: {
-    flex: 1,
-    background: "var(--bosque-profundo, #163B35)",
-    border: "none",
-    padding: "12px",
-    borderRadius: "10px",
-    cursor: "pointer",
-    color: "var(--crema, #F6F3EC)",
-    fontWeight: "500"
-  }
-};

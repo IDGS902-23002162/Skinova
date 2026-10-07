@@ -1,0 +1,216 @@
+.bonita-card {
+  border-radius: 16px;
+  background: var(--crema, #F6F3EC);
+  border: 1px solid var(--arena, #E7DFD2);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(29, 40, 37, 0.05);
+  height: 100%;
+}
+
+.bonita-card::before {
+  content: "";
+  height: 120px;
+  width: 120px;
+  position: absolute;
+  top: -40%;
+  left: -20%;
+  border-radius: 50%;
+  border: 35px solid rgba(169, 196, 181, 0.3); /* Salvia with opacity */
+  transition: all 0.8s ease;
+  filter: blur(0.5rem);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bonita-card:hover::before {
+  width: 150px;
+  height: 150px;
+  top: -30%;
+  left: 50%;
+  filter: blur(0rem);
+}
+
+.bonita-text {
+  flex-grow: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  color: var(--bosque-profundo, #163B35);
+  z-index: 1;
+}
+
+.bonita-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.4rem;
+  font-weight: normal;
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bonita-subtitle {
+  font-size: 0.95rem;
+  color: var(--carbon, #1D2825);
+  opacity: 0.8;
+  margin: 0 0 16px 0;
+}
+
+.bonita-icons {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border-top: 1px solid var(--arena, #E7DFD2);
+  z-index: 1;
+}
+
+.bonita-btn {
+  border: none;
+  flex: 1;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.bonita-btn-edit {
+  background-color: var(--crema, #F6F3EC);
+  color: var(--bosque-medio, #2D6658);
+}
+.bonita-btn-edit:hover {
+  background-color: var(--arena, #E7DFD2);
+}
+
+.bonita-btn-cancel {
+  background-color: var(--crema, #F6F3EC);
+  color: var(--carbon, #1D2825);
+  border-right: 1px solid var(--arena, #E7DFD2);
+}
+.bonita-btn-cancel:hover {
+  background-color: var(--arena, #E7DFD2);
+}
+
+.bonita-btn-save {
+  background-color: var(--bosque-profundo, #163B35);
+  color: var(--crema, #F6F3EC);
+}
+.bonita-btn-save:hover {
+  background-color: var(--bosque-medio, #2D6658);
+}
+.bonita-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Utility classes for content inside bonita-text */
+.bonita-info-text {
+  font-size: 1rem;
+  color: var(--carbon, #1D2825);
+  margin-bottom: 8px;
+}
+
+.bonita-label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--carbon, #1D2825);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.bonita-badge-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.bonita-badge {
+  padding: 6px 14px;
+  border: 1.5px solid;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.bonita-input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bonita-input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--arena, #E7DFD2);
+  background-color: #fff;
+  color: var(--carbon, #1D2825);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.bonita-add-btn {
+  background: var(--bosque-medio, #2D6658);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0 16px;
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.bonita-tag-edit {
+  padding: 6px 12px;
+  background-color: rgba(201, 130, 104, 0.15); /* Terracota suave */
+  color: var(--terracota, #C98268);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bonita-remove-icon {
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.bonita-textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--arena, #E7DFD2);
+  font-size: 0.95rem;
+  background-color: #fff;
+  color: var(--carbon, #1D2825);
+  min-height: 100px;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  margin-bottom: 8px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.bonita-spin {
+  animation: spin 1s linear infinite;
+}

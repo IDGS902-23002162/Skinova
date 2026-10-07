@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { FileText, Edit2, X, Check, Loader2 } from 'lucide-react';
+import './cardsBonitas.css';
 
 export default function DermatologicalHistorySection({ profile, onSave }) {
-  const [history, setHistory] = useState(profile.dermatological_history || "");
+  const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
+  
   const parseHistory = (hist) => {
     if (!hist) return "";
     if (typeof hist === 'string') return hist;
@@ -12,105 +14,62 @@ export default function DermatologicalHistorySection({ profile, onSave }) {
   };
 
   const originalHistory = parseHistory(profile.dermatological_history);
-
-  useEffect(() => {
-    setHistory(originalHistory);
-  }, [originalHistory]);
-
-  const isDirty = history !== originalHistory;
+  const [history, setHistory] = useState(originalHistory);
 
   const handleSave = async () => {
     setIsSaving(true);
     await onSave({ dermatological_history: history });
     setIsSaving(false);
+    setIsEditing(false);
   };
 
   const handleCancel = () => {
     setHistory(originalHistory);
+    setIsEditing(false);
   };
 
-  return (
-    <div style={styles.card}>
-      <h3 style={styles.title}>Antecedentes Dermatológicos</h3>
-      <p style={styles.subtitle}>Detalla tratamientos importantes, rosácea severa, acné crónico, etc.</p>
-
-      <textarea 
-        value={history}
-        onChange={(e) => setHistory(e.target.value)}
-        placeholder="¿Has tenido tratamientos importantes, rosácea severa, acné crónico?"
-        style={styles.textarea}
-      />
-
-      {isDirty && (
-        <div style={styles.actions}>
-          <button style={styles.cancelBtn} onClick={handleCancel} disabled={isSaving}>Cancelar</button>
-          <button style={styles.saveBtn} onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Guardando..." : "Guardar cambios"}
+  if (isEditing) {
+    return (
+      <div className="bonita-card">
+        <div className="bonita-text">
+          <h3 className="bonita-title"><FileText size={20} /> Antecedentes</h3>
+          <textarea 
+            className="bonita-textarea"
+            value={history}
+            onChange={(e) => setHistory(e.target.value)}
+            placeholder="Ej. Tratamientos, rosácea, acné crónico..."
+          />
+        </div>
+        
+        <div className="bonita-icons">
+          <button className="bonita-btn bonita-btn-cancel" onClick={handleCancel} disabled={isSaving}>
+            <X size={20} />
+          </button>
+          <button className="bonita-btn bonita-btn-save" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? <Loader2 size={20} className="bonita-spin" /> : <Check size={20} />}
           </button>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  const previewText = originalHistory.length > 40 
+    ? originalHistory.substring(0, 40) + "..." 
+    : originalHistory;
+
+  return (
+    <div className="bonita-card">
+      <div className="bonita-text">
+        <h3 className="bonita-title"><FileText size={20} /> Antecedentes</h3>
+        <div className="bonita-info-text">
+          {originalHistory.trim() ? previewText : "Ninguno registrado"}
+        </div>
+      </div>
+      <div className="bonita-icons">
+        <button className="bonita-btn bonita-btn-edit" onClick={() => setIsEditing(true)}>
+          <Edit2 size={20} />
+        </button>
+      </div>
     </div>
   );
 }
-
-const styles = {
-  card: {
-    backgroundColor: "var(--salvia, #A9C4B5)",
-    borderRadius: "16px",
-    padding: "24px",
-    marginBottom: "16px",
-    border: "none",
-    boxShadow: "0 2px 8px rgba(29,40,37,0.05)"
-  },
-  title: {
-    margin: "0 0 8px 0",
-    color: "var(--bosque-profundo, #163B35)",
-    fontFamily: "DM Serif Display, serif",
-    fontSize: "1.4rem"
-  },
-  subtitle: {
-    margin: "0 0 16px 0",
-    color: "var(--bosque-profundo, #163B35)",
-    opacity: 0.8,
-    fontSize: "0.95rem"
-  },
-  textarea: {
-    width: "100%",
-    padding: "16px",
-    borderRadius: "12px",
-    border: "1px solid var(--arena, #E7DFD2)",
-    fontSize: "1rem",
-    backgroundColor: "#FAFAFA",
-    color: "var(--carbon, #1D2825)",
-    minHeight: "120px",
-    resize: "vertical",
-    outline: "none",
-    boxSizing: "border-box",
-    fontFamily: "inherit"
-  },
-  actions: {
-    display: "flex",
-    gap: "12px",
-    marginTop: "20px"
-  },
-  cancelBtn: {
-    flex: 1,
-    background: "transparent",
-    border: "1px solid var(--bosque-profundo, #163B35)",
-    padding: "12px",
-    borderRadius: "10px",
-    cursor: "pointer",
-    color: "var(--bosque-profundo, #163B35)",
-    fontWeight: "500"
-  },
-  saveBtn: {
-    flex: 1,
-    background: "var(--bosque-profundo, #163B35)",
-    border: "none",
-    padding: "12px",
-    borderRadius: "10px",
-    cursor: "pointer",
-    color: "var(--crema, #F6F3EC)",
-    fontWeight: "500"
-  }
-};

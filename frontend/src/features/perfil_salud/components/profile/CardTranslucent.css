@@ -1,0 +1,80 @@
+.translucent-card {
+  width: 100%;
+  background: rgba(169, 196, 181, 0.25); /* Salvia con transparencia para el efecto cristal */
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: 0.5s ease-in-out;
+  padding: 16px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 12px 0 rgba(29, 40, 37, 0.05); /* Sombra difusa y suave */
+  border: 1px solid rgba(22, 59, 53, 0.1);
+  margin-bottom: 24px;
+}
+
+.translucent-card:hover {
+  cursor: pointer;
+  transform: scale(1.02);
+}
+
+.translucent-img {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--arena, #E7DFD2), var(--salvia, #A9C4B5));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bosque-profundo, #163B35);
+  flex-shrink: 0;
+  transition: 0.5s ease-in-out;
+}
+
+.translucent-card:hover .translucent-img {
+  background: linear-gradient(135deg, var(--salvia, #A9C4B5), var(--bosque-medio, #2D6658));
+  color: var(--crema, #F6F3EC);
+}
+
+.translucent-textbox {
+  flex: 1;
+  margin-left: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.translucent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.translucent-title {
+  font-family: 'DM Serif Display', serif; /* Tipografía del Criterios de Diseño */
+  font-size: 1.2rem;
+  margin: 0;
+  letter-spacing: 0.5px;
+  color: var(--bosque-profundo, #163B35);
+}
+
+.translucent-badge {
+  font-size: 0.75rem;
+  background: rgba(22, 59, 53, 0.1);
+  color: var(--bosque-profundo, #163B35);
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.translucent-p {
+  font-family: inherit;
+  font-size: 0.9rem;
+  margin: 0;
+  color: var(--carbon, #1D2825);
+}
