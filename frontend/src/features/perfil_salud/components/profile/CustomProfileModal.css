@@ -1,0 +1,283 @@
+.custom-profile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(29, 40, 37, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start; /* Permite que el modal crezca hacia abajo */
+  justify-content: center;
+  overflow-y: auto; /* Scroll en la página completa si el modal es gigante */
+  padding: 32px 16px; /* Espacio para que no toque los bordes si crece mucho */
+  animation: fadeIn 0.2s ease-out;
+  scrollbar-width: none;
+}
+
+.custom-profile-overlay::-webkit-scrollbar {
+  display: none;
+}
+
+.custom-profile-modal {
+  background-color: var(--color-crema, #F6F3EC);
+  width: 100%;
+  max-width: 440px;
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(29, 40, 37, 0.15);
+  display: flex;
+  flex-direction: column;
+  margin: auto; /* Lo centra verticalmente si sobra espacio */
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  transition: all 0.3s ease; /* Transición suave al crecer */
+}
+
+.custom-profile-close-external {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 1001;
+}
+
+.custom-profile-close-external:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.custom-profile-scroll-container {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-profile-hero {
+  width: 100%;
+  height: 240px; /* Reduced height to fit everything on screen */
+  padding: 16px;
+  position: relative;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.custom-profile-hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+  transition: filter 0.3s ease;
+}
+
+.custom-profile-hero-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--color-salvia, #A9C4B5), var(--color-bosque-medio, #2D6658));
+  border-radius: 24px;
+}
+
+.custom-profile-camera-fab {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-bosque-profundo, #163B35);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 5;
+  box-shadow: 0 4px 12px rgba(29, 40, 37, 0.15);
+}
+
+.custom-profile-camera-fab:hover {
+  background: rgba(255, 255, 255, 0.6);
+  transform: scale(1.05);
+}
+
+.custom-profile-camera-fab:active {
+  transform: scale(0.95);
+}
+
+.custom-profile-info-section {
+  padding: 16px 24px 16px 24px;
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.custom-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.custom-profile-name {
+  font-family: var(--font-title, "DM Serif Display", serif);
+  font-size: 1.8rem;
+  color: var(--color-bosque-profundo, #163B35);
+  margin: 0;
+  font-weight: normal;
+}
+
+.custom-profile-name-edit-btn {
+  background: rgba(45, 102, 88, 0.1);
+  color: var(--color-bosque-medio, #2D6658);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.custom-profile-name-edit-btn:hover {
+  background: rgba(45, 102, 88, 0.2);
+}
+
+.custom-profile-name-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.custom-profile-name-input {
+  flex: 1;
+  font-family: var(--font-title, "DM Serif Display", serif);
+  font-size: 1.6rem;
+  color: var(--color-bosque-profundo, #163B35);
+  background: #fff;
+  border: 1px solid var(--color-arena, #E7DFD2);
+  border-radius: 8px;
+  padding: 4px 12px;
+  outline: none;
+}
+.custom-profile-name-input:focus {
+  border-color: var(--color-bosque-medio, #2D6658);
+}
+
+.custom-profile-name-save-btn {
+  background: var(--color-bosque-medio, #2D6658);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.custom-profile-name-save-btn:disabled {
+  opacity: 0.6;
+}
+
+.custom-profile-bio {
+  font-size: 0.95rem;
+  color: var(--color-carbon, #1D2825);
+  opacity: 0.8;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.custom-profile-content {
+  padding: 0 24px 24px 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-profile-carousel-indicator {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-bosque-medio, #2D6658);
+  opacity: 0.7;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.custom-profile-carousel {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  gap: 16px;
+  
+  /* Break out of parent padding for edge-to-edge scroll */
+  margin-left: -24px;
+  margin-right: -24px;
+  padding-left: 24px;
+  padding-right: 24px;
+  
+  scrollbar-width: none;
+}
+.custom-profile-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.custom-profile-carousel > * {
+  /* Show exactly one card at a time matching the parent's content width */
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+}
+
+@media (min-width: 768px) {
+  .custom-profile-carousel {
+    flex-direction: column;
+    overflow-x: visible;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .custom-profile-carousel > * {
+    flex: 1 1 auto;
+  }
+  .custom-profile-carousel-indicator {
+    display: none;
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

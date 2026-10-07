@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth, UserButton, AuthenticateWithRedirectCallback } from "@clerk/react";
 import SignInPage from "../features/autenticacion/pages/SignInPage";
@@ -8,12 +8,13 @@ import FullScreenLoader from "../shared/components/FullScreenLoader";
 import LogoutTransition from "../features/autenticacion/components/LogoutTransition";
 import MainLayout from "../shared/components/MainLayout";
 import { Heart, Target, AlertTriangle } from "lucide-react";
-import MiPielTab from "../features/perfil_salud/pages/MiPielTab";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
 import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
+import CustomProfileModal from "../features/perfil_salud/components/profile/CustomProfileModal";
 
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   if (!isLoaded) return <FullScreenLoader isVisible={true} text="Cargando..." />;
   if (!isSignedIn) return <Navigate to="/sign-in" replace />;
@@ -39,22 +40,25 @@ function Home() {
                   elements: {
                     card: {
                       boxShadow: '0 4px 20px rgba(29,40,37,0.08)'
-                    },
-                    navbar: {
-                      borderRight: '1px solid #E7DFD2' // arena
                     }
                   }
                 }}
               >
-                <UserButton.UserProfilePage
-                  label="Mi Piel"
-                  url="mi-piel"
-                  labelIcon={<Heart size={16} />}
-                >
-                  <MiPielTab />
-                </UserButton.UserProfilePage>
+                <UserButton.MenuItems>
+                  <UserButton.Action 
+                    label="Mi Piel" 
+                    labelIcon={<Heart size={16} />} 
+                    onClick={() => setIsProfileModalOpen(true)} 
+                  />
+                </UserButton.MenuItems>
               </UserButton>
             </header>
+            
+            <CustomProfileModal 
+              isOpen={isProfileModalOpen} 
+              onClose={() => setIsProfileModalOpen(false)} 
+            />
+
             <div style={{
               backgroundColor: "var(--salvia, #A9C4B5)",
               padding: "2rem",

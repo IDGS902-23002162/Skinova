@@ -26,11 +26,42 @@
 }
 
 .bonita-card:hover::before {
+  /* Default hover para desktop (fallback si media queries no son soportados) */
   width: 150px;
   height: 150px;
   top: -30%;
   left: 50%;
   filter: blur(0rem);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .bonita-card:hover::before {
+    width: 150px;
+    height: 150px;
+    top: -30%;
+    left: 50%;
+    filter: blur(0rem);
+  }
+}
+
+@media (hover: none) {
+  .bonita-card:hover::before {
+    /* Desactivar el hover en móviles */
+    width: 120px;
+    height: 120px;
+    top: -40%;
+    left: -20%;
+    filter: blur(0.5rem);
+  }
+  
+  /* Activar animación cuando se le da click a editar (y la tarjeta muestra los botones de guardar/cancelar) */
+  .bonita-card:has(.bonita-btn-save)::before {
+    width: 150px;
+    height: 150px;
+    top: -30%;
+    left: 50%;
+    filter: blur(0rem);
+  }
 }
 
 .bonita-text {
