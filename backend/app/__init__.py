@@ -51,12 +51,12 @@ def create_app(config_name='default'):
     from app.modules.users.routes import users_bp
     app.register_blueprint(users_bp)
 
-    # Activar cuando ya uses las rutas de perfil_salud:
-    # from app.modules.perfil_salud.routes import perfil_salud_bp
-    # app.register_blueprint(
-    #     perfil_salud_bp,
-    #     url_prefix='/api/perfil-salud'
-    # )
+    # Rutas de perfil_salud:
+    from app.modules.perfil_salud.routes import perfil_salud_bp
+    app.register_blueprint(
+        perfil_salud_bp,
+        url_prefix='/api/perfil-salud'
+    )
 
     @app.route('/health')
     def health_check():

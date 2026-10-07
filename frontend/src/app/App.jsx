@@ -7,9 +7,11 @@ import NotFoundPage from "../shared/pages/NotFoundPage";
 import FullScreenLoader from "../shared/components/FullScreenLoader";
 import LogoutTransition from "../features/autenticacion/components/LogoutTransition";
 import MainLayout from "../shared/components/MainLayout";
-import ModuloPerfilSalud from "../features/perfil_salud/pages/ModuloPerfilSalud";
-import { Heart } from "lucide-react";
+import { Heart, Target, AlertTriangle } from "lucide-react";
+import MiPielTab from "../features/perfil_salud/pages/MiPielTab";
+import RestriccionesTab from "../features/perfil_salud/pages/RestriccionesTab";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
+import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
 
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -19,19 +21,45 @@ function Home() {
 
   return (
     <OnboardingGate>
-      <MainLayout>
-        <div style={{ padding: "1rem" }}>
+      <ProfileProvider>
+        <MainLayout>
+          <div style={{ padding: "1rem" }}>
           <header style={{ display: "flex", justifyContent: "space-between", marginBottom: "2rem" }}>
             <h1 style={{ color: "var(--bosque-profundo, #163B35)", fontFamily: "DM Serif Display, serif" }}>
               Dashboard
             </h1>
-            <UserButton>
+            <UserButton
+              appearance={{
+                variables: {
+                  colorPrimary: '#2D6658', // bosque-medio
+                  colorText: '#1D2825', // carbon
+                  colorBackground: '#F6F3EC', // crema
+                  colorDanger: '#C98268', // terracota
+                  borderRadius: '12px'
+                },
+                elements: {
+                  card: {
+                    boxShadow: '0 4px 20px rgba(29,40,37,0.08)'
+                  },
+                  navbar: {
+                    borderRight: '1px solid #E7DFD2' // arena
+                  }
+                }
+              }}
+            >
               <UserButton.UserProfilePage 
-                label="Perfil Skinova" 
-                url="perfil-skinova" 
+                label="Mi Piel" 
+                url="mi-piel" 
                 labelIcon={<Heart size={16} />}
               >
-                <ModuloPerfilSalud />
+                <MiPielTab />
+              </UserButton.UserProfilePage>
+              <UserButton.UserProfilePage 
+                label="Restricciones" 
+                url="restricciones" 
+                labelIcon={<AlertTriangle size={16} />}
+              >
+                <RestriccionesTab />
               </UserButton.UserProfilePage>
             </UserButton>
           </header>
@@ -46,6 +74,7 @@ function Home() {
         </div>
       </div>
       </MainLayout>
+      </ProfileProvider>
     </OnboardingGate>
   );
 }
