@@ -46,10 +46,12 @@ function Home() {
               >
                 <UserButton.MenuItems>
                   <UserButton.Action 
-                    label="Mi Piel" 
+                    label="Mi Perfil Skinova" 
                     labelIcon={<Heart size={16} />} 
                     onClick={() => setIsProfileModalOpen(true)} 
                   />
+                  <UserButton.Action label="manageAccount" />
+                  <UserButton.Action label="signOut" />
                 </UserButton.MenuItems>
               </UserButton>
             </header>
