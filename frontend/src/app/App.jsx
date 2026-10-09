@@ -10,6 +10,7 @@ import MainLayout from "../shared/components/MainLayout";
 import ModuloPerfilSalud from "../features/perfil_salud/pages/ModuloPerfilSalud";
 import { Heart } from "lucide-react";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
+import ConsultaIaView from "../features/consulta_ia/pages/consulta_ia";
 
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -56,6 +57,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
+      <Route path="/consulta" element={<ConsultaIaView/>} />
       <Route
         path="/sso-callback"
         element={
