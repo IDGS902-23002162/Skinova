@@ -4,19 +4,16 @@ import MainLayout from '../../../shared/components/MainLayout';
 
 export function ConsultaIaView() {
   const [productName, setProductName] = useState('');
-  const [capturedImage, setCapturedImage] = useState('');
+  const [capturedImage, setCapturedImage] = useState(null);
 
   const handleClearAll = () => {
     setProductName('');
-    setCapturedImage('');
+    setCapturedImage(null);
   };
 
-  const handleSubmit = (e) => {
-    if (e && typeof e.preventDefault === 'function') {
-      e.preventDefault();
-    }
+  const handleSubmit = () => {
     console.log("Enviando consulta con:", { productName, capturedImage });
-    // TODO: Lógica para enviar a la API de análisis de SKINOVA
+    // TODO: Lógica para enviar a la API de análisis de SKINOVA con `productName` y `capturedImage`
   };
 
   return (
@@ -46,10 +43,6 @@ export function ConsultaIaView() {
           Consulta de Producto
         </h2>
 
-        {/* 
-          Asegúrate de que tu componente AiChat esté adaptado para recibir 
-          estas props y evitar formularios anidados.
-        */}
         <AiChat
           productText={productName}
           onProductTextChange={setProductName}
@@ -57,6 +50,8 @@ export function ConsultaIaView() {
           onImageCaptured={setCapturedImage}
           onSubmit={handleSubmit}
           onClearAll={handleClearAll}
+          labelProduct="Nombre del producto o ingrediente"
+          labelCamera="Fotografía del producto (Opcional)"
         />
       </div>
     </MainLayout>

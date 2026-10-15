@@ -1,14 +1,35 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-function AiChat() {
-  const [productText, setProductText] = useState('');
+export function AiChat({
+  productText = '',
+  onProductTextChange,
+  capturedImage = null,
+  onImageCaptured,
+  onSubmit,
+  onClearAll,
+  labelProduct = 'Nombre del producto o ingrediente',
+  labelCamera = 'Fotografía del producto (Opcional)'
+}) {
+  const [internalText, setInternalText] = useState(productText);
   const [cameraState, setCameraState] = useState('idle'); // 'idle' | 'camera' | 'photo'
-  const [capturedImage, setCapturedImage] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+
+  // Sincronizar si cambia desde afuera
+  useEffect(() => {
+    setInternalText(productText);
+  }, [productText]);
+
+  const handleTextChange = (e) => {
+    const val = e.target.value;
+    setInternalText(val);
+    if (onProductTextChange) {
+      onProductTextChange(val);
+    }
+  };
 
   const startCamera = async () => {
     setErrorMessage('');
@@ -51,30 +72,30 @@ function AiChat() {
       const context = canvas.getContext('2d');
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      setCapturedImage(dataUrl);
+      if (onImageCaptured) {
+        onImageCaptured(dataUrl);
+      }
       stopCamera();
       setCameraState('photo');
     }
   };
 
   const clearPhoto = () => {
-    setCapturedImage(null);
+    if (onImageCaptured) {
+      onImageCaptured(null);
+    }
     setCameraState('idle');
   };
 
-  const clearAll = () => {
-    setProductText('');
+  const clearAllFields = (e) => {
+    e.preventDefault();
+    setInternalText('');
     stopCamera();
     clearPhoto();
     setErrorMessage('');
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const event = new CustomEvent('analyzer:submit', {
-      detail: { text: productText.trim(), image: capturedImage }
-    });
-    window.dispatchEvent(event);
+    if (onClearAll) {
+      onClearAll();
+    }
   };
 
   useEffect(() => {
@@ -102,11 +123,9 @@ function AiChat() {
           --pa-font: 'Manrope', system-ui, -apple-system, sans-serif;
           
           width: 100%;
-          min-height: 100vh;
-          background: var(--pa-bg);
+          background: transparent;
           font-family: var(--pa-font);
           color: var(--pa-text);
-          padding: 24px 16px;
           box-sizing: border-box;
         }
 
@@ -114,13 +133,11 @@ function AiChat() {
           box-sizing: border-box;
         }
 
-        .pa-form {
+        .pa-form-inner {
           display: flex;
           flex-direction: column;
           gap: 20px;
           width: 100%;
-          max-width: 600px;
-          margin: 0 auto;
         }
 
         .pa-field {
@@ -329,7 +346,6 @@ function AiChat() {
         }
 
         @media (min-width: 480px) {
-          .pa-wrapper { padding: 40px 24px; }
           .pa-actions { flex-direction: row; gap: 16px; }
           .pa-actions .pa-btn--primary { flex: 2 1 0; }
           .pa-actions .pa-btn--outline { flex: 1 1 0; }
@@ -340,10 +356,10 @@ function AiChat() {
         }
       `}</style>
 
-      <form className="pa-form" onSubmit={handleSubmit} noValidate>
+      <div className="pa-form-inner">
         <div className="pa-field">
           <label className="pa-label" htmlFor="product-name-input">
-            Nombre del producto o ingrediente
+            {labelProduct}
           </label>
           <input
             className="pa-input"
@@ -352,13 +368,13 @@ function AiChat() {
             type="text"
             autoComplete="off"
             placeholder="Ej. Crema hidratante con ceramidas..."
-            value={productText}
-            onChange={(e) => setProductText(e.target.value)}
+            value={internalText}
+            onChange={handleTextChange}
           />
         </div>
 
         <fieldset className="pa-field">
-          <legend className="pa-label">Fotografía del producto (Opcional)</legend>
+          <legend className="pa-label">{labelCamera}</legend>
 
           {errorMessage && (
             <div className="pa-error" role="alert">
@@ -366,7 +382,7 @@ function AiChat() {
             </div>
           )}
 
-          <div className="pa-stage" id="camera-stage" data-state={cameraState}>
+          <div className="pa-stage" id="camera-stage" data-state={capturedImage ? 'photo' : cameraState}>
             <div className="pa-view pa-view--idle">
               <p>Toma una fotografía directa del empaque o lista de ingredientes.</p>
               <button type="button" className="pa-btn pa-btn--secondary" onClick={startCamera}>
@@ -407,15 +423,16 @@ function AiChat() {
         </fieldset>
 
         <div className="pa-actions">
-          <button type="submit" className="pa-btn pa-btn--primary">
-            Analizar producto
+          <button type="button" className="pa-btn pa-btn--primary" onClick={onSubmit}>
+            Analizar Foto
           </button>
-          <button type="button" className="pa-btn pa-btn--outline" onClick={clearAll}>
+          <button type="button" className="pa-btn pa-btn--outline" onClick={clearAllFields}>
             Borrar todo
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
+
 export default AiChat;
