@@ -41,6 +41,7 @@ def create_app(config_name='default'):
     from app.modules.users import models as users_models
     from app.modules.perfil_salud import models as perfil_salud_models
     from app.modules.mi_neceser import models as mi_neceser_models
+    from app.modules.habitos_desafios import models as habitos_desafios_models
     from app.modules.creador_rutinas import models as creador_rutinas_models
     from app.modules.bitacora import models as bitacora_models
     from app.modules.comunidad import models as comunidad_models
@@ -49,7 +50,14 @@ def create_app(config_name='default'):
     from app.modules.notificaciones import models as notificaciones_models
 
     from app.modules.users.routes import users_bp
+    from app.modules.mi_neceser.routes import mi_neceser_bp
+    from app.modules.habitos_desafios.routes import habitos_desafios_bp
+    from app.modules.comunidad.routes import comunidad_bp
+
     app.register_blueprint(users_bp)
+    app.register_blueprint(mi_neceser_bp)
+    app.register_blueprint(habitos_desafios_bp)
+    app.register_blueprint(comunidad_bp)
 
     # Activar cuando ya uses las rutas de perfil_salud:
     # from app.modules.perfil_salud.routes import perfil_salud_bp
