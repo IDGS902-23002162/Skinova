@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useUser } from '@clerk/react';
-import { X, Camera, Edit2, Check, Loader2, Upload } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { X, Camera, Edit2, Check, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useProfileData } from '../../hooks/useProfileData';
 import SkinInfoCard from './SkinInfoCard';
 import GoalsSection from './GoalsSection';
@@ -172,18 +172,64 @@ export default function CustomProfileModal({ isOpen, onClose }) {
                               onChange={e => setEditedName(e.target.value)}
                               className="custom-profile-name-input"
                               autoFocus
-                              onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                              placeholder="Tu nombre"
+                              maxLength={35}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveName();
+                                if (e.key === 'Escape') {
+                                  setEditedName(displayTitle);
+                                  setIsEditingName(false);
+                                }
+                              }}
                             />
-                            <button className="custom-profile-name-save-btn" onClick={handleSaveName} disabled={isSavingName}>
-                              {isSavingName ? <Loader2 size={18} className="spin" /> : <Check size={18} />}
-                            </button>
+                            <div className="custom-profile-name-actions">
+                              <button
+                                type="button"
+                                className="custom-profile-name-cancel-btn"
+                                onClick={() => {
+                                  setEditedName(displayTitle);
+                                  setIsEditingName(false);
+                                }}
+                                disabled={isSavingName}
+                                title="Cancelar edición"
+                                aria-label="Cancelar edición"
+                              >
+                                <X size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                className="custom-profile-name-save-btn"
+                                onClick={handleSaveName}
+                                disabled={isSavingName || !editedName.trim()}
+                                title="Guardar cambios"
+                                aria-label="Guardar cambios"
+                              >
+                                {isSavingName ? (
+                                  <Loader2 size={16} className="spin" />
+                                ) : (
+                                  <>
+                                    <Check size={16} strokeWidth={2.5} />
+                                    <span className="custom-profile-name-save-text">Guardar</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <>
                             <h2 className="custom-profile-name">
                               {displayTitle}
                             </h2>
-                            <button className="custom-profile-name-edit-btn" onClick={() => setIsEditingName(true)}>
+                            <button
+                              type="button"
+                              className="custom-profile-name-edit-btn"
+                              onClick={() => {
+                                setEditedName(displayTitle);
+                                setIsEditingName(true);
+                              }}
+                              title="Editar nombre"
+                              aria-label="Editar nombre"
+                            >
                               <Edit2 size={16} />
                             </button>
                           </>
