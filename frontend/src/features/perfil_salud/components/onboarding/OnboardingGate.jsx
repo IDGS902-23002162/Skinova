@@ -5,32 +5,50 @@ import OnboardingContainer from "./OnboardingContainer";
 
 export default function OnboardingGate({ children }) {
   const { fetchConAuth } = useApi();
-  const [status, setStatus] = useState("loading"); // "loading" | "onboarding" | "completed"
+  
+  // Si ya se verificó el onboarding en esta sesión, inicia directamente como "completed"
+  const [status, setStatus] = useState(() => {
+    return sessionStorage.getItem("skinova_onboarding_verified") === "true"
+      ? "completed"
+      : "loading";
+  });
 
   useEffect(() => {
+    // Si ya fue verificado como completado en esta sesión, no re-ejecutar ni bloquear la pantalla
+    if (sessionStorage.getItem("skinova_onboarding_verified") === "true") {
+      return;
+    }
+
+    let isMounted = true;
+
     const syncAndCheckUser = async () => {
       try {
         const res = await fetchConAuth('/me');
         if (res.ok) {
           const data = await res.json();
           if (data.onboarding_completed) {
-            setStatus("completed");
+            sessionStorage.setItem("skinova_onboarding_verified", "true");
+            if (isMounted) setStatus("completed");
           } else {
-            setStatus("onboarding");
+            sessionStorage.removeItem("skinova_onboarding_verified");
+            if (isMounted) setStatus("onboarding");
           }
         } else {
-          // Fallback en caso de error, podríamos reintentar o mostrar error,
-          // por ahora dejaremos que pase si falla para no bloquear indefinidamente,
-          // o idealmente mostrar un estado de error.
-          setStatus("completed"); 
+          sessionStorage.setItem("skinova_onboarding_verified", "true");
+          if (isMounted) setStatus("completed"); 
         }
       } catch (error) {
         console.error("Error comprobando el onboarding", error);
-        setStatus("completed");
+        sessionStorage.setItem("skinova_onboarding_verified", "true");
+        if (isMounted) setStatus("completed");
       }
     };
     
     syncAndCheckUser();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (status === "loading") {
@@ -38,7 +56,14 @@ export default function OnboardingGate({ children }) {
   }
 
   if (status === "onboarding") {
-    return <OnboardingContainer onComplete={() => setStatus("completed")} />;
+    return (
+      <OnboardingContainer 
+        onComplete={() => {
+          sessionStorage.setItem("skinova_onboarding_verified", "true");
+          setStatus("completed");
+        }} 
+      />
+    );
   }
 
   return <>{children}</>;

@@ -11,6 +11,8 @@ import { Heart, Target, AlertTriangle } from "lucide-react";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
 import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
 import CustomProfileModal from "../features/perfil_salud/components/profile/CustomProfileModal";
+import SubscriptionsPage from "../features/suscripciones/pages/SubscriptionsPage";
+
 
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -83,6 +85,8 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
+      <Route path="/suscripciones" element={<SubscriptionsPage />} />
+      <Route path="/subscriptions" element={<SubscriptionsPage />} />
       <Route
         path="/sso-callback"
         element={

@@ -1,1 +1,0 @@
-export default function ModuloSuscripciones() { return <div>ModuloSuscripciones</div>; }

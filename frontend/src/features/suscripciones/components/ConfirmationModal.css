@@ -1,0 +1,162 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background-color: #fcfbf9;
+  border-radius: 16px;
+  padding: 40px;
+  width: 90%;
+  max-width: 480px;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  text-align: left;
+}
+
+.close-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.close-button:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+
+.icon-container {
+  background-color: #dbebe2;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.header-icon {
+  color: #1b4332;
+}
+
+.step-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: #1b4332;
+  margin: 0 0 12px 0;
+}
+
+.modal-subtitle {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0 0 32px 0;
+  line-height: 1.5;
+}
+
+.plan-summary-card {
+  background-color: #f5f3ef;
+  border: 1px solid #e5e2db;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.summary-row:first-child {
+  padding-top: 0;
+  border-bottom: 1px solid #e5e2db;
+}
+
+.summary-row:last-child {
+  padding-bottom: 0;
+}
+
+.summary-label {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.summary-value {
+  color: #1b4332;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.secure-payment-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 0.85rem;
+  margin-bottom: 32px;
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.continue-button {
+  background-color: #1b4332;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.continue-button:hover {
+  background-color: #133224;
+}
+
+.cancel-button {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 8px;
+  width: 100%;
+}
+
+.cancel-button:hover {
+  color: #333;
+}
