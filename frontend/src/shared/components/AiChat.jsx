@@ -1,7 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import "../styles/ai_chat_style.css";
-import HistorialConversaciones from "../../features/consulta_ia/components/HistorialConversaciones";
-import Chat from "../../features/consulta_ia/components/Chat";
 
 export function AiChat({
   productText = '',
@@ -16,9 +14,6 @@ export function AiChat({
   const [internalText, setInternalText] = useState(productText);
   const [cameraState, setCameraState] = useState('idle'); // 'idle' | 'camera' | 'photo'
   const [errorMessage, setErrorMessage] = useState('');
-
-  // 1. Estado para controlar la conversación/chat activo seleccionado
-  const [selectedChat, setSelectedChat] = useState(null);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -104,16 +99,6 @@ export function AiChat({
     }
   };
 
-  // Callback cuando se selecciona una conversación del historial
-  const handleSelectConversation = (item) => {
-    setSelectedChat(item);
-  };
-
-  // Función opcional para volver al formulario inicial (nueva consulta)
-  const handleNewConsultation = () => {
-    setSelectedChat(null);
-  };
-
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -124,98 +109,83 @@ export function AiChat({
 
   return (
     <div className="pa-wrapper">
-      <div className="pa-page-layout">
-        <aside className="pa-history-sidebar">
-          {/* Pasar el callback y el elemento seleccionado al historial */}
-          <HistorialConversaciones
-            onSelectConversation={handleSelectConversation}
-            onNewConsultation={handleNewConsultation}
-            selectedId={selectedChat?.id}
+      <div className="pa-form-inner">
+        {/* Input de texto */}
+        <div className="pa-field">
+          <label className="pa-label" htmlFor="product-name-input">
+            {labelProduct}
+          </label>
+          <input
+            className="pa-input"
+            id="product-name-input"
+            name="product"
+            type="text"
+            autoComplete="off"
+            placeholder="Ej. Crema hidratante con ceramidas..."
+            value={internalText}
+            onChange={handleTextChange}
           />
-        </aside>
+        </div>
 
-        <main className="pa-main-content">
-          {/* Renderizado condicional: si hay una conversación seleccionada, se muestra <Chat /> */}
-          {selectedChat ? (
-            <Chat conversationData={selectedChat} />
-          ) : (
-            <div className="pa-form-inner">
-              <div className="pa-field">
-                <label className="pa-label" htmlFor="product-name-input">
-                  {labelProduct}
-                </label>
-                <input
-                  className="pa-input"
-                  id="product-name-input"
-                  name="product"
-                  type="text"
-                  autoComplete="off"
-                  placeholder="Ej. Crema hidratante con ceramidas..."
-                  value={internalText}
-                  onChange={handleTextChange}
-                />
-              </div>
+        {/* Sección de Cámara */}
+        <fieldset className="pa-field">
+          <legend className="pa-label">{labelCamera}</legend>
 
-              <fieldset className="pa-field">
-                <legend className="pa-label">{labelCamera}</legend>
+          {errorMessage && (
+            <div className="pa-error" role="alert">
+              {errorMessage}
+            </div>
+          )}
 
-                {errorMessage && (
-                  <div className="pa-error" role="alert">
-                    {errorMessage}
-                  </div>
-                )}
+          <div className="pa-stage" id="camera-stage" data-state={capturedImage ? 'photo' : cameraState}>
+            <div className="pa-view pa-view--idle">
+              <p>Toma una fotografía directa del empaque o lista de ingredientes.</p>
+              <button type="button" className="pa-btn pa-btn--secondary" onClick={startCamera}>
+                Activar cámara
+              </button>
+            </div>
 
-                <div className="pa-stage" id="camera-stage" data-state={capturedImage ? 'photo' : cameraState}>
-                  <div className="pa-view pa-view--idle">
-                    <p>Toma una fotografía directa del empaque o lista de ingredientes.</p>
-                    <button type="button" className="pa-btn pa-btn--secondary" onClick={startCamera}>
-                      Activar cámara
-                    </button>
-                  </div>
-
-                  <div className="pa-view pa-view--camera">
-                    <video
-                      ref={videoRef}
-                      className="pa-media"
-                      autoPlay
-                      playsInline
-                      muted
-                      aria-label="Vista previa de la cámara"
-                    />
-                    <div className="pa-overlay">
-                      <button type="button" className="pa-btn pa-btn--primary" onClick={capturePhoto}>
-                        Capturar foto
-                      </button>
-                      <button type="button" className="pa-btn pa-btn--ghost" onClick={stopCamera}>
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="pa-view pa-view--photo">
-                    {capturedImage && (
-                      <img src={capturedImage} className="pa-media" alt="Producto capturado" />
-                    )}
-                    <button type="button" className="pa-btn pa-btn--primary pa-clear-photo" onClick={clearPhoto}>
-                      Borrar foto
-                    </button>
-                  </div>
-                </div>
-
-                <canvas ref={canvasRef} style={{ display: 'none' }} />
-              </fieldset>
-
-              <div className="pa-actions">
-                <button type="button" className="pa-btn pa-btn--primary" onClick={onSubmit}>
-                  Analizar Foto
+            <div className="pa-view pa-view--camera">
+              <video
+                ref={videoRef}
+                className="pa-media"
+                autoPlay
+                playsInline
+                muted
+                aria-label="Vista previa de la cámara"
+              />
+              <div className="pa-overlay">
+                <button type="button" className="pa-btn pa-btn--primary" onClick={capturePhoto}>
+                  Capturar foto
                 </button>
-                <button type="button" className="pa-btn pa-btn--outline" onClick={clearAllFields}>
-                  Borrar todo
+                <button type="button" className="pa-btn pa-btn--ghost" onClick={stopCamera}>
+                  Cancelar
                 </button>
               </div>
             </div>
-          )}
-        </main>
+
+            <div className="pa-view pa-view--photo">
+              {capturedImage && (
+                <img src={capturedImage} className="pa-media" alt="Producto capturado" />
+              )}
+              <button type="button" className="pa-btn pa-btn--primary pa-clear-photo" onClick={clearPhoto}>
+                Borrar foto
+              </button>
+            </div>
+          </div>
+
+          <canvas ref={canvasRef} style={{ display: 'none' }} />
+        </fieldset>
+
+        {/* Botones de Acción */}
+        <div className="pa-actions">
+          <button type="button" className="pa-btn pa-btn--primary" onClick={onSubmit}>
+            Analizar Foto
+          </button>
+          <button type="button" className="pa-btn pa-btn--outline" onClick={clearAllFields}>
+            Borrar todo
+          </button>
+        </div>
       </div>
     </div>
   );
