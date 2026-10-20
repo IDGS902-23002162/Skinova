@@ -1,0 +1,277 @@
+:root {
+  --forest: #163b35;
+  --forest-mid: #2d6658;
+  --cream: #f6f3ec;
+  --sand: #e7dfd2;
+  --charcoal: #1d2825;
+  --card: #fbf9f4;
+  --muted-fg: #55615c;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  background: var(--cream);
+  color: var(--charcoal);
+}
+
+button, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+svg {
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.container {
+  width: 100%;
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.messages {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 32px;
+  padding-bottom: 32px;
+}
+
+.msg {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-start;
+}
+
+.msg.user {
+  justify-content: flex-end;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-top: 4px;
+  border-radius: 12px;
+  background: var(--forest);
+  color: var(--cream);
+  flex-shrink: 0;
+}
+
+.avatar svg {
+  width: 16px;
+  height: 16px;
+}
+
+.msg-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 85%;
+}
+
+.msg.user .msg-col {
+  align-items: flex-end;
+}
+
+@media (min-width: 768px) {
+  .msg-col {
+    max-width: 70%;
+  }
+}
+
+.bubble {
+  white-space: pre-line;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  border-radius: 16px;
+  overflow-wrap: anywhere;
+}
+
+.msg.user .bubble {
+  background: var(--forest);
+  color: var(--cream);
+  border-bottom-right-radius: 6px;
+}
+
+.msg.assistant .bubble {
+  background: var(--card);
+  color: var(--charcoal);
+  border: 1px solid var(--sand);
+  border-bottom-left-radius: 6px;
+}
+
+.time {
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--muted-fg);
+}
+
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--sand);
+  border-radius: 16px;
+  border-bottom-left-radius: 6px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--forest-mid);
+  animation: bounce 1s infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: -0.3s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: -0.15s;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(.8, 0, 1, 1);
+  }
+  50% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0, 0, .2, 1);
+  }
+}
+
+.bottom {
+  padding-bottom: 16px;
+}
+
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px;
+  background: var(--card);
+  border: 1px solid var(--sand);
+  border-radius: 24px;
+  box-shadow: 0 8px 30px -12px rgba(22, 59, 53, .2);
+  transition: border-color .2s;
+}
+
+.composer:focus-within {
+  border-color: var(--forest-mid);
+}
+
+.composer textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 160px;
+  resize: none;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--charcoal);
+}
+
+.composer textarea::placeholder {
+  color: var(--muted-fg);
+}
+
+.composer textarea:focus {
+  outline: none;
+}
+
+.send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--forest);
+  color: var(--cream);
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.send svg {
+  width: 20px;
+  height: 20px;
+}
+
+.send:hover:not(:disabled) {
+  background: var(--forest-mid);
+}
+
+.send:focus-visible {
+  outline: 2px solid var(--forest-mid);
+  outline-offset: 2px;
+}
+
+.send:disabled {
+  background: var(--sand);
+  color: var(--muted-fg);
+  cursor: not-allowed;
+}
+
+.disclaimer {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
