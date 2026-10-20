@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import "../../../shared/styles/ai_chat_style.css";
 import HistorialConversaciones from "../components/HistorialConversaciones";
 import Chat from "../components/Chat";
-import AiChat from "../../../shared/components/AiChat";
+import AiChat from "../../../shared/components/CameraInput";
 import MainLayout from "../../../shared/components/MainLayout";
 
 export function ConsultaIA(props) {
