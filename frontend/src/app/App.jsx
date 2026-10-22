@@ -11,6 +11,7 @@ import { Heart, Target, AlertTriangle } from "lucide-react";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
 import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
 import CustomProfileModal from "../features/perfil_salud/components/profile/CustomProfileModal";
+import RoutineCreatorPage from "../features/creador_rutinas/components/RoutineCreatorPage";
 
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -103,7 +104,9 @@ export default function App() {
         }
       />
       <Route path="/logout-animation" element={<LogoutTransition />} />
+      <Route path="/rutinas" element={<RoutineCreatorPage />} />
       <Route path="*" element={<NotFoundPage />} />
+      
     </Routes>
   );
 } 

@@ -1,0 +1,302 @@
+/* EL CONTENEDOR MÁGICO: Evita que ocupe toda la pantalla */
+.routine-creator-wrapper {
+  max-width: 800px; /* Ancho máximo limitado */
+  margin: 0 auto; /* Centrado en la pantalla */
+  padding: 32px;
+  background-color: var(--crema, #F6F3EC);
+  min-height: 100vh;
+}
+
+.page-header h1 {
+  font-family: 'DM Serif Display', serif;
+  color: var(--bosque-profundo, #163B35);
+  font-size: 2.2rem;
+  margin-bottom: 8px;
+}
+
+.page-header p {
+  color: var(--carbon, #1D2825);
+  margin-bottom: 32px;
+}
+
+/* LISTA Y TARJETAS */
+.routine-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.product-card {
+  display: flex;
+  background: #FFFFFF;
+  border: 1px solid var(--arena, #E7DFD2);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(29, 40, 37, 0.04);
+  position: relative;
+  transition: opacity 0.3s ease;
+}
+
+.product-card.completed {
+  opacity: 0.6;
+  background: var(--crema, #F6F3EC);
+}
+
+/* LÍNEA DE TIEMPO (TIMELINE) */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 24px;
+  min-width: 32px;
+}
+
+.step-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--salvia, #A9C4B5);
+  color: var(--bosque-profundo, #163B35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  font-family: 'Manrope', sans-serif;
+  flex-shrink: 0;
+}
+
+.step-dot.done-dot {
+  background: var(--bosque-profundo, #163B35);
+  color: #fff;
+}
+
+.timeline-line {
+  width: 2px;
+  background: var(--salvia, #A9C4B5);
+  flex-grow: 1;
+  margin-top: 8px;
+  opacity: 0.5;
+}
+
+/* CONTENIDO DE LA TARJETA */
+.product-copy {
+  flex-grow: 1;
+}
+
+.product-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.step-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--bosque-medio, #2D6658);
+  text-transform: uppercase;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge.inventory {
+  background: var(--crema, #F6F3EC);
+  color: var(--bosque-medio, #2D6658);
+}
+
+.badge.ai {
+  background: #E8F0ED;
+  color: var(--bosque-profundo, #163B35);
+}
+
+.product-copy h2 {
+  font-family: 'DM Serif Display', serif;
+  color: var(--bosque-profundo, #163B35);
+  font-size: 1.4rem;
+  margin: 0 0 12px 0;
+}
+
+.instructions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--carbon, #1D2825);
+}
+
+/* BOTÓN DE CHECKBOX CUSTOM */
+.done-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--bosque-medio, #2D6658);
+}
+
+.done-control input {
+  display: none; /* Oculta el checkbox nativo feo */
+}
+
+.custom-check {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--bosque-medio, #2D6658);
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  background: transparent;
+  transition: all 0.2s;
+}
+
+.done-control input:checked + .custom-check {
+  background: var(--bosque-profundo, #163B35);
+  border-color: var(--bosque-profundo, #163B35);
+}
+
+/* ACCIONES (Botones de la derecha) */
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.card-actions button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--bosque-medio, #2D6658);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.card-actions button:hover {
+  background: var(--crema, #F6F3EC);
+}
+
+.tip-button.has-warning {
+  color: var(--terracota, #C98268);
+}
+
+/* MENÚS EMERGENTES (Tooltips) */
+.tooltip, .context-menu {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  background: #fff;
+  border: 1px solid var(--arena, #E7DFD2);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  padding: 16px;
+  width: 200px;
+  z-index: 10;
+}
+
+.warning-tooltip {
+  border-left: 4px solid var(--terracota, #C98268);
+}
+
+.context-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+}
+
+.context-menu button {
+  text-align: left;
+  padding: 10px;
+  width: 100%;
+}
+
+.context-menu button.danger {
+  color: var(--terracota, #C98268);
+}
+
+/* ESTRUCTURA DE LA CABECERA (Header) */
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+/* BOTÓN: Añadir Paso */
+.btn-add-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bosque-profundo, #163B35);
+  color: var(--crema, #F6F3EC);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(22, 59, 53, 0.15);
+}
+
+.btn-add-step:hover {
+  background-color: var(--bosque-medio, #2D6658);
+  transform: translateY(-2px);
+}
+
+/* PESTAÑAS: Mañana y Noche */
+.rutinas-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--arena, #E7DFD2);
+  padding-bottom: 12px;
+  margin-bottom: 32px;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  font-family: 'Manrope', sans-serif;
+  font-size: 16px;
+  color: var(--carbon, #1D2825);
+  padding: 8px 0;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s ease;
+  opacity: 0.6;
+}
+
+.tab-button:hover {
+  opacity: 1;
+}
+
+.tab-button.active {
+  color: var(--bosque-profundo, #163B35);
+  font-weight: 700;
+  opacity: 1;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -13px; /* Se ajusta a la línea inferior del borde */
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--bosque-profundo, #163B35);
+  border-radius: 4px 4px 0 0;
+}
