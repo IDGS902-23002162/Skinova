@@ -1,0 +1,657 @@
+.derm-directory-wrapper {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px;
+  background-color: var(--crema, #F6F3EC);
+  min-height: 100vh;
+  font-family: 'Manrope', sans-serif;
+  color: var(--carbon, #1D2825);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* CABECERA */
+.derm-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.derm-header h1 {
+  font-family: 'DM Serif Display', serif;
+  color: var(--bosque-profundo, #163B35);
+  font-size: 2.2rem;
+  font-weight: normal;
+  margin: 0 0 8px 0;
+}
+
+.derm-header p {
+  margin: 0;
+  font-size: 15px;
+  opacity: 0.85;
+}
+
+.btn-toggle-referral {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px dashed var(--salvia, #A9C4B5);
+  background: transparent;
+  color: var(--bosque-medio, #2D6658);
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.btn-toggle-referral.active {
+  background-color: #FDF7F5;
+  color: var(--terracota, #C98268);
+  border-style: solid;
+  border-color: var(--terracota, #C98268);
+}
+
+/* BANNER DE DERIVACIÓN MÉDICA POR IA (RF-DER-12) */
+.ai-referral-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background-color: #FDF7F5;
+  border: 1px solid var(--terracota, #C98268);
+  border-left: 5px solid var(--terracota, #C98268);
+  border-radius: 16px;
+  padding: 20px 24px;
+}
+
+.referral-icon {
+  color: var(--terracota, #C98268);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.referral-copy strong {
+  display: block;
+  color: var(--bosque-profundo, #163B35);
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.referral-copy p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* PANEL DE BÚSQUEDA Y FILTROS (RF-DER-01, 02, 06, 07) */
+.derm-controls-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--arena, #E7DFD2);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(29, 40, 37, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.controls-top-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-input-box {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--crema, #F6F3EC);
+  border: 1px solid var(--arena, #E7DFD2);
+  border-radius: 12px;
+  padding: 0 16px;
+  min-height: 44px;
+}
+
+.search-icon {
+  color: var(--bosque-medio, #2D6658);
+  flex-shrink: 0;
+}
+
+.search-input-box input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  color: var(--carbon, #1D2825);
+  outline: none;
+}
+
+.btn-location-consent {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid var(--bosque-profundo, #163B35);
+  background: transparent;
+  color: var(--bosque-profundo, #163B35);
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.btn-location-consent.active,
+.btn-location-consent:hover {
+  background-color: var(--bosque-profundo, #163B35);
+  color: var(--crema, #F6F3EC);
+}
+
+.controls-filters-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--arena, #E7DFD2);
+}
+
+.location-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bosque-medio, #2D6658);
+}
+
+.filters-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filter-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--crema, #F6F3EC);
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--bosque-profundo, #163B35);
+}
+
+.filter-item select {
+  border: none;
+  background: transparent;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--bosque-profundo, #163B35);
+  cursor: pointer;
+  outline: none;
+}
+
+.btn-filter-favs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 6px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--arena, #E7DFD2);
+  background-color: #FFFFFF;
+  color: var(--carbon, #1D2825);
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-filter-favs.active {
+  background-color: var(--salvia, #A9C4B5);
+  color: var(--bosque-profundo, #163B35);
+  border-color: var(--bosque-medio, #2D6658);
+}
+
+/* BARRA DE VISTA Y SELECTOR PÍLDORA (RF-DER-03 y 04) */
+.derm-view-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.results-counter {
+  font-size: 14px;
+  color: var(--carbon, #1D2825);
+}
+
+.view-toggle-pill {
+  display: inline-flex;
+  background-color: var(--arena, #E7DFD2);
+  border-radius: 24px;
+  padding: 4px;
+}
+
+.pill-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: none;
+  background: transparent;
+  color: var(--carbon, #1D2825);
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 250ms ease;
+  opacity: 0.7;
+}
+
+.pill-btn.active {
+  background-color: #FFFFFF;
+  color: var(--bosque-profundo, #163B35);
+  font-weight: 600;
+  opacity: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* TARJETAS DE ESPECIALISTAS EN LISTA (RF-DER-03, 05, 08, 09, 10, 11) */
+.derm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.derm-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--arena, #E7DFD2);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(29, 40, 37, 0.04);
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 24px;
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.derm-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(29, 40, 37, 0.08);
+}
+
+@media (max-width: 768px) {
+  .derm-card {
+    flex-direction: column;
+  }
+}
+
+.derm-card-main {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+}
+
+.derm-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background-color: var(--salvia, #A9C4B5);
+  color: var(--bosque-profundo, #163B35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.derm-info {
+  flex: 1;
+}
+
+.derm-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.distance-badge,
+.care-type-badge,
+.rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.distance-badge {
+  background-color: #E8F0ED;
+  color: var(--bosque-profundo, #163B35);
+}
+
+.care-type-badge {
+  background-color: var(--crema, #F6F3EC);
+  color: var(--bosque-medio, #2D6658);
+}
+
+.rating-badge {
+  color: var(--bosque-profundo, #163B35);
+}
+
+.derm-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.derm-title-row h2 {
+  font-family: 'DM Serif Display', serif;
+  color: var(--bosque-profundo, #163B35);
+  font-size: 1.45rem;
+  font-weight: normal;
+  margin: 0;
+}
+
+.btn-fav-star {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--bosque-medio, #2D6658);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.btn-fav-star:hover {
+  background-color: var(--crema, #F6F3EC);
+}
+
+.btn-fav-star.saved {
+  color: var(--terracota, #C98268);
+}
+
+.derm-specialty {
+  margin: 4px 0 2px 0;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--bosque-medio, #2D6658);
+}
+
+.derm-license {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.derm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.focus-tag {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background-color: var(--crema, #F6F3EC);
+  border: 1px solid var(--arena, #E7DFD2);
+}
+
+.derm-clinic-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background-color: var(--crema, #F6F3EC);
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.derm-clinic-box small {
+  color: var(--bosque-medio, #2D6658);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* MEDIOS DE CONTACTO (RF-DER-09) */
+.derm-contact-methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.contact-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bosque-profundo, #163B35);
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--arena, #E7DFD2);
+  background-color: #FFFFFF;
+}
+
+.contact-chip:hover {
+  border-color: var(--bosque-medio, #2D6658);
+}
+
+/* BOTONES DE ACCIÓN (RF-DER-08 y RF-DER-10) */
+.derm-card-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  min-width: 210px;
+  border-left: 1px solid var(--arena, #E7DFD2);
+  padding-left: 20px;
+}
+
+@media (max-width: 768px) {
+  .derm-card-actions {
+    border-left: none;
+    border-top: 1px solid var(--arena, #E7DFD2);
+    padding-left: 0;
+    padding-top: 16px;
+  }
+}
+
+.btn-directions,
+.btn-book-external,
+.btn-book-phone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.btn-directions {
+  background-color: transparent;
+  color: var(--bosque-profundo, #163B35);
+  border: 1px solid var(--bosque-profundo, #163B35);
+}
+
+.btn-directions:hover {
+  background-color: var(--crema, #F6F3EC);
+}
+
+.btn-book-external,
+.btn-book-phone {
+  background-color: var(--bosque-profundo, #163B35);
+  color: var(--crema, #F6F3EC);
+  border: none;
+}
+
+.btn-book-external:hover,
+.btn-book-phone:hover {
+  background-color: var(--bosque-medio, #2D6658);
+}
+
+/* VISTA EN MAPA (RF-DER-04) */
+.derm-map-layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 20px;
+  min-height: 420px;
+}
+
+@media (max-width: 768px) {
+  .derm-map-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.map-canvas {
+  position: relative;
+  background-color: #E6ECE8;
+  border: 1px solid var(--arena, #E7DFD2);
+  border-radius: 16px;
+  min-height: 400px;
+  overflow: hidden;
+}
+
+.map-grid-background {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--salvia, #A9C4B5) 1px, transparent 1px),
+    linear-gradient(to right, rgba(255, 255, 255, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.4) 1px, transparent 1px);
+  background-size: 24px 24px, 80px 80px, 80px 80px;
+}
+
+.map-user-marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.user-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--terracota, #C98268);
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.map-user-marker small {
+  background-color: #FFFFFF;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--bosque-profundo, #163B35);
+  background-color: #FFFFFF;
+  color: var(--bosque-profundo, #163B35);
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(22, 59, 53, 0.15);
+  transition: all 200ms ease;
+}
+
+.map-pin.selected,
+.map-pin:hover {
+  background-color: var(--bosque-profundo, #163B35);
+  color: var(--crema, #F6F3EC);
+  transform: translate(-50%, -55%) scale(1.05);
+  z-index: 5;
+}
+
+.map-detail-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--arena, #E7DFD2);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.map-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.map-detail-card h3 {
+  font-family: 'DM Serif Display', serif;
+  color: var(--bosque-profundo, #163B35);
+  font-size: 1.5rem;
+  font-weight: normal;
+  margin: 0;
+}
+
+.map-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.empty-results-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--arena, #E7DFD2);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+}
