@@ -256,33 +256,47 @@
 }
 
 /* PESTAÑAS: Mañana y Noche */
-.rutinas-tabs {
-  display: flex;
-  gap: 24px;
-  border-bottom: 1px solid var(--arena, #E7DFD2);
-  padding-bottom: 12px;
+/* DISEÑO MINIMALISTA TIPO PÍLDORA PARA EL SELECTOR */
+.routine-toggle {
+  display: inline-flex;
+  background-color: var(--arena, #E7DFD2);
+  border-radius: 24px;
+  padding: 4px;
   margin-bottom: 32px;
 }
 
-.tab-button {
+.toggle-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: transparent;
+  padding: 10px 20px;
+  border-radius: 20px;
   border: none;
-  font-family: 'Manrope', sans-serif;
-  font-size: 16px;
+  background: transparent;
   color: var(--carbon, #1D2825);
-  padding: 8px 0;
+  font-family: 'Manrope', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
-  position: relative;
-  transition: color 0.3s ease;
-  opacity: 0.6;
+  transition: all 0.3s ease;
+  opacity: 0.7;
 }
 
-.tab-button:hover {
+.toggle-btn:hover {
   opacity: 1;
 }
+
+.toggle-btn.active {
+  background-color: #FFFFFF;
+  color: var(--bosque-profundo, #163B35);
+  font-weight: 600;
+  opacity: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+
+
+
 
 .tab-button.active {
   color: var(--bosque-profundo, #163B35);
