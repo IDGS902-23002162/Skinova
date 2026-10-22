@@ -12,6 +12,7 @@ import OnboardingGate from "../features/perfil_salud/components/onboarding/Onboa
 import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
 import CustomProfileModal from "../features/perfil_salud/components/profile/CustomProfileModal";
 import RoutineCreatorPage from "../features/creador_rutinas/components/RoutineCreatorPage";
+import EnvironmentalMonitorPage from "../features/monitoreo_ambiental/components/EnvironmentalMonitorPage";
 
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -105,6 +106,7 @@ export default function App() {
       />
       <Route path="/logout-animation" element={<LogoutTransition />} />
       <Route path="/rutinas" element={<RoutineCreatorPage />} />
+      <Route path="/ambiente" element={<EnvironmentalMonitorPage />} />
       <Route path="*" element={<NotFoundPage />} />
       
     </Routes>
