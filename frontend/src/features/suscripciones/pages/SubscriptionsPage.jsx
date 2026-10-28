@@ -1,149 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import MainLayout from '../../../shared/components/MainLayout';
+import React from 'react';
 import { useAuth } from '@clerk/react';
-import { useApi } from '../../../shared/hooks/useApi';
+import MainLayout from '../../../shared/components/MainLayout';
 import FullScreenLoader from '../../../shared/components/FullScreenLoader';
 import ConfirmationModal from '../components/ConfirmationModal';
 import SuccessModal from '../components/SuccessModal';
 import CancelSubscriptionModal from '../components/CancelSubscriptionModal';
 import { Check } from 'lucide-react';
+import { useSuscripcion } from '../hooks/useSuscripcion';
 import './SubscriptionsPage.css';
 
 export default function SubscriptionsPage() {
   const { isSignedIn, isLoaded } = useAuth();
-  const { fetchConAuth } = useApi();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [isCanceling, setIsCanceling] = useState(false);
-  const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
-  const [subscription, setSubscription] = useState(() => {
-    try {
-      const cached = localStorage.getItem('skinova_subscription');
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
-
-    let isMounted = true;
-    const sessionId = searchParams.get('session_id');
-    const isSuccess = searchParams.get('success') === 'true';
-
-    const checkSubscription = async () => {
-      if (sessionId) {
-        try {
-          const res = await fetchConAuth('/verify-checkout-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: sessionId })
-          });
-          const data = await res.json();
-          if (isMounted && res.ok && data?.subscription) {
-            setSubscription(data.subscription);
-            localStorage.setItem('skinova_subscription', JSON.stringify(data.subscription));
-            setIsSuccessModalOpen(true);
-          }
-        } catch (err) {
-          console.error('Error al verificar sesión de Stripe:', err);
-        }
-      } else {
-        if (isSuccess && isMounted) {
-          setIsSuccessModalOpen(true);
-        }
-        try {
-          const res = await fetchConAuth('/subscription');
-          if (isMounted && res.ok) {
-            const data = await res.json();
-            if (data?.subscription) {
-              setSubscription(data.subscription);
-              localStorage.setItem('skinova_subscription', JSON.stringify(data.subscription));
-            } else {
-              setSubscription(null);
-              localStorage.removeItem('skinova_subscription');
-            }
-          }
-        } catch (err) {
-          console.error('Error al cargar suscripción:', err);
-        }
-      }
-    };
-
-    checkSubscription();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isLoaded, isSignedIn, searchParams]);
-
-  const handleCloseSuccessModal = () => {
-    setIsSuccessModalOpen(false);
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete('success');
-    newParams.delete('session_id');
-    setSearchParams(newParams, { replace: true });
-  };
-
-  const handleExplore = () => {
-    handleCloseSuccessModal();
-    navigate('/');
-  };
-
-  const handleCancelSubscription = async () => {
-    try {
-      setIsCanceling(true);
-      const res = await fetchConAuth('/cancel-subscription', {
-        method: 'POST'
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSubscription(null);
-        localStorage.removeItem('skinova_subscription');
-        setIsCancelModalOpen(false);
-        alert('Tu suscripción a Skinova Premium ha sido cancelada.');
-      } else {
-        alert(data.error || 'No se pudo cancelar la suscripción.');
-      }
-    } catch (err) {
-      console.error('Error al cancelar la suscripción:', err);
-      alert('Ocurrió un error al cancelar la suscripción.');
-    } finally {
-      setIsCanceling(false);
-    }
-  };
+  const {
+    subscription,
+    isPremiumActive,
+    isLoadingCheckout,
+    isCanceling,
+    isModalOpen,
+    setIsModalOpen,
+    isSuccessModalOpen,
+    isCancelModalOpen,
+    setIsCancelModalOpen,
+    handleCheckout,
+    handleCancelSubscription,
+    handleCloseSuccessModal,
+    handleExplore
+  } = useSuscripcion();
 
   if (!isLoaded) return <FullScreenLoader isVisible={true} text="Cargando..." />;
-
-  const handleCheckout = async () => {
-    try {
-      setIsModalOpen(false);
-      setIsLoadingCheckout(true);
-      const response = await fetchConAuth('/create-checkout-session', {
-        method: 'POST'
-      });
-      const data = await response.json();
-      if (response.ok && data.url) {
-        window.location.href = data.url;
-      } else {
-        console.error('Error creating checkout session', data);
-        alert(data.error || 'No se pudo iniciar la sesión de pago.');
-        setIsLoadingCheckout(false);
-      }
-    } catch (error) {
-      console.error('Error during checkout', error);
-      alert('Error de conexión al procesar el pago.');
-      setIsLoadingCheckout(false);
-    }
-  };
-
-  const isPremiumActive = subscription?.status === 'active';
 
   return (
     <MainLayout>
@@ -176,8 +60,8 @@ export default function SubscriptionsPage() {
               <li><span className="check-icon">✓</span> Acceso a la comunidad</li>
               <li><span className="check-icon">✓</span> Directorio dermatológico</li>
             </ul>
-            <button 
-              className="plan-button plan-button-outline" 
+            <button
+              className="plan-button plan-button-outline"
               type="button"
               disabled={isPremiumActive}
             >
@@ -212,8 +96,8 @@ export default function SubscriptionsPage() {
               </ul>
 
               <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
-                <button 
-                  className="plan-button plan-button-primary" 
+                <button
+                  className="plan-button plan-button-primary"
                   type="button"
                   onClick={() => setIsModalOpen(true)}
                   disabled={isPremiumActive}
@@ -249,8 +133,8 @@ export default function SubscriptionsPage() {
                     )}
                   </div>
 
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="discreet-cancel-btn"
                     onClick={() => setIsCancelModalOpen(true)}
                   >
@@ -273,7 +157,7 @@ export default function SubscriptionsPage() {
           <p>Puedes comenzar gratis y pasar a Premium cuando quieras. No hay permanencia ni cargos ocultos.</p>
         </details>
 
-        <ConfirmationModal 
+        <ConfirmationModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleCheckout}

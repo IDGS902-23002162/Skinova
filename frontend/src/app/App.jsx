@@ -10,7 +10,7 @@ import MainLayout from "../shared/components/MainLayout";
 import { Heart, Target, AlertTriangle } from "lucide-react";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
 import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
-import CustomProfileModal from "../features/perfil_salud/components/profile/CustomProfileModal";
+import ProfilePage from "../features/perfil_salud/pages/ProfilePage";
 import SubscriptionsPage from "../features/suscripciones/pages/SubscriptionsPage";
 
 
@@ -58,7 +58,7 @@ function Home() {
               </UserButton>
             </header>
             
-            <CustomProfileModal 
+            <ProfilePage 
               isOpen={isProfileModalOpen} 
               onClose={() => setIsProfileModalOpen(false)} 
             />
