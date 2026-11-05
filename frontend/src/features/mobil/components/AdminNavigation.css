@@ -1,0 +1,362 @@
+/* ── AdminNavigation.css ─────────────────────────────────────────────────── */
+
+:root {
+  --bosque-profundo: #163b35;
+  --bosque-medio: #2d6658;
+  --salvia: #a9c4b5;
+  --crema: #f6f3ec;
+  --arena: #e7dfd2;
+  --carbon: #1d2825;
+  --terracota: #c98268;
+  --admin-sidebar-w: 256px;
+  --admin-mobile-h: 72px;
+}
+
+/* ════════════════════════════════════════════
+   SIDEBAR — DESKTOP
+═════════════════════════════════════════════ */
+.admin-nav-sidebar {
+  width: var(--admin-sidebar-w);
+  min-height: 100vh;
+  background: var(--bosque-profundo);
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1rem 1.5rem;
+  gap: 2rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 200;
+  box-shadow: 2px 0 20px rgba(22, 59, 53, 0.18);
+}
+
+/* Brand */
+.admin-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 0.5rem 1rem;
+  border-bottom: 1px solid rgba(169, 196, 181, 0.15);
+}
+
+.admin-nav-brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bosque-medio);
+  color: var(--crema);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "DM Serif Display", serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.admin-nav-brand-name {
+  font-family: "DM Serif Display", serif;
+  font-size: 1.2rem;
+  color: var(--crema);
+  flex: 1;
+}
+
+.admin-nav-badge {
+  font-family: "Manrope", "DM Sans", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--terracota);
+  color: var(--crema);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* Section label */
+.admin-nav-section-label {
+  font-family: "Manrope", "DM Sans", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--salvia);
+  opacity: 0.6;
+  margin: 0 0 0.5rem 0.5rem;
+}
+
+/* Nav list desktop */
+.admin-nav-list-desktop {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1; /* empuja el footer hacia abajo */
+}
+
+.admin-nav-item-desktop {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: background 0.18s ease, transform 0.18s ease;
+  cursor: pointer;
+}
+
+.admin-nav-item-desktop:hover {
+  background: rgba(255, 255, 255, 0.07);
+  transform: translateX(2px);
+}
+
+.admin-nav-item-desktop.active {
+  background: rgba(169, 196, 181, 0.15);
+  box-shadow: inset 3px 0 0 var(--salvia);
+}
+
+.admin-nav-item-icon {
+  color: var(--salvia);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color 0.18s;
+}
+
+.admin-nav-item-desktop.active .admin-nav-item-icon {
+  color: var(--crema);
+}
+
+.admin-nav-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.admin-nav-item-label {
+  font-family: "Manrope", "DM Sans", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--salvia);
+  transition: color 0.18s;
+  line-height: 1.2;
+}
+
+.admin-nav-item-desktop.active .admin-nav-item-label {
+  color: var(--crema);
+}
+
+.admin-nav-item-sublabel {
+  font-family: "Manrope", "DM Sans", sans-serif;
+  font-size: 0.72rem;
+  color: rgba(169, 196, 181, 0.55);
+  line-height: 1.2;
+}
+
+.admin-nav-item-desktop.active .admin-nav-item-sublabel {
+  color: rgba(246, 243, 236, 0.5);
+}
+
+/* ════════════════════════════════════════════
+   BOTTOM NAV — MOBILE
+═════════════════════════════════════════════ */
+.admin-nav-mobile {
+  display: none; /* oculto en desktop */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  background: var(--bosque-profundo);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 24px rgba(22, 59, 53, 0.22);
+  transition: transform 0.32s cubic-bezier(0.25, 0.8, 0.25, 1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Drag pill */
+.admin-nav-drag-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.6rem 0 0.2rem;
+  cursor: pointer;
+  gap: 2px;
+}
+
+.admin-nav-drag-bar {
+  width: 36px;
+  height: 4px;
+  background: rgba(169, 196, 181, 0.35);
+  border-radius: 999px;
+}
+
+.admin-nav-chevron {
+  color: rgba(169, 196, 181, 0.5);
+  transition: transform 0.3s;
+}
+
+.admin-nav-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+/* Row de iconos siempre visible */
+.admin-nav-mobile-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0.5rem 0.5rem 0.75rem;
+}
+
+.admin-nav-mobile-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0.4rem 0.6rem;
+  border-radius: 10px;
+  text-decoration: none;
+  color: rgba(169, 196, 181, 0.6);
+  font-family: "Manrope", "DM Sans", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  transition: color 0.18s, background 0.18s;
+  min-width: 56px;
+  text-align: center;
+}
+
+.admin-nav-mobile-item:hover {
+  color: var(--salvia);
+}
+
+.admin-nav-mobile-item.active {
+  color: var(--crema);
+  background: rgba(169, 196, 181, 0.12);
+}
+
+/* Panel expandido */
+.admin-nav-expanded-panel {
+  padding: 1rem 1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid rgba(169, 196, 181, 0.12);
+  animation: slideUpFade 0.28s ease;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-nav-expanded-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: background 0.18s;
+}
+
+.admin-nav-expanded-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-nav-expanded-item.active {
+  background: rgba(169, 196, 181, 0.15);
+  box-shadow: inset 3px 0 0 var(--salvia);
+}
+
+.admin-nav-expanded-icon {
+  color: var(--salvia);
+  opacity: 0.75;
+  display: flex;
+  flex-shrink: 0;
+  transition: opacity 0.18s;
+}
+
+.admin-nav-expanded-item.active .admin-nav-expanded-icon {
+  opacity: 1;
+  color: var(--crema);
+}
+
+.admin-nav-expanded-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.admin-nav-expanded-label {
+  font-family: "Manrope", "DM Sans", sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--salvia);
+  transition: color 0.18s;
+}
+
+.admin-nav-expanded-item.active .admin-nav-expanded-label {
+  color: var(--crema);
+}
+
+.admin-nav-expanded-sublabel {
+  font-family: "Manrope", "DM Sans", sans-serif;
+  font-size: 0.7rem;
+  color: rgba(169, 196, 181, 0.5);
+}
+
+/* Close button */
+.admin-nav-close-btn {
+  position: absolute;
+  top: 0.6rem;
+  right: 1rem;
+  background: rgba(169, 196, 181, 0.1);
+  border: none;
+  color: var(--salvia);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.admin-nav-close-btn:hover {
+  background: rgba(169, 196, 181, 0.2);
+}
+
+/* Overlay */
+.admin-nav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(22, 59, 53, 0.45);
+  z-index: 290;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ════════════════════════════════════════════
+   RESPONSIVE
+═════════════════════════════════════════════ */@media (max-width: 768px) {
+  .admin-nav-sidebar {
+    display: none;
+  }
+
+  .admin-nav-mobile {
+    display: block;
+  }
+}
+

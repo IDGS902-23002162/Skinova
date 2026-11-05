@@ -1,0 +1,91 @@
+/* GestionUsuarios.css */
+.gu-root {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 1100px;
+}
+
+.gu-header { display: flex; align-items: flex-start; justify-content: space-between; }
+.gu-title  { font-family: "DM Serif Display", serif; font-size: 1.8rem; color: #163B35; margin: 0 0 .25rem; }
+.gu-subtitle { font-size: .88rem; color: #5a7a71; margin: 0; }
+
+/* Mini stats */
+.gu-stats-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+.gu-mini-stat {
+  display: flex; align-items: center; gap: .75rem;
+  background: #fff; border-radius: 14px; padding: .9rem 1.2rem;
+  box-shadow: 0 2px 10px rgba(22,59,53,.07);
+  border-left: 3px solid var(--accent, #2D6658);
+  flex: 1; min-width: 160px;
+  color: var(--accent, #2D6658);
+}
+.gu-mini-val   { display: block; font-size: 1.4rem; font-weight: 700; color: #163B35; }
+.gu-mini-label { display: block; font-size: .72rem; color: #7a9a92; }
+
+/* Toolbar */
+.gu-toolbar { display: flex; gap: .75rem; align-items: center; }
+.gu-search  {
+  display: flex; align-items: center; gap: .5rem;
+  background: #fff; border: 1.5px solid #E7DFD2; border-radius: 10px;
+  padding: .55rem .9rem; flex: 1;
+  font-size: .88rem; color: #7a9a92;
+}
+.gu-search input { border: none; outline: none; background: transparent; width: 100%; font-size: .88rem; color: #1D2825; }
+.gu-filter-btn {
+  display: flex; align-items: center; gap: .4rem;
+  border: 1.5px solid #E7DFD2; background: #fff; color: #2D6658;
+  font-size: .85rem; font-weight: 600; padding: .55rem 1rem;
+  border-radius: 10px; cursor: pointer; transition: background .18s;
+}
+.gu-filter-btn:hover { background: #F6F3EC; }
+
+/* Table */
+.gu-table-header {
+  display: grid; grid-template-columns: 2fr 1.4fr 1.2fr 40px;
+  padding: .4rem 1rem; font-size: .72rem; font-weight: 700;
+  letter-spacing: .06em; color: #7a9a92; text-transform: uppercase;
+}
+.gu-users-list { display: flex; flex-direction: column; gap: .5rem; }
+.gu-user-row {
+  display: grid; grid-template-columns: 2fr 1.4fr 1.2fr 40px;
+  align-items: center; gap: .5rem;
+  background: #fff; border-radius: 14px; padding: 1rem;
+  box-shadow: 0 1px 6px rgba(22,59,53,.05);
+  transition: box-shadow .18s;
+}
+.gu-user-row:hover { box-shadow: 0 4px 16px rgba(22,59,53,.1); }
+.gu-user-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #A9C4B5; color: #163B35;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .9rem; float: left; margin-right: .6rem;
+}
+.gu-user-info  { display: flex; flex-direction: column; gap: 2px; }
+.gu-user-name  { font-size: .88rem; font-weight: 600; color: #1D2825; }
+.gu-user-email { font-size: .75rem; color: #7a9a92; }
+.gu-user-meta  { display: flex; flex-direction: column; gap: 4px; }
+.gu-user-plan  { display: inline-flex; align-items: center; gap: 4px; font-size: .75rem; color: #2D6658; font-weight: 600; }
+.gu-user-dates { display: flex; flex-direction: column; gap: 2px; font-size: .72rem; color: #7a9a92; }
+.gu-user-action { background: none; border: none; color: #7a9a92; cursor: pointer; padding: 4px; border-radius: 6px; }
+.gu-user-action:hover { background: #F6F3EC; color: #163B35; }
+
+/* Badges */
+.gu-badge { display: inline-flex; align-items: center; gap: 3px; font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.badge-activo    { background: #d4ede4; color: #2D6658; }
+.badge-cancelado { background: #f5ddd5; color: #C98268; }
+.badge-vencido   { background: #ece8e3; color: #7a6a5a; }
+
+/* Pagination */
+.gu-pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; }
+.gu-page-btn { background: #fff; border: 1.5px solid #E7DFD2; color: #2D6658; font-size: .85rem; font-weight: 600; padding: .5rem 1rem; border-radius: 10px; cursor: pointer; }
+.gu-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+.gu-page-info { font-size: .82rem; color: #7a9a92; }
+
+@media (max-width: 640px) {
+  .gu-root { padding: 1rem; }
+  .gu-user-row { grid-template-columns: 1fr; }
+  .gu-table-header { display: none; }
+}
+

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useAuth, UserButton, AuthenticateWithRedirectCallback } from "@clerk/react";
+import { useAuth, useUser, UserButton, AuthenticateWithRedirectCallback } from "@clerk/react";
 import SignInPage from "../features/autenticacion/pages/SignInPage";
 import SignUpPage from "../features/autenticacion/pages/SignUpPage";
 import NotFoundPage from "../shared/pages/NotFoundPage";
@@ -11,13 +11,40 @@ import { Heart, Target, AlertTriangle } from "lucide-react";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
 import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
 import CustomProfileModal from "../features/perfil_salud/components/profile/CustomProfileModal";
+import AdminDashboard from "../features/mobil/dashboard/AdminDashboard";
+import AdminLayout from "../features/mobil/components/AdminLayout";
+import GestionUsuarios from "../features/mobil/gestion_usuarios/GestionUsuarios";
+import Rendimiento from "../features/mobil/rendimiento/Rendimiento";
+import Bitacora from "../features/mobil/bitacora/Bitacora";
+import Administracion from "../features/mobil/administracion/Administracion";
+
+// Protege /admin y sub-rutas: solo usuarios con publicMetadata.role === "admin"
+function AdminGuard({ children }) {
+  const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
+
+  if (!isLoaded) return <FullScreenLoader isVisible={true} text="Verificando permisos..." />;
+  if (!isSignedIn) return <Navigate to="/sign-in" replace />;
+
+  const role = user?.publicMetadata?.role;
+  if (role !== "admin") return <Navigate to="/" replace />;
+
+  return <AdminLayout>{children}</AdminLayout>;
+}
 
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   if (!isLoaded) return <FullScreenLoader isVisible={true} text="Cargando..." />;
   if (!isSignedIn) return <Navigate to="/sign-in" replace />;
+
+  // Si el usuario tiene role === "admin" en publicMetadata, redirigimos al panel admin.
+  // Esto se evalúa AQUÍ porque useUser() ya tiene el objeto User completo y actualizado.
+  if (user?.publicMetadata?.role === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
 
   return (
     <OnboardingGate>
@@ -83,6 +110,11 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
+      <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+      <Route path="/admin/usuarios"      element={<AdminGuard><GestionUsuarios /></AdminGuard>} />
+      <Route path="/admin/rendimiento"   element={<AdminGuard><Rendimiento /></AdminGuard>} />
+      <Route path="/admin/bitacora"      element={<AdminGuard><Bitacora /></AdminGuard>} />
+      <Route path="/admin/administracion" element={<AdminGuard><Administracion /></AdminGuard>} />
       <Route
         path="/sso-callback"
         element={

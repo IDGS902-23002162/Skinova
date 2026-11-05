@@ -1,0 +1,81 @@
+/* Bitacora.css */
+.bit-root { padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 1100px; }
+.bit-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+.bit-title    { font-family: "DM Serif Display", serif; font-size: 1.8rem; color: #163B35; margin: 0 0 .25rem; }
+.bit-subtitle { font-size: .88rem; color: #5a7a71; margin: 0; }
+
+.bit-live-badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: #fff; border: 1.5px solid #E7DFD2; border-radius: 999px;
+  padding: .3rem .8rem; font-size: .78rem; font-weight: 600; color: #2D6658;
+}
+.bit-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #C98268; animation: bpulse 1.5s infinite; }
+@keyframes bpulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* Summary chips */
+.bit-summary-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+.bit-summary-chip {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: #fff; border: 1.5px solid #E7DFD2;
+  border-radius: 999px; padding: .35rem .85rem;
+  font-size: .78rem; font-weight: 600; cursor: pointer;
+  transition: background .18s, border-color .18s;
+}
+.bit-chip-count { background: #F6F3EC; border-radius: 999px; padding: 1px 7px; font-size: .68rem; }
+.bit-summary-chip.selected { border-color: #2D6658; background: #d4ede4; }
+
+/* Type colors */
+.evt-error   { --evt-color: #C98268; }
+.evt-login   { --evt-color: #2D6658; }
+.evt-warning { --evt-color: #E8C99A; }
+.evt-info    { --evt-color: #A9C4B5; }
+.evt-success { --evt-color: #163B35; }
+
+/* Toolbar */
+.bit-toolbar { display: flex; gap: .75rem; align-items: center; }
+.bit-search  {
+  display: flex; align-items: center; gap: .5rem;
+  background: #fff; border: 1.5px solid #E7DFD2; border-radius: 10px;
+  padding: .5rem .85rem; flex: 1; font-size: .85rem; color: #7a9a92;
+}
+.bit-search input { border: none; outline: none; background: transparent; width: 100%; font-size: .85rem; color: #1D2825; }
+.bit-filter-btn {
+  display: flex; align-items: center; gap: .4rem;
+  border: 1.5px solid #E7DFD2; background: #fff; color: #2D6658;
+  font-size: .82rem; font-weight: 600; padding: .5rem 1rem;
+  border-radius: 10px; cursor: pointer;
+}
+
+/* Log rows */
+.bit-logs-list { display: flex; flex-direction: column; gap: .4rem; }
+.bit-log-row {
+  display: grid; grid-template-columns: 32px 1fr auto 80px;
+  align-items: center; gap: .75rem;
+  background: #fff; border-radius: 12px; padding: .85rem 1rem;
+  box-shadow: 0 1px 5px rgba(22,59,53,.05);
+  border-left: 3px solid var(--evt-color, #A9C4B5);
+  transition: box-shadow .18s;
+}
+.bit-log-row:hover { box-shadow: 0 4px 14px rgba(22,59,53,.09); }
+
+.bit-log-icon-wrap {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: color-mix(in srgb, var(--evt-color, #A9C4B5) 15%, #fff);
+  color: var(--evt-color, #2D6658);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.bit-log-body    { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.bit-log-message { font-size: .84rem; color: #1D2825; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bit-log-meta    { font-size: .72rem; color: #7a9a92; }
+.bit-log-component { background: #F6F3EC; border-radius: 4px; padding: 1px 5px; font-family: monospace; font-size: .68rem; color: #2D6658; }
+.bit-log-badge { font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--evt-color, #A9C4B5) 15%, #fff); color: var(--evt-color, #2D6658); white-space: nowrap; }
+.bit-log-time  { font-size: .72rem; color: #7a9a92; font-family: monospace; white-space: nowrap; }
+.bit-empty { text-align: center; padding: 2rem; color: #7a9a92; font-size: .88rem; }
+
+@media (max-width: 640px) {
+  .bit-root { padding: 1rem; }
+  .bit-log-row { grid-template-columns: 28px 1fr; }
+  .bit-log-badge, .bit-log-time { display: none; }
+}
+
