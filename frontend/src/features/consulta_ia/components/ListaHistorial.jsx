@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "../../../shared/styles/ai_history_style.css";
+import "../../../shared/styles/ai_chat_style.css";
 
 const grupos = ["Hoy", "Ayer", "Últimos 7 días", "Este mes"];
 

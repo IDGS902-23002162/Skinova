@@ -12,6 +12,9 @@ import OnboardingGate from "../features/perfil_salud/components/onboarding/Onboa
 import ConsultaIaView from "../features/consulta_ia/pages/consulta_ia";
 import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
 import CustomProfileModal from "../features/perfil_salud/components/profile/CustomProfileModal";
+import ModuloBitacoraProgreso from "../features/bitacora_progreso/pages/ModuloBitacoraProgreso";
+import ModuloNotificaciones from "../features/notificaciones_alarmas/pages/ModuloNotificaciones";
+
 
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -85,6 +88,8 @@ export default function App() {
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
       <Route path="/consulta" element={<ConsultaIaView/>} />
+      <Route path="/progreso" element={<ModuloBitacoraProgreso />} />
+      <Route path="/notificaciones" element={<ModuloNotificaciones />} />
       <Route
         path="/sso-callback"
         element={

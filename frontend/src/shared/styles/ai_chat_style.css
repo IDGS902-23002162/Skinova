@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Manrope:wght@400;500;600;700&display=swap');
 .pa-wrapper {
     --pa-bg: #F6F3EC;
     --pa-surface: #FFFFFF;
@@ -274,4 +275,53 @@ z-index: 10;
   .pa-history-sidebar {
     position: static;
   }
+}
+/* Títulos de ConsultaIA - pegar al final de shared/styles/ai_chat_style.css */
+
+.pa-section-title,
+.pa-main-title,
+.pa-chat-title {
+   margin: 0 0 16px;
+    font-family: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
+    font-weight: 500;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    line-height: 1;
+    letter-spacing: -0.01em;
+    color: var(--sk-forest);
+}
+
+/* Historial (aside) */
+.pa-section-title {
+  margin: 0 0 16px;
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
+/* Área principal */
+.pa-main-head {
+  max-width: 640px;
+  margin-bottom: 24px;
+}
+
+.pa-main-title {
+ margin: 0 0 16px;
+  font-family: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--sk-forest);
+}
+
+.pa-chat-title {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.pa-main-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--sk-muted, #4a5a55);
 }
