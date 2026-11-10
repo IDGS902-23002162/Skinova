@@ -33,6 +33,9 @@ function AdminGuard({ children }) {
 }
 import ProfilePage from "../features/perfil_salud/pages/ProfilePage";
 import SubscriptionsPage from "../features/suscripciones/pages/SubscriptionsPage";
+import RoutineCreatorPage from "../features/creador_rutinas/components/RoutineCreatorPage";
+import EnvironmentalMonitorPage from "../features/monitoreo_ambiental/components/EnvironmentalMonitorPage";
+import DirectorioDerma from "../features/directorio_dermatologos/components/DirectorioDerma";
 
 
 function Home() {
@@ -120,6 +123,9 @@ export default function App() {
       <Route path="/admin/administracion" element={<AdminGuard><Administracion /></AdminGuard>} />
       <Route path="/suscripciones" element={<SubscriptionsPage />} />
       <Route path="/subscriptions" element={<SubscriptionsPage />} />
+      <Route path="/rutinas" element={<RoutineCreatorPage />} />
+      <Route path="/ambiente" element={<EnvironmentalMonitorPage />} />
+      <Route path="/directorio" element={<DirectorioDerma />} />
       <Route
         path="/sso-callback"
         element={
@@ -141,6 +147,7 @@ export default function App() {
       />
       <Route path="/logout-animation" element={<LogoutTransition />} />
       <Route path="*" element={<NotFoundPage />} />
+
     </Routes>
   );
 } 
