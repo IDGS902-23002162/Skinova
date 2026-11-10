@@ -84,7 +84,7 @@ export default function SubCards({ isRegistered = true, isPremium = false }) {
           <p className="plan-description">
             Obtén una experiencia más personalizada con inteligencia artificial y herramientas avanzadas de seguimiento.
           </p>
-        </section>
+        </section>  
 
         <ul className="features-list">
           <li className="feature-item">

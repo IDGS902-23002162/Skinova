@@ -14,6 +14,7 @@ export default function SubscriptionsPage() {
   const {
     subscription,
     isPremiumActive,
+    isSubscriptionEnding,
     isLoadingCheckout,
     isCanceling,
     isModalOpen,
@@ -26,6 +27,14 @@ export default function SubscriptionsPage() {
     handleCloseSuccessModal,
     handleExplore
   } = useSuscripcion();
+
+  const formattedPeriodEnd = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString('es-MX', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })
+    : null;
 
   if (!isLoaded) return <FullScreenLoader isVisible={true} text="Cargando..." />;
 
@@ -63,9 +72,9 @@ export default function SubscriptionsPage() {
             <button
               className="plan-button plan-button-outline"
               type="button"
-              disabled={isPremiumActive}
+              disabled={isPremiumActive || isSubscriptionEnding}
             >
-              {isPremiumActive ? "Plan Básico" : (isSignedIn ? "Plan actual" : "Comenzar gratis")}
+              {(isPremiumActive || isSubscriptionEnding) ? "Plan Básico" : (isSignedIn ? "Plan actual" : "Comenzar gratis")}
             </button>
           </article>
 
@@ -95,12 +104,17 @@ export default function SubscriptionsPage() {
                 <li><span className="check-icon">✓</span> Seguimiento avanzado de rutinas y productos</li>
               </ul>
 
-              <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
+              <div style={{ marginTop: 'auto', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {isSubscriptionEnding && formattedPeriodEnd && (
+                  <div className="subscribed-period-badge ending-period-badge">
+                    <span>Tu suscripción terminará en: {formattedPeriodEnd}</span>
+                  </div>
+                )}
                 <button
                   className="plan-button plan-button-primary"
                   type="button"
                   onClick={() => setIsModalOpen(true)}
-                  disabled={isPremiumActive}
+                  disabled={isPremiumActive || isSubscriptionEnding}
                 >
                   Obtener Premium
                 </button>
@@ -111,20 +125,11 @@ export default function SubscriptionsPage() {
             {isPremiumActive && (
               <div className="subscribed-card-overlay">
                 <div className="subscribed-floating-card">
-                  <div className="subscribed-pill">
-                    <span className="subscribed-dot"></span>
-                    <span>PLAN ACTIVO</span>
-                  </div>
-
                   <div className="subscribed-icon-wrap">
                     <Check size={22} className="subscribed-check-svg" />
                   </div>
 
                   <h3 className="subscribed-card-title">¡Ya estás suscrito!</h3>
-                  <p className="subscribed-card-desc">
-                    Tu piel ya cuenta con el acompañamiento integral y herramientas avanzadas de <strong>Skinova Premium</strong>.
-                  </p>
-
                   <div className="subscribed-period-badge">
                     {subscription?.current_period_end ? (
                       <span>Próxima renovación: {new Date(subscription.current_period_end).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
@@ -151,11 +156,6 @@ export default function SubscriptionsPage() {
           <div><span className="reassurance-icon">◌</span><p><strong>Tu información, contigo.</strong> Tus datos siempre son tuyos.</p></div>
           <div><span className="reassurance-icon">⌁</span><p><strong>Hecho para acompañar.</strong> No reemplaza una consulta dermatológica.</p></div>
         </section>
-
-        <details className="faq-section">
-          <summary>¿Tienes dudas sobre los planes?</summary>
-          <p>Puedes comenzar gratis y pasar a Premium cuando quieras. No hay permanencia ni cargos ocultos.</p>
-        </details>
 
         <ConfirmationModal
           isOpen={isModalOpen}

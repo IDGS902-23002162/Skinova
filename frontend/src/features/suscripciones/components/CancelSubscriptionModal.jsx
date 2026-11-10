@@ -13,9 +13,6 @@ export default function CancelSubscriptionModal({ isOpen, onClose, onConfirm, is
         </button>
 
         <div className="cancel-modal-header">
-          <div className="cancel-icon-badge">
-            <AlertTriangle size={26} className="cancel-warning-icon" />
-          </div>
           <span className="cancel-tag">GESTIÓN DE PLAN</span>
           <h2 className="cancel-modal-title">¿Deseas cancelar tu suscripción?</h2>
           <p className="cancel-modal-subtitle">
@@ -33,16 +30,16 @@ export default function CancelSubscriptionModal({ isOpen, onClose, onConfirm, is
         </div>
 
         <div className="cancel-modal-actions">
-          <button 
-            className="keep-sub-btn" 
+          <button
+            className="keep-sub-btn"
             onClick={onClose}
             disabled={isCanceling}
           >
             Mantener mi suscripción
           </button>
 
-          <button 
-            className="confirm-cancel-btn" 
+          <button
+            className="confirm-cancel-btn"
             onClick={onConfirm}
             disabled={isCanceling}
           >

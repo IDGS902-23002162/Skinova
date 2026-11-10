@@ -97,8 +97,13 @@ export function useSuscripcion() {
       const res = await subscriptionApi.cancelSubscription();
       const data = await res.json();
       if (res.ok) {
-        setSubscription(null);
-        localStorage.removeItem(STORAGE_KEY);
+        const updatedSubscription = data?.subscription || (subscription ? { ...subscription, status: 'canceled' } : null);
+        setSubscription(updatedSubscription);
+        if (updatedSubscription) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSubscription));
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
         setIsCancelModalOpen(false);
         alert('Tu suscripción a Skinova Premium ha sido cancelada.');
       } else {
@@ -132,11 +137,23 @@ export function useSuscripcion() {
     }
   };
 
-  const isPremiumActive = subscription?.status === 'active';
+  const isPeriodActive = Boolean(
+    subscription?.current_period_end &&
+    new Date(subscription.current_period_end) > new Date()
+  );
+
+  const isPremiumActive = subscription?.status === 'active' && !subscription?.cancel_at_period_end;
+
+  const isSubscriptionEnding = Boolean(
+    (subscription?.status === 'canceled' || subscription?.cancel_at_period_end) &&
+    isPeriodActive
+  );
 
   return {
     subscription,
     isPremiumActive,
+    isSubscriptionEnding,
+    isPeriodActive,
     isLoadingCheckout,
     isCanceling,
     isModalOpen,

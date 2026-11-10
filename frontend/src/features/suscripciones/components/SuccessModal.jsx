@@ -13,9 +13,6 @@ export default function SuccessModal({ isOpen, onClose, onExplore }) {
         </button>
 
         <div className="success-modal-header">
-          <div className="success-icon-badge">
-            <Sparkles size={28} className="success-sparkle-icon" />
-          </div>
           <span className="success-pill">✦ PLAN PREMIUM ACTIVO</span>
           <h2 className="success-modal-title">¡Bienvenido a Skinova Premium!</h2>
           <p className="success-modal-subtitle">
@@ -23,38 +20,6 @@ export default function SuccessModal({ isOpen, onClose, onExplore }) {
           </p>
         </div>
 
-        <div className="success-perks-card">
-          <p className="perks-heading">Beneficios desbloqueados:</p>
-          <ul className="perks-list">
-            <li>
-              <div className="perk-check">
-                <Check size={14} />
-              </div>
-              <div>
-                <strong>Análisis ilimitados con IA</strong>
-                <span>Evaluaciones dérmicas profundas sin restricciones.</span>
-              </div>
-            </li>
-            <li>
-              <div className="perk-check">
-                <Check size={14} />
-              </div>
-              <div>
-                <strong>Recomendaciones personalizadas avanzadas</strong>
-                <span>Rutinas e ingredientes activos específicos para tus objetivos.</span>
-              </div>
-            </li>
-            <li>
-              <div className="perk-check">
-                <Check size={14} />
-              </div>
-              <div>
-                <strong>Historial completo y comparativas</strong>
-                <span>Seguimiento continuo de la evolución de tu piel.</span>
-              </div>
-            </li>
-          </ul>
-        </div>
 
         <div className="success-note">
           <ShieldCheck size={16} />

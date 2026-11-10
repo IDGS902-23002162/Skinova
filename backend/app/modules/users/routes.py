@@ -297,7 +297,14 @@ def cancel_subscription():
         return jsonify({
             "message": "Suscripción cancelada exitosamente",
             "is_subscribed": False,
-            "status": "canceled"
+            "status": "canceled",
+            "subscription": {
+                "id": sub.id,
+                "plan_code": sub.plan_code,
+                "status": sub.status,
+                "cancel_at_period_end": sub.cancel_at_period_end,
+                "current_period_end": sub.current_period_end.isoformat() if sub.current_period_end else None
+            }
         }), 200
     except Exception as e:
         print(f"Error canceling subscription: {e}")

@@ -234,6 +234,16 @@
   background: var(--color-bosque-medio, #2d6658);
 }
 
+.plan-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.plan-button-outline:disabled {
+  border-color: #c2bdb4;
+  color: #8c857b;
+}
+
 /* Estado de suscripción activa con blur de fondo y modal flotante */
 .plan-card-subscribed {
   position: relative;
@@ -372,6 +382,22 @@
   border-radius: 8px;
   margin-bottom: 14px;
   font-weight: 500;
+}
+
+.ending-period-badge {
+  font-size: 11px;
+  color: #2D6658;
+  background: rgba(169, 196, 181, 0.28);
+  border: 1px solid rgba(45, 102, 88, 0.2);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 0;
+  text-align: center;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .discreet-cancel-btn {
