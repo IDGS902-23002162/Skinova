@@ -22,8 +22,14 @@ class UserProfile(db.Model):
     onboarding_completed = db.Column(db.Boolean, default=False)
     updated_at = db.Column(db.DateTime, onupdate=lambda: datetime.now(timezone.utc))
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
 class UserRestriction(db.Model):
     __tablename__ = 'user_restrictions'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)

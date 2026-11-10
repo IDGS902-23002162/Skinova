@@ -12,6 +12,9 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, onupdate=lambda: datetime.now(timezone.utc))
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
     # Relationships (optional, for convenience)
     # profile = db.relationship('UserProfile', backref='user', uselist=False)
 
@@ -27,6 +30,9 @@ class ProfileLike(db.Model):
         db.UniqueConstraint('user_id', 'liked_user_id', name='uix_user_liked'),
     )
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
 class Subscription(db.Model):
     __tablename__ = 'subscriptions'
 
@@ -39,3 +45,6 @@ class Subscription(db.Model):
     current_period_end = db.Column(db.DateTime)
     cancel_at_period_end = db.Column(db.Boolean, default=False)
     updated_at = db.Column(db.DateTime, onupdate=lambda: datetime.now(timezone.utc))
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)

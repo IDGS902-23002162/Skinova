@@ -1,4 +1,5 @@
 import { useAuth } from "@clerk/react";
+import { useCallback } from "react";
 
 export function useApi() {
   const { getToken } = useAuth();
@@ -11,11 +12,8 @@ export function useApi() {
    * @param {string} endpoint - La ruta de la API (ej: '/auth/me')
    * @param {object} opciones - Opciones de fetch (method, body, etc.)
    */
-  const fetchConAuth = async (endpoint, opciones = {}) => {
-    // Obtiene el token actualizado de Clerk
+  const fetchConAuth = useCallback(async (endpoint, opciones = {}) => {
     const token = await getToken();
-
-    // Asegura que el endpoint comience con '/' si no lo tiene
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
     return fetch(`${BASE_URL}${path}`, {
@@ -26,7 +24,7 @@ export function useApi() {
         "Content-Type": "application/json"
       }
     });
-  };
+  }, [getToken, BASE_URL]);
 
   return { fetchConAuth };
 }

@@ -31,6 +31,9 @@ function AdminGuard({ children }) {
 
   return <AdminLayout>{children}</AdminLayout>;
 }
+import ProfilePage from "../features/perfil_salud/pages/ProfilePage";
+import SubscriptionsPage from "../features/suscripciones/pages/SubscriptionsPage";
+
 
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -72,20 +75,20 @@ function Home() {
                 }}
               >
                 <UserButton.MenuItems>
-                  <UserButton.Action 
-                    label="Mi Perfil Skinova" 
-                    labelIcon={<Heart size={16} />} 
-                    onClick={() => setIsProfileModalOpen(true)} 
+                  <UserButton.Action
+                    label="Mi Perfil Skinova"
+                    labelIcon={<Heart size={16} />}
+                    onClick={() => setIsProfileModalOpen(true)}
                   />
                   <UserButton.Action label="manageAccount" />
                   <UserButton.Action label="signOut" />
                 </UserButton.MenuItems>
               </UserButton>
             </header>
-            
-            <CustomProfileModal 
-              isOpen={isProfileModalOpen} 
-              onClose={() => setIsProfileModalOpen(false)} 
+
+            <ProfilePage
+              isOpen={isProfileModalOpen}
+              onClose={() => setIsProfileModalOpen(false)}
             />
 
             <div style={{
@@ -111,10 +114,12 @@ export default function App() {
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
       <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-      <Route path="/admin/usuarios"      element={<AdminGuard><GestionUsuarios /></AdminGuard>} />
-      <Route path="/admin/rendimiento"   element={<AdminGuard><Rendimiento /></AdminGuard>} />
-      <Route path="/admin/bitacora"      element={<AdminGuard><Bitacora /></AdminGuard>} />
+      <Route path="/admin/usuarios" element={<AdminGuard><GestionUsuarios /></AdminGuard>} />
+      <Route path="/admin/rendimiento" element={<AdminGuard><Rendimiento /></AdminGuard>} />
+      <Route path="/admin/bitacora" element={<AdminGuard><Bitacora /></AdminGuard>} />
       <Route path="/admin/administracion" element={<AdminGuard><Administracion /></AdminGuard>} />
+      <Route path="/suscripciones" element={<SubscriptionsPage />} />
+      <Route path="/subscriptions" element={<SubscriptionsPage />} />
       <Route
         path="/sso-callback"
         element={
