@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React from "react";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth, UserButton, AuthenticateWithRedirectCallback } from "@clerk/react";
 import SignInPage from "../features/autenticacion/pages/SignInPage";
 import SignUpPage from "../features/autenticacion/pages/SignUpPage";
@@ -11,7 +11,11 @@ import ModuloPerfilSalud from "../features/perfil_salud/pages/ModuloPerfilSalud"
 import { Heart } from "lucide-react";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
 
-function Home() {
+import ModuloMiNeceser from "../features/mi_neceser/pages/ModuloMiNeceser";
+import ModuloHabitosDesafios from "../features/habitos_desafios/pages/ModuloHabitosDesafios";
+import ModuloComunidadForo from "../features/comunidad_foro/pages/ModuloComunidadForo";
+
+function ProtectedLayout() {
   const { isSignedIn, isLoaded } = useAuth();
 
   if (!isLoaded) return <FullScreenLoader isVisible={true} text="Cargando..." />;
@@ -20,40 +24,54 @@ function Home() {
   return (
     <OnboardingGate>
       <MainLayout>
-        <div style={{ padding: "1rem" }}>
-          <header style={{ display: "flex", justifyContent: "space-between", marginBottom: "2rem" }}>
-            <h1 style={{ color: "var(--bosque-profundo, #163B35)", fontFamily: "DM Serif Display, serif" }}>
-              Dashboard
-            </h1>
-            <UserButton>
-              <UserButton.UserProfilePage 
-                label="Perfil Skinova" 
-                url="perfil-skinova" 
-                labelIcon={<Heart size={16} />}
-              >
-                <ModuloPerfilSalud />
-              </UserButton.UserProfilePage>
-            </UserButton>
-          </header>
-        <div style={{
-          backgroundColor: "var(--salvia, #A9C4B5)",
-          padding: "2rem",
-          borderRadius: "16px",
-          color: "var(--bosque-profundo, #163B35)"
-        }}>
-          <h2>¡Bienvenido a Skinova!</h2>
-          <p>Tu rutina de cuidado consciente comienza aquí.</p>
-        </div>
-      </div>
+        <Outlet />
       </MainLayout>
     </OnboardingGate>
+  );
+}
+
+function Home() {
+  return (
+    <div style={{ padding: "1rem" }}>
+      <header style={{ display: "flex", justifyContent: "space-between", marginBottom: "2rem" }}>
+        <h1 style={{ color: "var(--bosque-profundo, #163B35)", fontFamily: "DM Serif Display, serif" }}>
+          Dashboard
+        </h1>
+        <UserButton>
+          <UserButton.UserProfilePage
+            label="Perfil Skinova"
+            url="perfil-skinova"
+            labelIcon={<Heart size={16} />}
+          >
+            <ModuloPerfilSalud />
+          </UserButton.UserProfilePage>
+        </UserButton>
+      </header>
+      <div style={{
+        backgroundColor: "var(--salvia, #A9C4B5)",
+        padding: "2rem",
+        borderRadius: "16px",
+        color: "var(--bosque-profundo, #163B35)"
+      }}>
+        <h2>¡Bienvenido a Skinova!</h2>
+        <p>Tu rutina de cuidado consciente comienza aquí.</p>
+      </div>
+    </div>
   );
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      {/* Rutas protegidas que utilizan la navegación principal y validación de onboarding */}
+      <Route element={<ProtectedLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/neceser" element={<ModuloMiNeceser />} />
+        <Route path="/habitos" element={<ModuloHabitosDesafios />} />
+        <Route path="/comunidad" element={<ModuloComunidadForo />} />
+      </Route>
+
+      {/* Rutas públicas y de autenticación */}
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
       <Route
@@ -79,4 +97,4 @@ export default function App() {
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
-} 
+}
