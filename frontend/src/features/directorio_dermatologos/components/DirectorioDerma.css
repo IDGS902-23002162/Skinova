@@ -655,3 +655,136 @@
   padding: 32px;
   text-align: center;
 }
+
+/* =========================================================
+   DISEÑO RESPONSIVO MÓVIL (No afecta la vista de escritorio)
+   ========================================================= */
+@media (max-width: 768px) {
+  .derm-directory-wrapper {
+    padding: 20px 16px 100px 16px; /* Espacio inferior para la barra móvil */
+    gap: 18px;
+  }
+
+  .derm-header-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .derm-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .btn-toggle-referral {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ai-referral-banner {
+    padding: 16px;
+  }
+
+  /* Buscador y filtros adaptados a una columna */
+  .derm-controls-card {
+    padding: 16px;
+  }
+
+  .controls-top-row {
+    flex-direction: column;
+  }
+
+  .search-input-box {
+    min-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .btn-location-consent {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .controls-filters-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .filters-group {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .filter-item {
+    justify-content: space-between;
+    padding: 10px 14px;
+  }
+
+  .btn-filter-favs {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  /* Selector Lista / Mapa tipo píldora al 100% en móvil */
+  .derm-view-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .view-toggle-pill {
+    display: flex;
+    width: 100%;
+  }
+
+  .pill-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  /* Tarjeta de especialista en móvil */
+  .derm-card {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .derm-card-main {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .derm-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .derm-title-row h2 {
+    font-size: 1.25rem;
+  }
+
+  .derm-contact-methods {
+    flex-direction: column;
+  }
+
+  .contact-chip {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: flex-start;
+  }
+
+  .derm-card-actions {
+    min-width: 100%;
+  }
+
+  /* Mapa compacto arriba y detalle abajo en celular */
+  .map-canvas {
+    min-height: 260px;
+  }
+
+  .map-detail-card {
+    padding: 16px;
+  }
+}
+

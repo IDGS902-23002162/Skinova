@@ -394,7 +394,6 @@ function DirectorioDerma() {
               return (
                 <article className="derm-card" key={doc.id}>
                   <div className="derm-card-main">
-                    {/* Avatar / Iniciales */}
                     <div className="derm-avatar">
                       <Stethoscope size={24} />
                     </div>

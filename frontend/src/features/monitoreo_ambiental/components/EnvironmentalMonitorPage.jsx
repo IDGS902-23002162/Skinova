@@ -251,86 +251,6 @@ function EnvironmentalMonitorPage() {
           </div>
         )}
 
-        {/* RF-AMB-01 y RF-AMB-02: PANEL DE UBICACIÓN Y SELECCIÓN MANUAL */}
-        <section className="location-bar-card">
-          <div className="location-current">
-            <div className="location-icon-box">
-              <MapPin size={22} />
-            </div>
-            <div>
-              <span className="location-label">
-                {locationConsent
-                  ? "Ubicación automática (GPS con consentimiento)"
-                  : "Selección manual de ciudad"}
-              </span>
-              <h2>{selectedCity}</h2>
-              <span className="condition-subtitle">
-                Condición actual: <strong>{currentData.condition}</strong>
-              </span>
-            </div>
-          </div>
-
-          <div className="location-controls">
-            <button
-              type="button"
-              className={`btn-gps ${locationConsent ? "active" : ""}`}
-              onClick={handleRequestLocation}
-            >
-              <Navigation size={16} />
-              <span>
-                {locationConsent ? "GPS Activo" : "Usar mi ubicación"}
-              </span>
-            </button>
-
-            <select
-              className="city-select"
-              value={selectedCity}
-              onChange={(e) => {
-                setSelectedCity(e.target.value);
-                setLocationConsent(false);
-              }}
-              aria-label="Seleccionar ciudad manualmente"
-            >
-              {Object.keys(CITY_DATA).map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
-
-            <form onSubmit={handleCustomCitySubmit} className="custom-city-form">
-              <input
-                type="text"
-                placeholder="Otra ciudad..."
-                value={customCityInput}
-                onChange={(e) => setCustomCityInput(e.target.value)}
-                aria-label="Escribir nombre de ciudad manualmente"
-              />
-              <button type="submit">Cambiar</button>
-            </form>
-          </div>
-        </section>
-
-        {/* RF-AMB-09: ALERTA POR ÍNDICE UV ELEVADO */}
-        {isHighUV && (
-          <section className="uv-alert-banner" role="alert">
-            <div className="uv-alert-icon">
-              <AlertTriangle size={22} />
-            </div>
-            <div className="uv-alert-content">
-              <strong>
-                Alerta de Radiación Solar: Índice UV {currentData.uv} (
-                {currentData.uvLevel})
-              </strong>
-              <p>
-                El nivel de radiación UV actual puede causar sensibilidad y
-                manchas. Te recomendamos aplicar protector solar FPS 50+ como
-                último paso de tu rutina matutina y reaplicar cada 2 a 3 horas.
-              </p>
-            </div>
-          </section>
-        )}
-
         {/* RF-AMB-03 al RF-AMB-07: MÉTRICAS AMBIENTALES ACTUALES */}
         <section
           className="metrics-grid"
@@ -394,6 +314,90 @@ function EnvironmentalMonitorPage() {
             <p className="metric-detail">{currentData.aqiStatus}</p>
           </article>
         </section>
+
+        {/* RF-AMB-09: ALERTA POR ÍNDICE UV ELEVADO */}
+        {isHighUV && (
+          <section className="uv-alert-banner" role="alert">
+            <div className="uv-alert-icon">
+              <AlertTriangle size={22} />
+            </div>
+            <div className="uv-alert-content">
+              <strong>
+                Alerta de Radiación Solar: Índice UV {currentData.uv} (
+                {currentData.uvLevel})
+              </strong>
+              <p>
+                El nivel de radiación UV actual puede causar sensibilidad y
+                manchas. Te recomendamos aplicar protector solar FPS 50+ como
+                último paso de tu rutina matutina y reaplicar cada 2 a 3 horas.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* RF-AMB-01 y RF-AMB-02: PANEL DE UBICACIÓN Y SELECCIÓN MANUAL */}
+        <section className="location-bar-card">
+          <div className="location-current">
+            <div className="location-icon-box">
+              <MapPin size={22} />
+            </div>
+            <div>
+              <span className="location-label">
+                {locationConsent
+                  ? "Ubicación automática (GPS con consentimiento)"
+                  : "Selección manual de ciudad"}
+              </span>
+              <h2>{selectedCity}</h2>
+              <span className="condition-subtitle">
+                Condición actual: <strong>{currentData.condition}</strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="location-controls">
+            <button
+              type="button"
+              className={`btn-gps ${locationConsent ? "active" : ""}`}
+              onClick={handleRequestLocation}
+            >
+              <Navigation size={16} />
+              <span>
+                {locationConsent ? "GPS Activo" : "Usar mi ubicación"}
+              </span>
+            </button>
+
+            <select
+              className="city-select"
+              value={selectedCity}
+              onChange={(e) => {
+                setSelectedCity(e.target.value);
+                setLocationConsent(false);
+              }}
+              aria-label="Seleccionar ciudad manualmente"
+            >
+              {Object.keys(CITY_DATA).map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+
+            <form onSubmit={handleCustomCitySubmit} className="custom-city-form">
+              <input
+                type="text"
+                placeholder="Otra ciudad..."
+                value={customCityInput}
+                onChange={(e) => setCustomCityInput(e.target.value)}
+                aria-label="Escribir nombre de ciudad manualmente"
+              />
+              <button type="submit">Cambiar</button>
+            </form>
+          </div>
+        </section>
+
+        
+
+        
 
         <section className="ai-env-panel">
           <div className="ai-recommendations-card">

@@ -494,3 +494,101 @@
 .btn-go-routine:hover {
   background-color: var(--bosque-medio, #2D6658);
 }
+
+/* =========================================================
+   DISEÑO RESPONSIVO MÓVIL (No afecta la vista de escritorio)
+   ========================================================= */
+@media (max-width: 768px) {
+  .env-monitor-wrapper {
+    padding: 20px 16px 100px 16px; /* Espacio inferior para la barra de navegación móvil */
+    gap: 18px;
+  }
+
+  .env-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .env-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .env-header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .btn-refresh,
+  .btn-simulate-offline {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  /* Tarjeta de ubicación apilada */
+  .location-bar-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .location-current h2 {
+    font-size: 1.35rem;
+  }
+
+  .location-controls {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .btn-gps,
+  .city-select {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .custom-city-form {
+    width: 100%;
+  }
+
+  .custom-city-form input {
+    flex: 1;
+    width: auto;
+  }
+
+  /* Cuadrícula de métricas 2x2 en celulares */
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .metric-card {
+    padding: 16px;
+  }
+
+  .metric-value {
+    font-size: 1.55rem;
+    flex-wrap: wrap;
+  }
+
+  .uv-alert-banner {
+    padding: 16px;
+  }
+
+  .ai-recommendations-card,
+  .routine-context-card {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 400px) {
+  .env-header-actions,
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}

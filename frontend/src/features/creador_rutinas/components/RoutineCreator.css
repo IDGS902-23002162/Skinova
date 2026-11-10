@@ -314,3 +314,123 @@
   background-color: var(--bosque-profundo, #163B35);
   border-radius: 4px 4px 0 0;
 }
+
+/* =========================================================
+   DISEÑO RESPONSIVO MÓVIL (No afecta la vista de escritorio)
+   ========================================================= */
+@media (max-width: 768px) {
+  .routine-creator-wrapper {
+    padding: 20px 16px 100px 16px; /* Espacio extra abajo para el menú móvil */
+  }
+
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .header-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .header-buttons {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .btn-add-step,
+  .btn-save-routine {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Barra de perfil, presupuesto y versiones en columna */
+  .routine-context-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px;
+  }
+
+  .routine-preferences-controls {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .pref-select-box {
+    justify-content: space-between;
+  }
+
+  /* Banner de ajuste inteligente apilado */
+  .smart-adjustment-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+
+  .btn-apply-smart {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Selector píldora (Morning / Night) al 100% del ancho en celular */
+  .routine-toggle {
+    display: flex;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  /* Ajuste de las tarjetas de pasos para pantallas angostas */
+  .product-card {
+    padding: 16px;
+  }
+
+  .timeline {
+    margin-right: 14px;
+    min-width: 28px;
+  }
+
+  .step-dot {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+
+  .product-copy h2 {
+    font-size: 1.2rem;
+  }
+
+  .card-bottom-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .web-search-link {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  /* Evita que los tooltips se salgan de la pantalla del celular */
+  .tooltip,
+  .context-menu {
+    right: 0;
+    top: 44px;
+    width: min(230px, 78vw);
+  }
+}
+
+@media (max-width: 480px) {
+  .routine-preferences-controls {
+    grid-template-columns: 1fr;
+  }
+}
