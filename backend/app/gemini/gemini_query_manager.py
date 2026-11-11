@@ -1,10 +1,11 @@
+import os
 import base64
 import json
 from typing import Dict, Any, Optional
 from google import genai
 from google.genai import types
 
-from Skinova.backend.app.gemini.gemini_response import GeminiProductAnalysisSchema
+from app.gemini.gemini_response import GeminiProductAnalysisSchema
 
 SYSTEM_INSTRUCTION = """
 Eres el motor de IA de la aplicación "Skinova", experto en dermatología y cosmetología.
@@ -23,9 +24,9 @@ def analyze_product_with_gemini(
     image_base64: Optional[str] = None,
     image_mime_type: str = "image/jpeg"
 ) -> str:
-    """Envía la consulta y la imagen opcional a Gemini 2.5 Flash."""
-    
-    client = genai.Client()
+    """Envía la consulta y la imagen opcional al modelo de Gemini."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    client = genai.Client(api_key=api_key) if api_key else genai.Client()
     contents = []
 
     if image_base64:
@@ -41,8 +42,10 @@ def analyze_product_with_gemini(
     )
     contents.append(prompt_text)
 
+    model_name = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
+
     response = client.models.generate_content(
-        model='gemini-2.5-flash',
+        model=model_name,
         contents=contents,
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM_INSTRUCTION,

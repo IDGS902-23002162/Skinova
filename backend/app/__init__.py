@@ -49,6 +49,8 @@ def create_app(config_name='default'):
     from app.modules.notificaciones import models as notificaciones_models
 
     from app.modules.users.routes import users_bp
+    from app.modules.busqueda_ia.routes import ai_analysis_bp
+    app.register_blueprint(ai_analysis_bp)
     app.register_blueprint(users_bp)
 
     # Rutas de perfil_salud:

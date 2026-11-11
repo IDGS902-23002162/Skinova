@@ -1,12 +1,9 @@
 import logging
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import declarative_base
-
 
 logger = logging.getLogger(__name__)
-Base = declarative_base()
 
 class IngredientAnalysis(BaseModel):
     ingredient_name: str
@@ -17,7 +14,10 @@ class CompatibilityDetails(BaseModel):
     is_compatible: bool
     score: int = Field(description="Puntuación de compatibilidad de 1 a 100")
     profile_match_reason: str
-    neceser_conflict_reason: Optional[str] = None
+    neceser_conflict_reason: str = Field(
+        default="", 
+        description="Razón del conflicto con productos del neceser actual, o vacío si no hay conflicto"
+    )
 
 class GeminiProductAnalysisSchema(BaseModel):
     subject: str = Field(description="Nombre o marca del producto analizado")
@@ -26,4 +26,3 @@ class GeminiProductAnalysisSchema(BaseModel):
     compatibility: CompatibilityDetails
     warnings: List[str] = Field(description="Lista de advertencias sobre alérgenos, irritaciones o incompatibilidades")
     requires_professional_attention: bool = Field(description="True si se detecta un riesgo que requiera evaluación dermatológica")
-    raw_result_data: dict = Field(description="Detalle estructurado completo del análisis para almacenar en la BD")
