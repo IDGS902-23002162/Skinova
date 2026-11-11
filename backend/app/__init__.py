@@ -54,6 +54,8 @@ def create_app(config_name='default'):
     from app.modules.habitos_desafios.routes import habitos_desafios_bp
     from app.modules.comunidad.routes import comunidad_bp
 
+    from app.modules.busqueda_ia.routes import ai_analysis_bp
+    app.register_blueprint(ai_analysis_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(mi_neceser_bp)
     app.register_blueprint(habitos_desafios_bp)

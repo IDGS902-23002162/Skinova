@@ -1,27 +1,82 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ChatRespuesta } from "./ChatRespuesta";
 import "../../../shared/styles/ai_conversation_style.css";
 
-const INITIAL_PLACEHOLDERS = [
-  {
-    role: "user",
-    content: "Hola, empecé a usar retinol hace una semana y noto la piel un poco tirante por las noches. ¿Es normal?",
-    time: "09:40"
-  },
-  {
-    role: "assistant",
-    content: "Es bastante común sentir tirantez durante las primeras semanas con retinol, mientras la piel se adapta. Algunas ideas que suelen ayudar:\n\n• Aplícalo 2 o 3 noches por semana y aumenta poco a poco.\n• Usa una crema hidratante después, o antes si notas mucha sensibilidad.\n• Mantén protector solar todas las mañanas.\n\nSi aparece ardor intenso, descamación fuerte o enrojecimiento que no cede, conviene pausarlo y consultarlo con tu dermatólogo.",
-    time: "09:41"
+const parseAnalysisData = (data) => {
+  if (!data) return null;
+  if (typeof data === "string") {
+    try {
+      return JSON.parse(data);
+    } catch {
+      return null;
+    }
   }
-];
+  return data;
+};
 
-const EXAMPLE_REPLY = "Gracias por contármelo. Lo registro en tu seguimiento para que podamos comparar cómo evoluciona en los próximos días. ¿Notas la sensación en alguna zona en particular, como mejillas o alrededor de la nariz?";
+const createInitialMessages = (conversationData) => {
+  if (!conversationData) {
+    return [
+      {
+        role: "user",
+        content: "Hola, ¿cómo puedo consultar un producto para mi piel?",
+        time: "09:40"
+      },
+      {
+        role: "assistant",
+        content: "¡Hola! Puedes escribir el nombre del producto o tomar una fotografía de su empaque o lista de ingredientes desde la opción 'Nueva consulta'. Analizaré su compatibilidad con tu tipo de piel y los productos de tu neceser.",
+        time: "09:41"
+      }
+    ];
+  }
 
-export default function Chat ({ backgroundColor = "#f6f3ec", pageAlignment = "center" }){
-  const [messages, setMessages] = useState(INITIAL_PLACEHOLDERS);
+  const analysis = parseAnalysisData(conversationData.analysis);
+  const currentTime = conversationData.time || new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
+
+  const userQuery = conversationData.query_text || conversationData.search_query || conversationData.title || "Consulta de producto";
+
+  const msgs = [
+    {
+      role: "user",
+      content: userQuery,
+      image: conversationData.image || null,
+      time: currentTime
+    }
+  ];
+
+  if (analysis) {
+    msgs.push({
+      role: "assistant",
+      content: "He analizado los ingredientes del producto en base a tu perfil dermatológico y neceser:",
+      analysis: analysis,
+      time: currentTime
+    });
+  } else if (conversationData.preview) {
+    msgs.push({
+      role: "assistant",
+      content: conversationData.preview,
+      time: currentTime
+    });
+  }
+
+  return msgs;
+};
+
+export default function Chat({
+  conversationData = null,
+  onNewConsultation = null,
+  backgroundColor = "#f6f3ec",
+  pageAlignment = "center"
+}) {
+  const [messages, setMessages] = useState(() => createInitialMessages(conversationData));
   const [inputText, setInputText] = useState("");
   const [isReplying, setIsReplying] = useState(false);
   const textareaRef = useRef(null);
+
+  // Sincronizar mensajes cuando cambia conversationData
+  useEffect(() => {
+    setMessages(createInitialMessages(conversationData));
+  }, [conversationData]);
 
   const getCurrentTime = () => {
     return new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
@@ -59,21 +114,24 @@ export default function Chat ({ backgroundColor = "#f6f3ec", pageAlignment = "ce
 
     setIsReplying(true);
 
+    const activeAnalysis = parseAnalysisData(conversationData?.analysis);
+    const subject = activeAnalysis?.subject || conversationData?.title || "este producto";
+
     setTimeout(() => {
       setIsReplying(false);
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: EXAMPLE_REPLY,
+          content: `Respecto a "${subject}": recuerda incorporarlo de forma paulatina en tu rutina. Si tienes dudas sobre sensaciones de tirantez o reacción, observa tu piel por 48 horas y no dudes en consultar a un especialista ante cualquier irritación persistente.`,
           time: getCurrentTime()
         }
       ]);
-    }, 1200);
+    }, 1000);
   };
 
   const handleKeyDown = (e) => {
-    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+    if (e.nativeEvent?.isComposing || e.keyCode === 229) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
@@ -83,7 +141,20 @@ export default function Chat ({ backgroundColor = "#f6f3ec", pageAlignment = "ce
   const isSubmitDisabled = inputText.trim().length === 0 || isReplying;
 
   return (
-    <main className="chat">
+    <main className="chat" style={{ height: "auto", minHeight: "500px", display: "flex", flexDirection: "column" }}>
+      {onNewConsultation && (
+        <div style={{ padding: "8px 16px", display: "flex", justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            onClick={onNewConsultation}
+            className="pa-btn pa-btn--ghost"
+            style={{ fontSize: "13px", height: "36px", padding: "0 14px", borderRadius: "10px" }}
+          >
+            + Nueva consulta
+          </button>
+        </div>
+      )}
+
       <ChatRespuesta 
         messages={messages} 
         isTyping={isReplying} 
@@ -94,7 +165,7 @@ export default function Chat ({ backgroundColor = "#f6f3ec", pageAlignment = "ce
       <div className="bottom container">
         <form className="composer" id="composer" onSubmit={handleSubmit}>
           <label htmlFor="chat-input" className="sr-only">
-            Escribe tu mensaje
+            Escribe tu pregunta de seguimiento
           </label>
           <textarea
             id="chat-input"
@@ -103,7 +174,7 @@ export default function Chat ({ backgroundColor = "#f6f3ec", pageAlignment = "ce
             value={inputText}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Cuéntame cómo se siente tu piel hoy…"
+            placeholder="Haz una pregunta sobre este producto o cómo usarlo…"
           />
           <button
             type="submit"
@@ -124,4 +195,4 @@ export default function Chat ({ backgroundColor = "#f6f3ec", pageAlignment = "ce
       </div>
     </main>
   );
-};
+}
