@@ -9,6 +9,7 @@ import LogoutTransition from "../features/autenticacion/components/LogoutTransit
 import MainLayout from "../shared/components/MainLayout";
 import { Heart, Target, AlertTriangle } from "lucide-react";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
+import ConsultaIaView from "../features/consulta_ia/pages/consulta_ia";
 import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
 import AdminDashboard from "../features/mobil/dashboard/AdminDashboard";
 import AdminLayout from "../features/mobil/components/AdminLayout";
@@ -24,6 +25,8 @@ import DirectorioDerma from "../features/directorio_dermatologos/components/Dire
 import ModuloComunidadForo from "../features/comunidad_foro/pages/ModuloComunidadForo";
 import ModuloHabitosDesafios from "../features/habitos_desafios/pages/ModuloHabitosDesafios";
 import ModuloMiNeceser from "../features/mi_neceser/pages/ModuloMiNeceser";
+import ModuloBitacoraProgreso from "../features/bitacora_progreso/pages/ModuloBitacoraProgreso";
+import ModuloNotificaciones from "../features/notificaciones_alarmas/pages/ModuloNotificaciones";
 
 // Protege /admin y sub-rutas: solo usuarios con publicMetadata.role === "admin"
 function AdminGuard({ children }) {
@@ -132,6 +135,9 @@ export default function App() {
       <Route path="/comunidad" element={<ModuloComunidadForo />} />
       <Route path="/habitos" element={<ModuloHabitosDesafios />} />
       <Route path="/neceser" element={<ModuloMiNeceser />} />
+      <Route path="/consulta" element={<ConsultaIaView />} />
+      <Route path="/progreso" element={<ModuloBitacoraProgreso />} />
+      <Route path="/notificaciones" element={<ModuloNotificaciones />} />
       <Route
         path="/sso-callback"
         element={
