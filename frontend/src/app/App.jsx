@@ -10,13 +10,20 @@ import MainLayout from "../shared/components/MainLayout";
 import { Heart, Target, AlertTriangle } from "lucide-react";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
 import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
-import CustomProfileModal from "../features/perfil_salud/components/profile/CustomProfileModal";
 import AdminDashboard from "../features/mobil/dashboard/AdminDashboard";
 import AdminLayout from "../features/mobil/components/AdminLayout";
 import GestionUsuarios from "../features/mobil/gestion_usuarios/GestionUsuarios";
 import Rendimiento from "../features/mobil/rendimiento/Rendimiento";
 import Bitacora from "../features/mobil/bitacora/Bitacora";
 import Administracion from "../features/mobil/administracion/Administracion";
+import ProfilePage from "../features/perfil_salud/pages/ProfilePage";
+import SubscriptionsPage from "../features/suscripciones/pages/SubscriptionsPage";
+import RoutineCreatorPage from "../features/creador_rutinas/components/RoutineCreatorPage";
+import EnvironmentalMonitorPage from "../features/monitoreo_ambiental/components/EnvironmentalMonitorPage";
+import DirectorioDerma from "../features/directorio_dermatologos/components/DirectorioDerma";
+import ModuloComunidadForo from "../features/comunidad_foro/pages/ModuloComunidadForo";
+import ModuloHabitosDesafios from "../features/habitos_desafios/pages/ModuloHabitosDesafios";
+import ModuloMiNeceser from "../features/mi_neceser/pages/ModuloMiNeceser";
 
 // Protege /admin y sub-rutas: solo usuarios con publicMetadata.role === "admin"
 function AdminGuard({ children }) {
@@ -31,11 +38,7 @@ function AdminGuard({ children }) {
 
   return <AdminLayout>{children}</AdminLayout>;
 }
-import ProfilePage from "../features/perfil_salud/pages/ProfilePage";
-import SubscriptionsPage from "../features/suscripciones/pages/SubscriptionsPage";
-import RoutineCreatorPage from "../features/creador_rutinas/components/RoutineCreatorPage";
-import EnvironmentalMonitorPage from "../features/monitoreo_ambiental/components/EnvironmentalMonitorPage";
-import DirectorioDerma from "../features/directorio_dermatologos/components/DirectorioDerma";
+
 
 
 function Home() {
@@ -126,6 +129,9 @@ export default function App() {
       <Route path="/rutinas" element={<RoutineCreatorPage />} />
       <Route path="/ambiente" element={<EnvironmentalMonitorPage />} />
       <Route path="/directorio" element={<DirectorioDerma />} />
+      <Route path="/comunidad" element={<ModuloComunidadForo />} />
+      <Route path="/habitos" element={<ModuloHabitosDesafios />} />
+      <Route path="/neceser" element={<ModuloMiNeceser />} />
       <Route
         path="/sso-callback"
         element={
