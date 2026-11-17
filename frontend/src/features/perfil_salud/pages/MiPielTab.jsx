@@ -20,9 +20,9 @@ export default function MiPielTab() {
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "16px 0" }}>
       <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ 
-          color: "var(--bosque-profundo, #163B35)", 
-          fontFamily: "DM Serif Display, serif", 
+        <h2 style={{
+          color: "var(--bosque-profundo, #163B35)",
+          fontFamily: "DM Serif Display, serif",
           fontSize: "2rem",
           margin: "0 0 8px 0"
         }}>
@@ -40,7 +40,6 @@ export default function MiPielTab() {
         <div className="translucent-textbox">
           <div className="translucent-header">
             <h1 className="translucent-title">Análisis de Piel</h1>
-            <span className="translucent-badge">Próximamente</span>
           </div>
           <p className="translucent-p">Tómate una foto para obtener una evaluación inteligente.</p>
         </div>

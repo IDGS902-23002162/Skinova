@@ -1,11 +1,12 @@
-import React from 'react';
-import { Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useResultadosPiel } from '../../hooks/useResultadosPiel';
 import SkinRadarChart from './SkinRadarChart';
 import SkinMetricCard from './SkinMetricCard';
 import EvaluationSummary from './EvaluationSummary';
 import EvaluationEmptyState from './EvaluationEmptyState';
+import AnalisisPielModal from './AnalisisPielModal';
 
 const MotionCard = ({ children, delay = 0, style }) => (
   <motion.div
@@ -20,7 +21,8 @@ const MotionCard = ({ children, delay = 0, style }) => (
 );
 
 export default function ResultsSection() {
-  const { evaluations, loading, handleCreateMock } = useResultadosPiel();
+  const { evaluations, loading, loadEvaluations, handleCreateMock } = useResultadosPiel();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (loading) {
     return (
@@ -34,8 +36,15 @@ export default function ResultsSection() {
   if (evaluations.length === 0) {
     return (
       <div style={{ position: 'relative' }}>
-        <EvaluationEmptyState />
-        {/* Development only button */}
+        <EvaluationEmptyState onStartAnalysis={() => setIsModalOpen(true)} />
+        <AnalisisPielModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={() => {
+            loadEvaluations();
+          }}
+        />
+        {/* Development only button
         {process.env.NODE_ENV === 'development' && (
           <button
             onClick={handleCreateMock}
@@ -43,7 +52,7 @@ export default function ResultsSection() {
           >
             Mock Data
           </button>
-        )}
+        )} */}
       </div>
     );
   }
@@ -81,9 +90,29 @@ export default function ResultsSection() {
       }}>
         Tus Resultados
       </h3>
-      <p style={{ textAlign: 'center', opacity: 0.8, color: 'var(--color-carbon, #1D2825)', margin: '0 0 16px 0', fontSize: '0.9rem' }}>
-        Análisis del {new Date(currentEval.created_at).toLocaleDateString()}
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <span style={{ opacity: 0.8, color: 'var(--color-carbon, #1D2825)', fontSize: '0.9rem' }}>
+          Análisis del {new Date(currentEval.created_at).toLocaleDateString()}
+        </span>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          style={{
+            border: '1px solid var(--color-bosque-medio, #2D6658)',
+            color: 'var(--color-bosque-profundo, #163B35)',
+            padding: '4px 12px',
+            borderRadius: '16px',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          <Sparkles size={14} color="var(--color-bosque-medio, #2D6658)" />
+          Nuevo Análisis
+        </button>
+      </div>
 
       <div className="desktop-top-section" style={{ marginTop: '16px' }}>
         <div className="desktop-top-left">
@@ -223,6 +252,15 @@ export default function ResultsSection() {
           )}
         </div>
       </div>
+
+      <AnalisisPielModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => {
+          loadEvaluations();
+          setIsModalOpen(false);
+        }}
+      />
     </div>
   );
 }

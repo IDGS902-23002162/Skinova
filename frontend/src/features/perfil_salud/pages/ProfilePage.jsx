@@ -196,14 +196,17 @@ export default function ProfilePage({ isOpen, onClose }) {
 
                     <div style={{ padding: '0 24px 0 24px' }}>
                       <MotionCard delay={0}>
-                        <div className="translucent-card" style={{ marginBottom: '16px' }}>
+                        <div
+                          className="translucent-card"
+                          style={{ marginBottom: '16px', cursor: 'pointer' }}
+                          onClick={() => setActiveTab('resultados')}
+                        >
                           <div className="translucent-img">
                             <Camera size={24} />
                           </div>
                           <div className="translucent-textbox">
                             <div className="translucent-header">
                               <h1 className="translucent-title">Análisis de Piel</h1>
-                              <span className="translucent-badge">Próximamente</span>
                             </div>
                             <p className="translucent-p">Tómate una foto para obtener una evaluación inteligente.</p>
                           </div>

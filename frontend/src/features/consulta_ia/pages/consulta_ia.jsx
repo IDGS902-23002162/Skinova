@@ -33,6 +33,10 @@ export function ConsultaIA(props) {
       try {
         const records = await getHistory();
         if (isMounted && Array.isArray(records)) {
+          //Filtro porque estoy guardando los Análisis de skin care en la misma tabla :(
+          const filteredRecords = records.filter(
+            (record) => record.interaction_type !== "Skin_analysis"
+          );
           setHistory(records);
         }
       } catch (err) {
@@ -174,12 +178,12 @@ export function ConsultaIA(props) {
           </header>
 
           {selectedChat ? (
-            <Chat 
-              conversationData={selectedChat} 
-              onNewConsultation={handleNewConsultation} 
+            <Chat
+              conversationData={selectedChat}
+              onNewConsultation={handleNewConsultation}
             />
           ) : (
-            <AiChat 
+            <AiChat
               {...props}
               productText={productText}
               onProductTextChange={setProductText}

@@ -8,6 +8,7 @@ export function useResultadosPiel() {
 
   const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState(null);
 
   const loadEvaluations = useCallback(async () => {
@@ -34,6 +35,22 @@ export function useResultadosPiel() {
     loadEvaluations();
   }, [loadEvaluations]);
 
+  const handleAnalyzeSkin = async (params) => {
+    try {
+      setAnalyzing(true);
+      setError(null);
+      const result = await evaluationApi.analyzeSkin(params);
+      await loadEvaluations();
+      return result;
+    } catch (err) {
+      console.error("Error al analizar piel:", err);
+      setError(err.message || "Error al procesar el análisis de piel.");
+      throw err;
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const handleCreateMock = async () => {
     try {
       setLoading(true);
@@ -49,8 +66,10 @@ export function useResultadosPiel() {
   return {
     evaluations,
     loading,
+    analyzing,
     error,
     loadEvaluations,
+    handleAnalyzeSkin,
     handleCreateMock
   };
 }
