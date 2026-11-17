@@ -14,13 +14,30 @@ const levelColors = {
   high: 'rgba(201, 130, 104, 0.4)' // Terracota suave
 };
 
-export default function SkinMetricCard({ name, score, level, explanation }) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function SkinMetricCard({
+  name,
+  score,
+  level,
+  explanation,
+  isOpen: isOpenProp,
+  onToggle
+}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = typeof isOpenProp === 'boolean';
+  const isOpen = isControlled ? isOpenProp : internalOpen;
+
+  const handleToggle = () => {
+    if (isControlled) {
+      onToggle?.();
+    } else {
+      setInternalOpen(!internalOpen);
+    }
+  };
 
   return (
     <motion.div 
       layout
-      onClick={() => setIsOpen(!isOpen)}
+      onClick={handleToggle}
       style={{
         background: 'var(--color-crema, #F6F3EC)',
         border: '1px solid var(--color-arena, #E7DFD2)',

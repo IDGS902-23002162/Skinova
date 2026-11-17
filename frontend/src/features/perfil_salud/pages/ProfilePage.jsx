@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useUser } from '@clerk/react';
 import { X, Camera, Edit2, Check, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useProfileData } from '../hooks/useProfileData';
 import { useControlModalPerfil } from '../hooks/useControlModalPerfil';
 import { useEditarUsuario } from '../hooks/useEditarUsuario';
+import ProgressDots from '../../../shared/components/ProgressDots';
 import SkinInfoCard from '../components/profile/SkinInfoCard';
 import GoalsSection from '../components/profile/GoalsSection';
 import RestrictionsSection from '../components/profile/RestrictionsSection';
@@ -42,6 +43,64 @@ export default function ProfilePage({ isOpen, onClose }) {
     handlePhotoChange
   } = useEditarUsuario({ user, profile, saveProfile, isOpen });
 
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [editingCard, setEditingCard] = useState(null); // 'skin' | 'goals' | 'restrictions' | 'history' | null
+  const carouselRef = useRef(null);
+
+  const handleTabChange = useCallback((newTab) => {
+    setActiveTab(newTab);
+    setEditingCard(null);
+  }, [setActiveTab]);
+
+  const handleCarouselScroll = useCallback(() => {
+    const container = carouselRef.current;
+    if (!container) return;
+
+    const containerCenter = container.scrollLeft + container.clientWidth / 2;
+    let closestIndex = 0;
+    let minDistance = Infinity;
+
+    for (let i = 0; i < container.children.length; i++) {
+      const child = container.children[i];
+      const childCenter = child.offsetLeft + child.offsetWidth / 2;
+      const distance = Math.abs(containerCenter - childCenter);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = i;
+      }
+    }
+
+    if (closestIndex !== activeSlide) {
+      setActiveSlide(closestIndex);
+      // Al cambiar de tarjeta deslizando, cancelamos cualquier edición activa
+      if (editingCard) {
+        setEditingCard(null);
+      }
+    } else if (editingCard) {
+      // Si el usuario comienza a deslizar (> 25px respecto a la tarjeta actual), cerramos la edición
+      const currentChild = container.children[activeSlide];
+      if (currentChild) {
+        const expectedCenter = currentChild.offsetLeft + currentChild.offsetWidth / 2;
+        if (Math.abs(containerCenter - expectedCenter) > 25) {
+          setEditingCard(null);
+        }
+      }
+    }
+  }, [activeSlide, editingCard]);
+
+  const handleDotClick = useCallback((index) => {
+    setEditingCard(null);
+    setActiveSlide(index);
+    const container = carouselRef.current;
+    if (!container || !container.children[index]) return;
+    const child = container.children[index];
+    const targetScroll = child.offsetLeft - (container.clientWidth - child.offsetWidth) / 2;
+    container.scrollTo({
+      left: Math.max(0, targetScroll),
+      behavior: 'smooth'
+    });
+  }, []);
+
   if (!isOpen) return null;
 
   const emailAddress = user?.primaryEmailAddress?.emailAddress;
@@ -72,7 +131,7 @@ export default function ProfilePage({ isOpen, onClose }) {
           >
             <div
               className={`folder-tab ${activeTab === 'perfil' ? 'active' : ''}`}
-              onClick={() => setActiveTab('perfil')}
+              onClick={() => handleTabChange('perfil')}
               style={{
                 position: 'absolute',
                 bottom: '100%',
@@ -199,7 +258,7 @@ export default function ProfilePage({ isOpen, onClose }) {
                         <div
                           className="translucent-card"
                           style={{ marginBottom: '16px', cursor: 'pointer' }}
-                          onClick={() => setActiveTab('resultados')}
+                          onClick={() => handleTabChange('resultados')}
                         >
                           <div className="translucent-img">
                             <Camera size={24} />
@@ -223,25 +282,53 @@ export default function ProfilePage({ isOpen, onClose }) {
                     <div style={{ textAlign: "center", color: "var(--terracota, #C98268)", padding: "24px" }}>Error cargando perfil.</div>
                   ) : (
                     <>
-                      <div className="custom-profile-carousel-indicator">
-                        ← Desliza para ver más →
-                      </div>
+                      <ProgressDots
+                        className="custom-profile-carousel-indicator"
+                        mode="carousel"
+                        totalSteps={4}
+                        currentStep={activeSlide + 1}
+                        onDotClick={handleDotClick}
+                      />
 
-                      <div className="custom-profile-carousel">
+                      <div
+                        className="custom-profile-carousel"
+                        ref={carouselRef}
+                        onScroll={handleCarouselScroll}
+                      >
                         <MotionCard delay={0.1}>
-                          <SkinInfoCard profile={profile} onSave={saveProfile} />
+                          <SkinInfoCard
+                            profile={profile}
+                            onSave={saveProfile}
+                            isEditing={editingCard === 'skin'}
+                            onEditChange={(val) => setEditingCard(val ? 'skin' : null)}
+                          />
                         </MotionCard>
 
                         <MotionCard delay={0.2}>
-                          <GoalsSection profile={profile} onSave={saveProfile} />
+                          <GoalsSection
+                            profile={profile}
+                            onSave={saveProfile}
+                            isEditing={editingCard === 'goals'}
+                            onEditChange={(val) => setEditingCard(val ? 'goals' : null)}
+                          />
                         </MotionCard>
 
                         <MotionCard delay={0.3}>
-                          <RestrictionsSection profile={profile} onSave={saveProfile} />
+                          <RestrictionsSection
+                            profile={profile}
+                            onSave={saveProfile}
+                            isEditing={editingCard === 'restrictions'}
+                            onEditChange={(val) => setEditingCard(val ? 'restrictions' : null)}
+                          />
                         </MotionCard>
 
                         <MotionCard delay={0.4}>
-                          <DermatologicalHistorySection profile={profile} onSave={saveProfile} />
+                          <DermatologicalHistorySection
+                            profile={profile}
+                            onSave={saveProfile}
+                            isEditing={editingCard === 'history'}
+                            onEditChange={(val) => setEditingCard(val ? 'history' : null)}
+                          />
                         </MotionCard>
                       </div>
                     </>
@@ -267,7 +354,7 @@ export default function ProfilePage({ isOpen, onClose }) {
           >
             <div
               className={`folder-tab ${activeTab === 'resultados' ? 'active' : ''}`}
-              onClick={() => setActiveTab('resultados')}
+              onClick={() => handleTabChange('resultados')}
               style={{
                 position: 'absolute',
                 bottom: '100%',

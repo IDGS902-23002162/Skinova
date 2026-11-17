@@ -143,26 +143,7 @@ export default function AnalisisPielModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={handleClose}
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            background: 'none',
-            border: 'none',
-            color: 'var(--color-carbon, #1D2825)',
-            cursor: 'pointer',
-            padding: '6px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: 0.7
-          }}
-        >
-          <X size={22} />
-        </button>
+
 
         {!analysisResult ? (
           <div>
@@ -307,7 +288,7 @@ export default function AnalisisPielModal({
                 <textarea
                   value={userDescription}
                   onChange={(e) => setUserDescription(e.target.value)}
-                  placeholder="Ej: Siento tirantez después de lavarme, brillo en la zona T hacia el mediodía y a veces enrojecimiento en las mejillas..."
+                  placeholder="Ej: Siento tirantez después de lavarme, brillo en la zona T hacia el mediodía..."
                   rows={3}
                   style={{
                     width: '100%',

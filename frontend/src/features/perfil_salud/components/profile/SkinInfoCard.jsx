@@ -1,13 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Edit2, X, Check, Loader2 } from 'lucide-react';
 import { skinTypes, sensitivityLevels } from '../../constants/perfilOpciones';
 import './cardsBonitas.css';
 
-export default function SkinInfoCard({ profile, onSave }) {
-  const [isEditing, setIsEditing] = useState(false);
+export default function SkinInfoCard({ profile, onSave, isEditing: isEditingProp, onEditChange }) {
+  const [internalEditing, setInternalEditing] = useState(false);
+  const isEditing = typeof isEditingProp === 'boolean' ? isEditingProp : internalEditing;
+
+  const setIsEditing = (val) => {
+    if (typeof isEditingProp === 'boolean') {
+      onEditChange?.(val);
+    } else {
+      setInternalEditing(val);
+    }
+  };
+
   const [skinType, setSkinType] = useState(profile.skin_type || "");
   const [sensitivity, setSensitivity] = useState(profile.sensitivity_level || "");
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setSkinType(profile.skin_type || "");
+      setSensitivity(profile.sensitivity_level || "");
+    }
+  }, [isEditing, profile.skin_type, profile.sensitivity_level]);
 
   const getLabel = (list, id) => list.find(item => item.id === id)?.label || id;
 

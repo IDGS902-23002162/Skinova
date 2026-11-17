@@ -303,18 +303,16 @@
 }
 
 .custom-profile-carousel-indicator {
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--color-bosque-medio, #2D6658);
-  opacity: 0.7;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
 }
 
 .custom-profile-carousel {
   display: flex;
   flex-direction: row;
+  align-items: flex-start;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
@@ -484,6 +482,10 @@
   .custom-profile-carousel > * {
     flex: unset !important;
     min-width: 0;
+  }
+
+  .custom-profile-carousel-indicator {
+    display: none !important;
   }
 }
 
