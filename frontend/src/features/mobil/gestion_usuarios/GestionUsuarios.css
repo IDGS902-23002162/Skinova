@@ -44,6 +44,7 @@
     opacity: 0;
     transform: translateY(-12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -538,6 +539,7 @@
     opacity: 0;
     transform: scale(0.96) translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -913,5 +915,84 @@
 
   .gu-plan-selector {
     grid-template-columns: 1fr;
+  }
+
+  /* 1. Evita que el contenedor principal o el grid excedan el ancho del teléfono */
+  .gu-root {
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .gu-users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .gu-user-card {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  /* 2. Permite que el nombre y correo se recorten con "..." en lugar de empujar el botón */
+  .gu-user-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .gu-user-main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+    /* Clave para que Flexbox permita encoger el texto */
+  }
+
+  .gu-user-avatar {
+    flex-shrink: 0;
+  }
+
+  .gu-user-identifiers {
+    flex: 1;
+    min-width: 0;
+    /* Clave para truncar hijos */
+  }
+
+  .gu-user-name,
+  .gu-user-email {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gu-admin-action-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* 3. Ajuste fino para pantallas móviles pequeñas */
+  @media (max-width: 480px) {
+    .gu-user-card {
+      padding: 1rem;
+    }
+
+    .gu-admin-action-btn {
+      padding: 0.45rem 0.65rem;
+      font-size: 0.78rem;
+    }
+
+    /* Opcional: si prefieres mostrar solo el ícono de editar en pantallas muy angostas, descomenta esto:
+  .gu-admin-action-btn span {
+    display: none;
+  }
+  */
   }
 }
