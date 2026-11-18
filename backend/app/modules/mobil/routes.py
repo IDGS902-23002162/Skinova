@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timezone, timedelta
+from sqlalchemy import func
 from flask import Blueprint, request, jsonify
 from clerk_backend_api import Clerk
 from app.extensions import db
@@ -53,6 +54,38 @@ def _get_admin_courtesy_user_ids():
         else:
             courtesy_users.discard(log.user_id)
     return courtesy_users
+
+
+def _count_pwa_sessions(start_dt=None, end_dt=None):
+    """
+    Cuenta visitas reales a la PWA (1 visita por usuario por día + entradas anónimas al dashboard),
+    evitando que navegar entre múltiples módulos infle el contador de visitas.
+    """
+    # 1. Usuarios autenticados: máximo 1 visita por día (sesión diaria)
+    auth_query = db.session.query(
+        func.count(
+            func.distinct(
+                func.concat(PwaVisit.user_id, '_', func.date(PwaVisit.created_at))
+            )
+        )
+    ).filter(PwaVisit.user_id.isnot(None))
+
+    # 2. Visitantes sin user_id: contar solo entradas al dashboard principal
+    anon_query = PwaVisit.query.filter(
+        PwaVisit.user_id.is_(None),
+        PwaVisit.module_name == 'dashboard'
+    )
+
+    if start_dt is not None:
+        auth_query = auth_query.filter(PwaVisit.created_at >= start_dt)
+        anon_query = anon_query.filter(PwaVisit.created_at >= start_dt)
+    if end_dt is not None:
+        auth_query = auth_query.filter(PwaVisit.created_at < end_dt)
+        anon_query = anon_query.filter(PwaVisit.created_at < end_dt)
+
+    auth_sessions = auth_query.scalar() or 0
+    anon_sessions = anon_query.count() or 0
+    return auth_sessions + anon_sessions
 
 
 @mobil_bp.route('/dashboard/stats', methods=['GET'])
@@ -110,13 +143,10 @@ def get_dashboard_analytics():
                 .count()
             )
 
-        # 3. Visitas a la PWA reales
-        total_visits = PwaVisit.query.count()
-        visits_month = PwaVisit.query.filter(PwaVisit.created_at >= thirty_days_ago).count()
-        visits_prev = PwaVisit.query.filter(
-            PwaVisit.created_at < thirty_days_ago,
-            PwaVisit.created_at >= sixty_days_ago
-        ).count()
+        # 3. Visitas reales a la PWA (sesiones diarias, no vistas individuales por módulo)
+        total_visits = _count_pwa_sessions()
+        visits_month = _count_pwa_sessions(start_dt=thirty_days_ago)
+        visits_prev = _count_pwa_sessions(start_dt=sixty_days_ago, end_dt=thirty_days_ago)
 
         if visits_prev > 0:
             visits_growth_val = round(((visits_month - visits_prev) / visits_prev) * 100, 1)
@@ -126,7 +156,7 @@ def get_dashboard_analytics():
         else:
             visits_growth_str = "0%"
 
-        # 4. Suscripciones activas vs. Ingresos reales
+        # 4. Suscripciones activas vs. Ingresos reales (excluyendo cortesías de admin)
         plan_price_mxn = 99.0
         courtesy_user_ids = _get_admin_courtesy_user_ids()
 
@@ -179,10 +209,24 @@ def get_dashboard_analytics():
         else:
             revenue_growth_str = "0%"
 
-        # 5. Tasa de conversión
-        conversion_rate = round((active_subs / total_registered) * 100, 1) if total_registered > 0 else 0.0
+        # 5. Tasa de conversión de visita a suscripción pagada (Opción 2, sin cortesías)
+        unique_visitors_month = (
+            db.session.query(func.count(func.distinct(PwaVisit.user_id)))
+            .filter(
+                PwaVisit.created_at >= thirty_days_ago,
+                PwaVisit.user_id.isnot(None),
+                PwaVisit.module_name.in_(['dashboard', 'suscripciones'])
+            )
+            .scalar() or 0
+        )
 
-        # 6. Módulos más utilizados
+        paid_subs_count = len(paid_subs_current_cycle)
+        if unique_visitors_month > 0:
+            conversion_rate = min(100.0, round((paid_subs_count / unique_visitors_month) * 100, 1))
+        else:
+            conversion_rate = 0.0
+
+        # 6. Módulos más utilizados (aquí sí se cuentan todas las vistas por módulo)
         module_labels = {
             "rutinas": "Creador de Rutinas",
             "consulta_ia": "Consulta con IA",
@@ -193,7 +237,9 @@ def get_dashboard_analytics():
             "ambiente": "Monitoreo Ambiental",
             "comunidad": "Comunidad & Foro",
             "directorio": "Dermatólogos",
-            "dashboard": "Dashboard Principal"
+            "dashboard": "Dashboard Principal",
+            "suscripciones": "Planes & Suscripciones",
+            "notificaciones": "Notificaciones"
         }
 
         all_visits = PwaVisit.query.all()
@@ -213,7 +259,7 @@ def get_dashboard_analytics():
                 "percentage": percentage
             })
 
-        # 7. Histórico de últimos 6 meses
+        # 7. Histórico de últimos 6 meses (solo suscripciones pagadas, sin cortesías)
         month_names_es = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
         revenue_history = []
 
