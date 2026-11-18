@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { UserButton } from "@clerk/react";
 import {
   LayoutDashboard,
   Users,
@@ -109,27 +108,6 @@ export default function AdminNavigation() {
             </NavLink>
           ))}
         </nav>
-
-        {/* Footer con UserButton de Clerk */}
-        <div className="admin-nav-sidebar-footer">
-          <UserButton
-            appearance={{
-              variables: {
-                colorPrimary: "#2D6658",
-                colorText: "#F6F3EC",
-                colorBackground: "#163B35",
-                borderRadius: "10px",
-              },
-              elements: {
-                userButtonAvatarBox: {
-                  width: "34px",
-                  height: "34px",
-                },
-              },
-            }}
-          />
-          <span className="admin-nav-footer-label">Mi cuenta</span>
-        </div>
       </aside>
 
       {/* ── Bottom Nav Mobile ─────────────────────────────────────── */}
