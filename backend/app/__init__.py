@@ -49,7 +49,10 @@ def create_app(config_name='default'):
     from app.modules.notificaciones import models as notificaciones_models
 
     from app.modules.users.routes import users_bp
+    from app.modules.creador_rutinas.routes import rutinas_bp
+
     app.register_blueprint(users_bp)
+    app.register_blueprint(rutinas_bp)
 
     # Rutas de perfil_salud:
     from app.modules.perfil_salud.routes import perfil_salud_bp
