@@ -1,14 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Edit2, X, Check, Loader2 } from 'lucide-react';
 import './cardsBonitas.css';
 
-export default function RestrictionsSection({ profile, onSave }) {
-  const [isEditing, setIsEditing] = useState(false);
+export default function RestrictionsSection({ profile, onSave, isEditing: isEditingProp, onEditChange }) {
+  const [internalEditing, setInternalEditing] = useState(false);
+  const isEditing = typeof isEditingProp === 'boolean' ? isEditingProp : internalEditing;
+
+  const setIsEditing = (val) => {
+    if (typeof isEditingProp === 'boolean') {
+      onEditChange?.(val);
+    } else {
+      setInternalEditing(val);
+    }
+  };
+
   const [allergies, setAllergies] = useState(profile.allergies || []);
   const [sensitivities, setSensitivities] = useState(profile.sensitivities || []);
   const [newAllergy, setNewAllergy] = useState("");
   const [newSensitivity, setNewSensitivity] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setAllergies(profile.allergies || []);
+      setSensitivities(profile.sensitivities || []);
+      setNewAllergy("");
+      setNewSensitivity("");
+    }
+  }, [isEditing, profile.allergies, profile.sensitivities]);
 
   const handleSave = async () => {
     setIsSaving(true);

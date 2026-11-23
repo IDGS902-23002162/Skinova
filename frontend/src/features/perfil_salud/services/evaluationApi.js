@@ -9,6 +9,43 @@ export const createEvaluationApi = (fetchConAuth) => ({
   getEvaluation: async (id) => {
     return await fetchConAuth(`/perfil-salud/evaluations/${id}`);
   },
+  /**
+   * Realiza un análisis de piel con IA (Gemini).
+   * @param {Object} params
+   * @param {string} [params.imageBase64] - Imagen en Base64.
+   * @param {string} [params.imageMimeType] - Tipo MIME (por defecto 'image/jpeg').
+   * @param {string} [params.userDescription] - Sensaciones o síntomas descritos.
+   * @param {boolean} [params.applyToProfile] - Si se debe actualizar el perfil del usuario.
+   * @param {boolean} [params.isOnboarding] - Si el análisis se realiza durante el onboarding.
+   */
+  analyzeSkin: async ({ imageBase64, imageMimeType = "image/jpeg", userDescription, applyToProfile = false, isOnboarding = false } = {}) => {
+    const payload = {};
+    if (imageBase64) {
+      payload.image_base64 = imageBase64;
+      payload.image_mime_type = imageMimeType;
+    }
+    if (userDescription && typeof userDescription === 'string' && userDescription.trim()) {
+      payload.user_description = userDescription.trim();
+    }
+    if (applyToProfile) {
+      payload.apply_to_profile = true;
+    }
+    if (isOnboarding) {
+      payload.is_onboarding = true;
+    }
+
+    const response = await fetchConAuth('/perfil-salud/evaluations/analyze', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.message || result.error || `Error en análisis de piel (${response.status})`);
+    }
+
+    return result.data || result;
+  },
   // Mock function for frontend testing
   createMockEvaluation: async () => {
     return await fetchConAuth('/perfil-salud/evaluations', {

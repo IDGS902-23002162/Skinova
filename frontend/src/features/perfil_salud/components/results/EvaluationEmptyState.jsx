@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 
-export default function EvaluationEmptyState() {
+export default function EvaluationEmptyState({ onStartAnalysis }) {
   return (
     <div style={{ 
       textAlign: "center", 
@@ -47,26 +47,30 @@ export default function EvaluationEmptyState() {
         maxWidth: '300px',
         lineHeight: 1.5
       }}>
-        Realiza tu primer análisis inteligente para conocer a profundidad el estado actual de tu piel y recibir recomendaciones.
+        Realiza tu primer análisis inteligente con IA para conocer a profundidad el estado actual de tu piel y recibir recomendaciones.
       </p>
 
-      <button style={{
-        background: 'var(--color-bosque-medio, #2D6658)',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '16px',
-        padding: '16px 32px',
-        fontSize: '1rem',
-        fontWeight: 'bold',
-        cursor: 'pointer',
-        boxShadow: '0 8px 24px rgba(45, 102, 88, 0.2)',
-        transition: 'transform 0.2s',
-      }}>
+      <button
+        onClick={onStartAnalysis}
+        style={{
+          background: 'var(--color-bosque-medio, #2D6658)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '16px',
+          padding: '16px 32px',
+          fontSize: '1rem',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          boxShadow: '0 8px 24px rgba(45, 102, 88, 0.2)',
+          transition: 'transform 0.2s',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+      >
+        <Sparkles size={18} />
         Comenzar Análisis
       </button>
-      <span style={{ fontSize: '0.8rem', marginTop: '12px', opacity: 0.6 }}>
-        Próximamente...
-      </span>
     </div>
   );
 }

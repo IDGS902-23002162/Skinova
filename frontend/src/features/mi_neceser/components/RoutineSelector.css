@@ -1,0 +1,100 @@
+.routine-selector,
+.routine-selector-toggle {
+  display: inline-flex;
+  align-items: center;
+}
+
+.routine-selector {
+  gap: 16px;
+}
+
+.routine-selector-toggle {
+  gap: 10px;
+  color: #64716b;
+  font-size: 14px;
+}
+
+.routine-selector-toggle .is-current {
+  color: var(--color-bosque-profundo, #163b35);
+  font-weight: 650;
+}
+
+.routine-selector-all {
+  min-height: 40px;
+  border: 1px solid var(--color-arena, #e7dfd2);
+  border-radius: 10px;
+  padding: 0 18px;
+  background: #fffefa;
+  color: #64716b;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.routine-selector-all:hover {
+  background: rgba(169, 196, 181, 0.2);
+}
+
+.routine-selector-all.is-active {
+  border-color: var(--color-bosque-profundo, #163b35);
+  background: var(--color-bosque-profundo, #163b35);
+  color: var(--color-crema, #f6f3ec);
+}
+
+.routine-selector-switch {
+  position: relative;
+  display: inline-flex;
+  width: 48px;
+  height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  border: 1px solid var(--color-bosque-medio, #2d6658);
+  border-radius: 999px;
+  padding: 3px;
+  background: var(--color-salvia, #a9c4b5);
+  cursor: pointer;
+  transition: background-color 180ms ease;
+}
+
+.routine-selector-switch[aria-checked="true"] {
+  background: var(--color-bosque-profundo, #163b35);
+}
+
+.routine-selector-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fffefa;
+  box-shadow: 0 1px 3px rgba(29, 40, 37, 0.2);
+  transition: transform 180ms ease;
+}
+
+.routine-selector-switch[aria-checked="true"] .routine-selector-thumb {
+  transform: translateX(20px);
+}
+
+.routine-selector-all:focus-visible,
+.routine-selector-switch:focus-visible {
+  outline: 3px solid rgba(45, 102, 88, 0.35);
+  outline-offset: 3px;
+}
+
+@media (max-width: 420px) {
+  .routine-selector {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .routine-selector-toggle {
+    margin-left: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .routine-selector *,
+  .routine-selector *::before,
+  .routine-selector *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

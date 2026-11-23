@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Edit2, X, Check, Loader2 } from 'lucide-react';
 import './cardsBonitas.css';
 
-export default function DermatologicalHistorySection({ profile, onSave }) {
-  const [isEditing, setIsEditing] = useState(false);
+export default function DermatologicalHistorySection({ profile, onSave, isEditing: isEditingProp, onEditChange }) {
+  const [internalEditing, setInternalEditing] = useState(false);
+  const isEditing = typeof isEditingProp === 'boolean' ? isEditingProp : internalEditing;
+
+  const setIsEditing = (val) => {
+    if (typeof isEditingProp === 'boolean') {
+      onEditChange?.(val);
+    } else {
+      setInternalEditing(val);
+    }
+  };
+
   const [isSaving, setIsSaving] = useState(false);
   
   const parseHistory = (hist) => {
@@ -15,6 +25,12 @@ export default function DermatologicalHistorySection({ profile, onSave }) {
 
   const originalHistory = parseHistory(profile.dermatological_history);
   const [history, setHistory] = useState(originalHistory);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setHistory(originalHistory);
+    }
+  }, [isEditing, originalHistory]);
 
   const handleSave = async () => {
     setIsSaving(true);

@@ -39,11 +39,11 @@ export default function SkinRadarChart({ metrics }) {
   };
 
   return (
-    <div style={{ width: '100%', height: 300, position: 'relative' }}>
+    <div style={{ width: '100%', height: 260, position: 'relative' }}>
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
+        <RadarChart cx="50%" cy="50%" outerRadius="72%" data={data} margin={{ top: 5, right: 15, bottom: 5, left: 15 }}>
           <PolarGrid stroke="var(--color-arena, #E7DFD2)" />
-          <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--color-carbon, #1D2825)', fontSize: 12, fontWeight: 500 }} />
+          <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--color-carbon, #1D2825)', fontSize: 11, fontWeight: 500 }} />
           <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
           <Tooltip content={customTooltip} />
           <Radar

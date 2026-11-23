@@ -1,0 +1,91 @@
+/* Administracion.css */
+.adm-root { padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 900px; }
+.adm-header { display: flex; align-items: flex-start; justify-content: space-between; }
+.adm-title    { font-family: "DM Serif Display", serif; font-size: 1.8rem; color: #163B35; margin: 0 0 .25rem; }
+.adm-subtitle { font-size: .88rem; color: #5a7a71; margin: 0; }
+
+.adm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+
+/* Section card */
+.adm-section-card {
+  background: #fff; border-radius: 18px; padding: 1.4rem;
+  box-shadow: 0 2px 12px rgba(22,59,53,.07);
+  display: flex; flex-direction: column; gap: 1rem;
+}
+.adm-section-head { display: flex; align-items: center; gap: .6rem; border-bottom: 1px solid #E7DFD2; padding-bottom: .75rem; }
+.adm-section-icon { color: #2D6658; }
+.adm-section-title { font-size: .95rem; font-weight: 700; color: #163B35; margin: 0; }
+.adm-section-body  { display: flex; flex-direction: column; gap: .6rem; }
+
+/* Plan rows */
+.adm-plan-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem; background: #F6F3EC; border-radius: 12px; }
+.adm-plan-info { display: flex; flex-direction: column; gap: 2px; }
+.adm-plan-name { font-size: .88rem; font-weight: 700; color: #163B35; }
+.adm-plan-features { font-size: .72rem; color: #7a9a92; }
+.adm-plan-right { display: flex; align-items: center; gap: .75rem; flex-shrink: 0; }
+.adm-plan-price { font-size: .88rem; font-weight: 700; color: #2D6658; }
+.adm-plan-edit { display: inline-flex; align-items: center; gap: 2px; background: none; border: 1.5px solid #E7DFD2; color: #2D6658; font-size: .78rem; font-weight: 600; padding: .3rem .65rem; border-radius: 8px; cursor: pointer; }
+.adm-plan-edit:hover { background: #E7DFD2; }
+.adm-add-plan-btn { background: none; border: 1.5px dashed #A9C4B5; color: #2D6658; font-size: .82rem; font-weight: 600; padding: .55rem; border-radius: 10px; cursor: pointer; width: 100%; transition: background .18s; }
+.adm-add-plan-btn:hover { background: #F6F3EC; }
+
+/* Notification form */
+.adm-notif-form { display: flex; flex-direction: column; gap: .75rem; }
+.adm-label { font-size: .78rem; font-weight: 600; color: #163B35; }
+.adm-textarea {
+  resize: vertical; border: 1.5px solid #E7DFD2; border-radius: 10px;
+  padding: .65rem .9rem; font-size: .85rem; color: #1D2825;
+  font-family: "Manrope", sans-serif; outline: none;
+  transition: border-color .18s;
+}
+.adm-textarea:focus { border-color: #2D6658; }
+.adm-notif-actions { display: flex; gap: .6rem; align-items: center; }
+.adm-select {
+  flex: 1; border: 1.5px solid #E7DFD2; border-radius: 10px; padding: .5rem .75rem;
+  font-size: .82rem; color: #1D2825; outline: none; background: #fff;
+}
+.adm-send-btn {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: #2D6658; color: #F6F3EC; border: none;
+  font-size: .85rem; font-weight: 700; padding: .5rem 1.1rem;
+  border-radius: 10px; cursor: pointer; transition: background .18s;
+}
+.adm-send-btn:hover:not(:disabled) { background: #163B35; }
+.adm-send-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Toggles */
+.adm-toggle-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .6rem .2rem; border-bottom: 1px solid #F6F3EC; cursor: pointer;
+  transition: background .15s; border-radius: 8px;
+}
+.adm-toggle-row:hover { background: #FAFAF8; }
+.adm-toggle-info { display: flex; flex-direction: column; gap: 2px; }
+.adm-toggle-label { font-size: .86rem; font-weight: 600; color: #163B35; }
+.adm-toggle-desc  { font-size: .72rem; color: #7a9a92; }
+.adm-toggle-switch { flex-shrink: 0; }
+.adm-toggle-switch.on  { color: #2D6658; }
+.adm-toggle-switch.off { color: #E7DFD2; }
+
+/* Content fields */
+.adm-content-fields { display: flex; flex-direction: column; gap: .75rem; }
+.adm-field { display: flex; flex-direction: column; gap: .3rem; }
+.adm-input {
+  border: 1.5px solid #E7DFD2; border-radius: 10px; padding: .55rem .9rem;
+  font-size: .85rem; color: #1D2825; outline: none;
+  transition: border-color .18s;
+}
+.adm-input:focus { border-color: #2D6658; }
+.adm-save-btn {
+  display: inline-flex; align-items: center; gap: .4rem; align-self: flex-end;
+  background: #163B35; color: #F6F3EC; border: none;
+  font-size: .85rem; font-weight: 700; padding: .55rem 1.2rem;
+  border-radius: 10px; cursor: pointer; transition: background .18s;
+}
+.adm-save-btn:hover { background: #2D6658; }
+
+@media (max-width: 768px) {
+  .adm-root { padding: 1rem; }
+  .adm-grid { grid-template-columns: 1fr; }
+}
+

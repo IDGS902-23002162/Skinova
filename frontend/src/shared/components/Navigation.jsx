@@ -41,9 +41,41 @@ export default function Navigation() {
   const [touchStartY, setTouchStartY] = useState(null);
   const location = useLocation();
 
-  // Close extended menu on route change in mobile
+  // Desactivar la restauración automática del scroll del navegador al navegar
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
+
+  // Bloquear el scroll de fondo cuando el menú móvil está desplegado
+  useEffect(() => {
+    if (isExpanded) {
+      const originalBodyOverflow = document.body.style.overflow;
+      const originalHtmlOverflow = document.documentElement.style.overflow;
+
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+
+      return () => {
+        document.body.style.overflow = originalBodyOverflow;
+        document.documentElement.style.overflow = originalHtmlOverflow;
+      };
+    }
+  }, [isExpanded]);
+
+  // Cerrar menú y reiniciar el scroll al cargar un nuevo módulo
   useEffect(() => {
     setIsExpanded(false);
+    document.body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    const mainEl = document.querySelector("main");
+    if (mainEl) mainEl.scrollTop = 0;
   }, [location.pathname]);
 
   const handleTouchStart = (e) => {
@@ -87,7 +119,7 @@ export default function Navigation() {
         </div>
 
         {/* Mobile drag indicator */}
-        <div className="mobile-drag-indicator">
+        <div className="mobile-drag-indicator" onClick={() => setIsExpanded((prev) => !prev)}>
           <div className="drag-bar"></div>
         </div>
 
@@ -142,7 +174,13 @@ export default function Navigation() {
         )}
       </nav>
       {/* Overlay for mobile when expanded */}
-      {isExpanded && <div className="nav-overlay" onClick={() => setIsExpanded(false)}></div>}
+      {isExpanded && (
+        <div
+          className="nav-overlay"
+          onClick={() => setIsExpanded(false)}
+          onTouchMove={(e) => e.preventDefault()}
+        />
+      )}
     </>
   );
 }

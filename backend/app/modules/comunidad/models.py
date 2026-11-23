@@ -69,3 +69,53 @@ class Report(db.Model):
     description = db.Column(db.Text)
     status = db.Column(db.String(30), default='pending')
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class ForumPost(db.Model):
+    __tablename__ = 'forum_posts'
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False, index=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(50), default='discussion')
+    tags = db.Column(JSON)
+    status = db.Column(db.String(30), default='active')
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'title': self.title,
+            'content': self.content,
+            'category': self.category,
+            'tags': self.tags,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class ForumComment(db.Model):
+    __tablename__ = 'forum_comments'
+
+    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    post_id = db.Column(db.String(36), db.ForeignKey('forum_posts.id'), nullable=False, index=True)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    parent_comment_id = db.Column(db.String(36), db.ForeignKey('forum_comments.id'))
+    content = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(30), default='active')
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'post_id': self.post_id,
+            'user_id': self.user_id,
+            'parent_comment_id': self.parent_comment_id,
+            'content': self.content,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }

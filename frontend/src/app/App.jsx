@@ -1,27 +1,125 @@
 import React, { useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { useAuth, UserButton, AuthenticateWithRedirectCallback } from "@clerk/react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useAuth, useUser, UserButton, AuthenticateWithRedirectCallback } from "@clerk/react";
 import SignInPage from "../features/autenticacion/pages/SignInPage";
 import SignUpPage from "../features/autenticacion/pages/SignUpPage";
 import NotFoundPage from "../shared/pages/NotFoundPage";
 import FullScreenLoader from "../shared/components/FullScreenLoader";
 import LogoutTransition from "../features/autenticacion/components/LogoutTransition";
 import MainLayout from "../shared/components/MainLayout";
-import { Heart, Target, AlertTriangle } from "lucide-react";
+import { Heart } from "lucide-react";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
+import ConsultaIaView from "../features/consulta_ia/pages/consulta_ia";
 import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
-import CustomProfileModal from "../features/perfil_salud/components/profile/CustomProfileModal";
+import AdminDashboard from "../features/mobil/dashboard/AdminDashboard";
+import AdminLayout from "../features/mobil/components/AdminLayout";
+import GestionUsuarios from "../features/mobil/gestion_usuarios/GestionUsuarios";
+import Rendimiento from "../features/mobil/rendimiento/Rendimiento";
+import Bitacora from "../features/mobil/bitacora/Bitacora";
+import Administracion from "../features/mobil/administracion/Administracion";
+import ProfilePage from "../features/perfil_salud/pages/ProfilePage";
+import SubscriptionsPage from "../features/suscripciones/pages/SubscriptionsPage";
 import RoutineCreatorPage from "../features/creador_rutinas/components/RoutineCreatorPage";
 import EnvironmentalMonitorPage from "../features/monitoreo_ambiental/components/EnvironmentalMonitorPage";
 import DirectorioDerma from "../features/directorio_dermatologos/components/DirectorioDerma";
+import ModuloComunidadForo from "../features/comunidad_foro/pages/ModuloComunidadForo";
+import ModuloHabitosDesafios from "../features/habitos_desafios/pages/ModuloHabitosDesafios";
+import ModuloMiNeceser from "../features/mi_neceser/pages/ModuloMiNeceser";
+import ModuloBitacoraProgreso from "../features/bitacora_progreso/pages/ModuloBitacoraProgreso";
+import ModuloNotificaciones from "../features/notificaciones_alarmas/pages/ModuloNotificaciones";
 
+const PATH_TO_MODULE = {
+  "/": "dashboard",
+  "/rutinas": "rutinas",
+  "/consulta": "consulta_ia",
+  "/neceser": "mi_neceser",
+  "/progreso": "progreso",
+  "/bitacora": "bitacora",
+  "/habitos": "habitos",
+  "/ambiente": "ambiente",
+  "/comunidad": "comunidad",
+  "/directorio": "directorio",
+  "/notificaciones": "notificaciones",
+  "/suscripciones": "suscripciones",
+  "/subscriptions": "suscripciones",
+};
+
+const IGNORED_PREFIXES = [
+  "/admin",
+  "/sign-in",
+  "/sign-up",
+  "/sso-callback",
+  "/logout-animation",
+];
+
+export function useTrackPwaVisits() {
+  const location = useLocation();
+  const { user, isLoaded } = useUser();
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const cleanPath = location.pathname.toLowerCase();
+
+    // Ignorar rutas de administración y autenticación
+    if (IGNORED_PREFIXES.some((prefix) => cleanPath.startsWith(prefix))) {
+      return;
+    }
+
+    // No registrar visitas cuando un admin entra temporalmente a "/" antes de redirigir a "/admin"
+    if (user?.publicMetadata?.role === "admin") {
+      return;
+    }
+
+    const matchedKey = Object.keys(PATH_TO_MODULE).find(
+      (key) => key !== "/" && cleanPath.startsWith(key)
+    );
+    const moduleName = matchedKey
+      ? PATH_TO_MODULE[matchedKey]
+      : cleanPath === "/"
+        ? "dashboard"
+        : cleanPath.replace(/^\//, "").split("/")[0] || "general";
+
+    // Normaliza la URL base (soporta VITE_API_URL definido o proxy relativo en Vite)
+    const rawBaseUrl = import.meta.env.VITE_API_URL || "";
+    const baseUrl = rawBaseUrl.replace(/\/+$/, "");
+
+    fetch(`${baseUrl}/mobil/track-visit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        module_name: moduleName,
+        path: location.pathname,
+        user_id: user?.id || null,
+      }),
+    }).catch(() => { });
+  }, [location.pathname, isLoaded, user?.id, user?.publicMetadata?.role]);
+}
+
+function AdminGuard({ children }) {
+  const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
+
+  if (!isLoaded) return <FullScreenLoader isVisible={true} text="Verificando permisos..." />;
+  if (!isSignedIn) return <Navigate to="/sign-in" replace />;
+
+  const role = user?.publicMetadata?.role;
+  if (role !== "admin") return <Navigate to="/" replace />;
+
+  return <AdminLayout>{children}</AdminLayout>;
+}
 
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   if (!isLoaded) return <FullScreenLoader isVisible={true} text="Cargando..." />;
   if (!isSignedIn) return <Navigate to="/sign-in" replace />;
+
+  if (user?.publicMetadata?.role === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
 
   return (
     <OnboardingGate>
@@ -35,42 +133,44 @@ function Home() {
               <UserButton
                 appearance={{
                   variables: {
-                    colorPrimary: '#2D6658', // bosque-medio
-                    colorText: '#1D2825', // carbon
-                    colorBackground: '#F6F3EC', // crema
-                    colorDanger: '#C98268', // terracota
-                    borderRadius: '12px'
+                    colorPrimary: "#2D6658",
+                    colorText: "#1D2825",
+                    colorBackground: "#F6F3EC",
+                    colorDanger: "#C98268",
+                    borderRadius: "12px",
                   },
                   elements: {
                     card: {
-                      boxShadow: '0 4px 20px rgba(29,40,37,0.08)'
-                    }
-                  }
+                      boxShadow: "0 4px 20px rgba(29,40,37,0.08)",
+                    },
+                  },
                 }}
               >
                 <UserButton.MenuItems>
-                  <UserButton.Action 
-                    label="Mi Perfil Skinova" 
-                    labelIcon={<Heart size={16} />} 
-                    onClick={() => setIsProfileModalOpen(true)} 
+                  <UserButton.Action
+                    label="Mi Perfil Skinova"
+                    labelIcon={<Heart size={16} />}
+                    onClick={() => setIsProfileModalOpen(true)}
                   />
                   <UserButton.Action label="manageAccount" />
                   <UserButton.Action label="signOut" />
                 </UserButton.MenuItems>
               </UserButton>
             </header>
-            
-            <CustomProfileModal 
-              isOpen={isProfileModalOpen} 
-              onClose={() => setIsProfileModalOpen(false)} 
+
+            <ProfilePage
+              isOpen={isProfileModalOpen}
+              onClose={() => setIsProfileModalOpen(false)}
             />
 
-            <div style={{
-              backgroundColor: "var(--salvia, #A9C4B5)",
-              padding: "2rem",
-              borderRadius: "16px",
-              color: "var(--bosque-profundo, #163B35)"
-            }}>
+            <div
+              style={{
+                backgroundColor: "var(--salvia, #A9C4B5)",
+                padding: "2rem",
+                borderRadius: "16px",
+                color: "var(--bosque-profundo, #163B35)",
+              }}
+            >
               <h2>¡Bienvenido a Skinova!</h2>
               <p>Tu rutina de cuidado consciente comienza aquí.</p>
             </div>
@@ -82,11 +182,30 @@ function Home() {
 }
 
 export default function App() {
+  // <--- Aquí se activa el tracking en cada cambio de ruta
+  useTrackPwaVisits();
+
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
+      <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+      <Route path="/admin/usuarios" element={<AdminGuard><GestionUsuarios /></AdminGuard>} />
+      <Route path="/admin/rendimiento" element={<AdminGuard><Rendimiento /></AdminGuard>} />
+      <Route path="/admin/bitacora" element={<AdminGuard><Bitacora /></AdminGuard>} />
+      <Route path="/admin/administracion" element={<AdminGuard><Administracion /></AdminGuard>} />
+      <Route path="/suscripciones" element={<SubscriptionsPage />} />
+      <Route path="/subscriptions" element={<SubscriptionsPage />} />
+      <Route path="/rutinas" element={<RoutineCreatorPage />} />
+      <Route path="/ambiente" element={<EnvironmentalMonitorPage />} />
+      <Route path="/directorio" element={<DirectorioDerma />} />
+      <Route path="/comunidad" element={<ModuloComunidadForo />} />
+      <Route path="/habitos" element={<ModuloHabitosDesafios />} />
+      <Route path="/neceser" element={<ModuloMiNeceser />} />
+      <Route path="/consulta" element={<ConsultaIaView />} />
+      <Route path="/progreso" element={<ModuloBitacoraProgreso />} />
+      <Route path="/notificaciones" element={<ModuloNotificaciones />} />
       <Route
         path="/sso-callback"
         element={
@@ -107,11 +226,7 @@ export default function App() {
         }
       />
       <Route path="/logout-animation" element={<LogoutTransition />} />
-      <Route path="/rutinas" element={<RoutineCreatorPage />} />
-      <Route path="/ambiente" element={<EnvironmentalMonitorPage />} />
-      <Route path="/directorio" element={<DirectorioDerma />} />
       <Route path="*" element={<NotFoundPage />} />
-      
     </Routes>
   );
 } 

@@ -16,7 +16,9 @@ def create_app(config_name='default'):
             r"/api/*": {
                 "origins": [
                     "http://localhost:5173",
+                    "http://127.0.0.1:5173",
                     "http://localhost:4173",
+                    "http://127.0.0.1:4173",
                     "https://app.skinovaapp.uk"
                 ]
             }
@@ -41,18 +43,35 @@ def create_app(config_name='default'):
     from app.modules.users import models as users_models
     from app.modules.perfil_salud import models as perfil_salud_models
     from app.modules.mi_neceser import models as mi_neceser_models
+    from app.modules.habitos_desafios import models as habitos_desafios_models
     from app.modules.creador_rutinas import models as creador_rutinas_models
     from app.modules.bitacora import models as bitacora_models
     from app.modules.comunidad import models as comunidad_models
     from app.modules.directorio import models as directorio_models
     from app.modules.ai_history import models as ai_history_models
     from app.modules.notificaciones import models as notificaciones_models
+    from app.modules.mobil import models as mobil_models
 
     from app.modules.users.routes import users_bp
+<<<<<<< HEAD
     from app.modules.creador_rutinas.routes import rutinas_bp
 
     app.register_blueprint(users_bp)
     app.register_blueprint(rutinas_bp)
+=======
+    from app.modules.mi_neceser.routes import mi_neceser_bp
+    from app.modules.habitos_desafios.routes import habitos_desafios_bp
+    from app.modules.comunidad.routes import comunidad_bp
+    from app.modules.mobil.routes import mobil_bp
+
+    from app.modules.busqueda_ia.routes import ai_analysis_bp
+    app.register_blueprint(ai_analysis_bp)
+    app.register_blueprint(users_bp)
+    app.register_blueprint(mi_neceser_bp)
+    app.register_blueprint(habitos_desafios_bp)
+    app.register_blueprint(comunidad_bp)
+    app.register_blueprint(mobil_bp)
+>>>>>>> origin/main
 
     # Rutas de perfil_salud:
     from app.modules.perfil_salud.routes import perfil_salud_bp

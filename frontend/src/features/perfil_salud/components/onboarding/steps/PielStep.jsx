@@ -78,36 +78,6 @@ export default function PielStep({ formData, updateData, onNext, onBack }) {
         Esto nos ayudará a personalizar mejor tus recomendaciones.
       </p>
 
-      {/* Opción IA */}
-      <div
-        onClick={handleAiClick}
-        style={{
-          background: "linear-gradient(135deg, var(--arena, #E7DFD2), var(--salvia, #A9C4B5))",
-          padding: "16px",
-          borderRadius: "12px",
-          textAlign: "center",
-          cursor: "pointer",
-          marginBottom: "2rem",
-          transition: "transform 0.2s ease"
-        }}
-      >
-        <span style={{ fontWeight: "bold", color: "var(--bosque-profundo, #163B35)" }}> Deja que la IA te ayude</span>
-      </div>
-
-      {showAiMsg && (
-        <div style={{
-          background: "var(--bosque-profundo, #163B35)",
-          color: "var(--crema, #F6F3EC)",
-          padding: "12px",
-          borderRadius: "8px",
-          textAlign: "center",
-          marginBottom: "2rem",
-          fontSize: "0.9rem"
-        }}>
-          Próximamente podrás recibir ayuda de SKINOVA para conocer mejor tu tipo de piel.
-        </div>
-      )}
-
       {/* Tipo de piel */}
       <h3 style={{ fontSize: "1.1rem", marginBottom: "1rem", color: "var(--bosque-profundo, #163B35)" }}>Tipo de piel</h3>
       <div className="grid-2-col" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "2rem" }}>

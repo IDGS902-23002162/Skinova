@@ -1,12 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Target, Edit2, X, Check, Loader2 } from 'lucide-react';
 import { goalsList } from '../../constants/perfilOpciones';
 import './cardsBonitas.css';
 
-export default function GoalsSection({ profile, onSave }) {
-  const [isEditing, setIsEditing] = useState(false);
+export default function GoalsSection({ profile, onSave, isEditing: isEditingProp, onEditChange }) {
+  const [internalEditing, setInternalEditing] = useState(false);
+  const isEditing = typeof isEditingProp === 'boolean' ? isEditingProp : internalEditing;
+
+  const setIsEditing = (val) => {
+    if (typeof isEditingProp === 'boolean') {
+      onEditChange?.(val);
+    } else {
+      setInternalEditing(val);
+    }
+  };
+
   const [selectedGoals, setSelectedGoals] = useState(profile.goals || []);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setSelectedGoals(profile.goals || []);
+    }
+  }, [isEditing, profile.goals]);
 
   const handleSave = async () => {
     setIsSaving(true);
