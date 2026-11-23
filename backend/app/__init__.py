@@ -53,12 +53,7 @@ def create_app(config_name='default'):
     from app.modules.mobil import models as mobil_models
 
     from app.modules.users.routes import users_bp
-<<<<<<< HEAD
     from app.modules.creador_rutinas.routes import rutinas_bp
-
-    app.register_blueprint(users_bp)
-    app.register_blueprint(rutinas_bp)
-=======
     from app.modules.mi_neceser.routes import mi_neceser_bp
     from app.modules.habitos_desafios.routes import habitos_desafios_bp
     from app.modules.comunidad.routes import comunidad_bp
@@ -71,7 +66,8 @@ def create_app(config_name='default'):
     app.register_blueprint(habitos_desafios_bp)
     app.register_blueprint(comunidad_bp)
     app.register_blueprint(mobil_bp)
->>>>>>> origin/main
+    app.register_blueprint(rutinas_bp)
+
 
     # Rutas de perfil_salud:
     from app.modules.perfil_salud.routes import perfil_salud_bp
