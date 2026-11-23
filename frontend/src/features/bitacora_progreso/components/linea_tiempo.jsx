@@ -30,7 +30,12 @@ function ResumenRegistro({ entry, date }) {
   return (
     <div className="lt-summary">
       {photos[0] && (
-        <img className="lt-summary__thumb" src={photos[0].url} alt="" loading="lazy" />
+        <img
+          className="lt-summary__thumb"
+          src={photos[0].url || photos[0].storage_key}
+          alt=""
+          loading="lazy"
+        />
       )}
       <div>
         <p className="lt-summary__date">{date}</p>
@@ -58,6 +63,7 @@ export default function LineaTiempo({
   compact = false,
   selectedId,
   onSelect,
+  loading = false,
 }) {
   const [internalId, setInternalId] = useState(null);
   const selected = selectedId !== undefined ? selectedId : internalId;
@@ -74,6 +80,14 @@ export default function LineaTiempo({
     if (selectedId === undefined) setInternalId(next);
     onSelect?.(next ? entry : null);
   };
+
+  if (loading && sorted.length === 0) {
+    return (
+      <section className="lt lt--loading" aria-label="Cargando línea de tiempo">
+        <p className="pb-loading-text">Cargando tus registros...</p>
+      </section>
+    );
+  }
 
   if (sorted.length === 0) {
     return (

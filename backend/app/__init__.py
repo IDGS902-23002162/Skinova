@@ -52,6 +52,10 @@ def create_app(config_name='default'):
     from app.modules.busqueda_ia.routes import ai_analysis_bp
     app.register_blueprint(ai_analysis_bp)
     app.register_blueprint(users_bp)
+    from app.modules.notificaciones.routes import notifications_bp
+    from app.modules.bitacora.routes import bitacora_bp
+    app.register_blueprint(notifications_bp)
+    app.register_blueprint(bitacora_bp)
 
     # Rutas de perfil_salud:
     from app.modules.perfil_salud.routes import perfil_salud_bp

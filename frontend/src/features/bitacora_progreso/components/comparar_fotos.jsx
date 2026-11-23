@@ -70,7 +70,10 @@ function PhotoPanel({
       </p>
 
       <div className="cmp-frame">
-        <img src={photo.url} alt={`Fotografía de tu piel tomada el ${date}`} />
+        <img
+          src={photo.url || photo.storage_key}
+          alt={`Fotografía de tu piel tomada el ${date}`}
+        />
       </div>
 
       {confirming ? (

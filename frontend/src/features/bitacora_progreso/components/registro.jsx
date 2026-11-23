@@ -129,7 +129,11 @@ export default function RegistroBitacora({ entry, routineName, habitLog = null }
         <ul className="reg-photos" data-count={Math.min(photos.length, 3)}>
           {photos.map((photo) => (
             <li key={photo.id} className="reg-photo">
-              <img src={photo.url} alt={`Fotografía de tu piel tomada el ${date}`} loading="lazy" />
+              <img
+                src={photo.url || photo.storage_key}
+                alt={`Fotografía de tu piel tomada el ${date}`}
+                loading="lazy"
+              />
             </li>
           ))}
         </ul>
