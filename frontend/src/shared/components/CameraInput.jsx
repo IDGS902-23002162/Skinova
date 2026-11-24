@@ -12,7 +12,8 @@ export function AiChat({
   labelCamera = 'Fotografía del producto (Opcional)',
   isLoading = false,
   submitLabel = 'Analizar Producto',
-  error = ''
+  error = '',
+  showActions = true
 }) {
   const [internalText, setInternalText] = useState(productText);
   const [cameraState, setCameraState] = useState(capturedImage ? 'photo' : 'idle');
@@ -261,25 +262,27 @@ export function AiChat({
         </fieldset>
 
         {/* Botones de Acción */}
-        <div className="pa-actions">
-          <button
-            type="button"
-            className="pa-btn pa-btn--primary"
-            onClick={handleSubmit}
-            disabled={isLoading || (!internalText.trim() && !capturedImage)}
-            style={{ opacity: (isLoading || (!internalText.trim() && !capturedImage)) ? 0.7 : 1 }}
-          >
-            {isLoading ? 'Analizando con IA...' : submitLabel}
-          </button>
-          <button
-            type="button"
-            className="pa-btn pa-btn--outline"
-            onClick={clearAllFields}
-            disabled={isLoading}
-          >
-            Borrar todo
-          </button>
-        </div>
+        {showActions && (
+          <div className="pa-actions">
+            <button
+              type="button"
+              className="pa-btn pa-btn--primary"
+              onClick={handleSubmit}
+              disabled={isLoading || (!internalText.trim() && !capturedImage)}
+              style={{ opacity: (isLoading || (!internalText.trim() && !capturedImage)) ? 0.7 : 1 }}
+            >
+              {isLoading ? 'Analizando con IA...' : submitLabel}
+            </button>
+            <button
+              type="button"
+              className="pa-btn pa-btn--outline"
+              onClick={clearAllFields}
+              disabled={isLoading}
+            >
+              Borrar todo
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

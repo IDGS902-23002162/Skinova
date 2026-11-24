@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from app.extensions import db
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
 
 class ProgressEntry(db.Model):
     __tablename__ = 'progress_entries'
@@ -35,7 +36,7 @@ class ProgressPhoto(db.Model):
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     progress_entry_id = db.Column(db.String(36), db.ForeignKey('progress_entries.id'), nullable=False)
-    storage_key = db.Column(db.Text, nullable=False)
+    storage_key = db.Column(MEDIUMTEXT, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):

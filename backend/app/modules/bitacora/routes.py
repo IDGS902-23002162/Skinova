@@ -6,6 +6,7 @@ from app.extensions import db
 from app.modules.users.models import User
 from app.modules.perfil_salud.models import UserProfile
 from app.modules.bitacora.services import BitacoraService
+from app.modules.face_id.service import FaceIdService
 
 logger = logging.getLogger(__name__)
 
@@ -55,14 +56,38 @@ def get_entries():
 @bitacora_bp.route('/entries', methods=['POST'])
 @require_auth
 def create_entry():
-    """Crea una entrada en la bitácora con percepción, fotos y notas."""
+    """Crea una entrada en la bitácora con percepción, fotos y notas tras validar facialmente las fotos."""
     try:
         user_id = _get_authenticated_user_id()
+        clerk_user_id = getattr(g, 'user_id', None)
         data = request.get_json() or {}
         perception = data.get("perception", "same")
         notes = data.get("notes")
         routine_id = data.get("routine_id")
         photos = data.get("photos", [])
+
+        # Validación con Face ID antes de persistir la foto o entrada en la base de datos
+        if photos:
+            photo_list = photos if isinstance(photos, list) else [photos]
+            for photo in photo_list:
+                if photo and isinstance(photo, str) and (photo.startswith("data:image") or len(photo) > 100):
+                    verification = FaceIdService.verify_user_photo(
+                        clerk_user_id=clerk_user_id,
+                        submitted_image=photo
+                    )
+                    if not verification.verified:
+                        logger.warning(
+                            f"Bitácora photo submission rejected for user {clerk_user_id}: "
+                            f"{verification.error_code} - {verification.message}"
+                        )
+                        return jsonify({
+                            "success": False,
+                            "error": verification.message,
+                            "message": verification.message,
+                            "error_code": verification.error_code,
+                            "similarity_score": verification.similarity_score,
+                            "threshold": verification.threshold
+                        }), 400
 
         entry = BitacoraService.create_progress_entry(
             user_id=user_id,

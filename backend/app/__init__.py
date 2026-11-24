@@ -54,8 +54,10 @@ def create_app(config_name='default'):
     app.register_blueprint(users_bp)
     from app.modules.notificaciones.routes import notifications_bp
     from app.modules.bitacora.routes import bitacora_bp
+    from app.modules.face_id.routes import face_id_bp
     app.register_blueprint(notifications_bp)
     app.register_blueprint(bitacora_bp)
+    app.register_blueprint(face_id_bp)
 
     # Rutas de perfil_salud:
     from app.modules.perfil_salud.routes import perfil_salud_bp

@@ -7,6 +7,15 @@ from clerk_backend_api.security.types import AuthenticateRequestOptions
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        # Support existing test context or test header during testing
+        if getattr(g, 'user_id', None):
+            return f(*args, **kwargs)
+
+        test_user = request.headers.get("X-Test-User-Id")
+        if test_user and (os.environ.get("FLASK_ENV") == "testing" or os.environ.get("TESTING") == "True"):
+            g.user_id = test_user
+            return f(*args, **kwargs)
+
         secret_key = os.environ.get("CLERK_SECRET_KEY")
         if not secret_key:
             return jsonify({"error": "CLERK_SECRET_KEY is not configured on the backend"}), 500

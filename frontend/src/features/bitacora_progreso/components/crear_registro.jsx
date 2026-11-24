@@ -178,27 +178,6 @@ export default function CreaRegistroProgreso({ routines = [], onSave, isSaving: 
 
         <div className="sk-grid">
           <div className="sk-main">
-            <section className="sk-card" aria-labelledby="sk-observa">
-              <h2 id="sk-observa" className="sk-card__title">
-                Observa tu piel
-              </h2>
-              <p className="sk-card__text">
-                Una foto con luz natural y unas líneas sobre lo que notas es suficiente.
-              </p>
-              <div className="sk-aichat">
-                <AiChat
-                  productText={notes}
-                  onProductTextChange={handleNotes}
-                  capturedImage={image}
-                  onImageCaptured={handleImage}
-                  onSubmit={handleSubmit}
-                  onClearAll={handleClear}
-                  labelProduct="Comentarios sobre tu piel"
-                  labelCamera="Fotografía de tu piel (opcional)"
-                />
-              </div>
-            </section>
-
             <section className="sk-card" aria-labelledby="sk-entiende">
               <h2 id="sk-entiende" className="sk-card__title">
                 ¿Cómo la sientes hoy?
@@ -251,6 +230,28 @@ export default function CreaRegistroProgreso({ routines = [], onSave, isSaving: 
                     </option>
                   ))}
                 </select>
+              </div>
+            </section>
+
+            <section className="sk-card" aria-labelledby="sk-observa">
+              <h2 id="sk-observa" className="sk-card__title">
+                Observa tu piel
+              </h2>
+              <p className="sk-card__text">
+                Una foto con luz natural y unas líneas sobre lo que notas es suficiente.
+              </p>
+              <div className="sk-aichat">
+                <AiChat
+                  productText={notes}
+                  onProductTextChange={handleNotes}
+                  capturedImage={image}
+                  onImageCaptured={handleImage}
+                  onSubmit={handleSubmit}
+                  onClearAll={handleClear}
+                  labelProduct="Comentarios sobre tu piel"
+                  labelCamera="Fotografía de tu piel (opcional)"
+                  showActions={false}
+                />
               </div>
             </section>
           </div>
