@@ -173,8 +173,8 @@ def _fallback_steps(skin_type, allergies, budget):
     ]
 
 
-def _generate_personalized_steps(profile, allergies, budget="medio", inventory_items=None):
-    """Genera la rutina usando Gemini API con validación estricta de alergias e inventario."""
+def _generate_personalized_steps(profile, allergies, budget="medio", inventory_items=None, env_context=None):
+    """Genera la rutina usando Gemini API con validación estricta de alergias, inventario y contexto climático (RF-AMB-10)."""
     skin_type = (getattr(profile, "skin_type", None) or "Mixta").capitalize()
     sensitivity = getattr(profile, "sensitivity_level", None) or "Sensible"
     goals = getattr(profile, "goals", None) or ["Hidratación", "Luminosidad"]
@@ -183,6 +183,10 @@ def _generate_personalized_steps(profile, allergies, budget="medio", inventory_i
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key or genai is None:
         return _fallback_steps(skin_type, allergies, budget)
+
+    env_prompt_line = ""
+    if env_context and env_context.get("summary"):
+        env_prompt_line = f"- Contexto climático actual del usuario: {env_context.get('summary')} (adapta las texturas y fotoprotección acordemente)"
 
     prompt = f"""
     Eres un experto formulador dermatológico para la app Skinova.
@@ -193,6 +197,7 @@ def _generate_personalized_steps(profile, allergies, budget="medio", inventory_i
     - Presupuesto deseado: {budget} (economico | medio | premium)
     - ALERGIAS Y RESTRICCIONES ESTRICTAS (PROHIBIDO INCLUIR ESTOS INGREDIENTES): {allergies if allergies else "Ninguna"}
     - Productos que el usuario YA TIENE en Mi Neceser (priorízalos marcando source_badge="inventory" si son adecuados): {inventory_items if inventory_items else "Ninguno registrado"}
+    {env_prompt_line}
 
     Reglas obligatorias:
     1. Genera 3 pasos para "matutina" (siempre terminando con protector solar FPS 50+) y 2 o 3 pasos para "nocturna".
@@ -206,8 +211,9 @@ def _generate_personalized_steps(profile, allergies, budget="medio", inventory_i
 
     try:
         client = genai.Client(api_key=api_key)
+        model_name = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model=model_name,
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -485,6 +491,16 @@ def apply_smart_adjustment(version_id):
         return jsonify({"error": "Versión no encontrada"}), 404
 
     if not version.smart_adjusted:
+        # RF-AMB-10: Obtener contexto ambiental real del usuario
+        summary_text = "Ajustado según condiciones climáticas actuales (UV y humedad)"
+        try:
+            from app.modules.monitoreo_ambiental.services import get_environmental_routine_context
+            env_ctx = get_environmental_routine_context(user.id)
+            if env_ctx and env_ctx.get("summary"):
+                summary_text = env_ctx["summary"]
+        except Exception as e:
+            print(f"[Aviso] No se pudo obtener contexto ambiental en vivo: {e}")
+
         morning_steps = [s for s in version.steps if s.period == "matutina"]
         for s in morning_steps:
             if s.step_order >= 3:
@@ -498,17 +514,17 @@ def apply_smart_adjustment(version_id):
             product_name="Gel-Crema Ácido Hialurónico + Ceramidas",
             amount="1 falange",
             method="Aplicar antes del protector solar para sellar la hidratación",
-            frequency="Diario (Mientras humedad ambiental < 30%)",
+            frequency="Diario (Ajuste según clima y radiación UV)",
             source_badge="ai",
             has_warning=False,
             incompatibility_note=None,
-            justification_note="Ajuste Inteligente IA: Refuerza la barrera cutánea frente a baja humedad y alta radiación UV.",
+            justification_note=f"Ajuste Inteligente IA: {summary_text}",
             is_paused=False,
             web_search_url=_build_web_url("gel crema acido hialuronico ceramidas"),
         )
         db.session.add(hydration_step)
         version.smart_adjusted = True
-        version.environmental_summary = "Ajustado por clima seco y radiación UV elevada"
+        version.environmental_summary = summary_text[:255]
         db.session.commit()
 
     return jsonify(version.to_dict()), 200

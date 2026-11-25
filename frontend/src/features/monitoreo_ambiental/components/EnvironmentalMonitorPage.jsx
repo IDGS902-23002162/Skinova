@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@clerk/react";
 import {
   MapPin,
   Navigation,
@@ -15,6 +16,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import MainLayout from "../../../shared/components/MainLayout";
+import { ambientalService } from "../services/ambientalService";
 import "./EnvironmentalMonitor.css";
 
 // Datos simulados por ciudad para probar cambios dinámicos (incluyendo UV alto y bajo)
@@ -95,6 +97,7 @@ const CITY_DATA = {
 
 function EnvironmentalMonitorPage() {
   const navigate = useNavigate();
+  const { getToken, isSignedIn } = useAuth();
 
   // RF-AMB-01 y RF-AMB-02: Consentimiento de ubicación y selección manual
   const [locationConsent, setLocationConsent] = useState(false);
@@ -105,40 +108,117 @@ function EnvironmentalMonitorPage() {
   const [syncedWithRoutine, setSyncedWithRoutine] = useState(true);
 
   // RF-AMB-11 y RF-AMB-12: Auto-actualización y resiliencia ante caída de API
-  const [lastUpdated, setLastUpdated] = useState("Hace unos segundos");
+  const [lastUpdated, setLastUpdated] = useState("Cargando...");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [apiOffline, setApiOffline] = useState(false);
 
-  const currentData = CITY_DATA[selectedCity] || CITY_DATA["León, Gto"];
+  // Datos ambientales (live backend o fallback local)
+  const [envData, setEnvData] = useState(() => CITY_DATA["León, Gto"]);
+
+  // Carga inicial y obtención desde Backend
+  const loadEnvironmentalData = useCallback(async (cityName, lat = null, lon = null, force = false) => {
+    if (apiOffline) return;
+    setIsRefreshing(true);
+    try {
+      const token = isSignedIn ? await getToken() : null;
+      const data = await ambientalService.getCurrent(token, {
+        city: cityName,
+        lat,
+        lon,
+        refresh: force,
+      });
+
+      setEnvData({
+        temp: data.temp,
+        feelsLike: data.feelsLike,
+        condition: data.condition,
+        humidity: data.humidity,
+        humidityStatus: data.humidityStatus,
+        uv: data.uv,
+        uvLevel: data.uvLevel,
+        aqi: data.aqi,
+        aqiStatus: data.aqiStatus,
+        aiSummary: data.aiSummary || CITY_DATA[cityName]?.aiSummary || "Condiciones analizadas para tu tipo de piel.",
+        aiTips: (data.aiTips && data.aiTips.length > 0)
+          ? data.aiTips
+          : (CITY_DATA[cityName]?.aiTips || [
+              "Mantén tu hidratación adecuada según sientas la piel.",
+              "Aplica protector solar FPS 50+ si sales al exterior.",
+              "Limpia tu piel suavemente al terminar el día."
+            ]),
+        isFallback: data.isFallback,
+      });
+
+      if (data.city) {
+        setSelectedCity(data.city);
+      }
+      if (data.syncWithRoutine !== undefined) {
+        setSyncedWithRoutine(data.syncWithRoutine);
+      }
+      if (data.useLocation !== undefined) {
+        setLocationConsent(data.useLocation);
+      }
+
+      const now = new Date();
+      setLastUpdated(
+        `Actualizado a las ${now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}`
+      );
+    } catch (err) {
+      console.warn("Fallo al conectar con backend ambiental, recurriendo a modo resiliente (RF-AMB-12):", err);
+      // Fallback local garantizado
+      const fallback = CITY_DATA[cityName] || CITY_DATA["León, Gto"];
+      setEnvData(fallback);
+      setLastUpdated("Modo resiliente (datos locales)");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [apiOffline, getToken, isSignedIn]);
+
+  // Carga al montar
+  useEffect(() => {
+    loadEnvironmentalData(selectedCity);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const currentData = envData || CITY_DATA[selectedCity] || CITY_DATA["León, Gto"];
   const isHighUV = currentData.uv >= 6; // RF-AMB-09: Alerta por índice UV elevado
 
-  // RF-AMB-11: Simulación de actualización automática periódica (cada 60s)
+  // RF-AMB-11: Actualización automática periódica (cada 60s)
   useEffect(() => {
     const interval = setInterval(() => {
       if (!apiOffline) {
-        const now = new Date();
-        setLastUpdated(
-          `Actualizado a las ${now.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit"
-          })}`
-        );
+        loadEnvironmentalData(selectedCity, null, null, false);
       }
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [apiOffline]);
+  }, [apiOffline, selectedCity, loadEnvironmentalData]);
 
   // Solicitar geolocalización con consentimiento (RF-AMB-01)
   const handleRequestLocation = () => {
     setIsRefreshing(true);
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        () => {
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
           setLocationConsent(true);
-          setSelectedCity("León, Gto");
           setLastUpdated("Ubicación GPS sincronizada");
-          setIsRefreshing(false);
+          await loadEnvironmentalData(null, lat, lon, true);
+          if (isSignedIn) {
+            try {
+              const token = await getToken();
+              await ambientalService.updatePreferences(token, {
+                use_location: true,
+                latitude: lat,
+                longitude: lon,
+              });
+            } catch (e) {
+              console.warn("No se pudo guardar la preferencia de GPS:", e);
+            }
+          }
         },
         () => {
           // Si el usuario rechaza en el navegador, mantenemos selección manual
@@ -152,24 +232,32 @@ function EnvironmentalMonitorPage() {
     }
   };
 
-  // Refrescar datos manualmente
+  // Refrescar datos manualmente (RF-AMB-11)
   const handleManualRefresh = () => {
     if (apiOffline) return;
-    setIsRefreshing(true);
-    setTimeout(() => {
-      const now = new Date();
-      setLastUpdated(
-        `Actualizado a las ${now.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit"
-        })}`
-      );
-      setIsRefreshing(false);
-    }, 600);
+    loadEnvironmentalData(selectedCity, null, null, true);
+  };
+
+  // Cambiar ciudad seleccionada (RF-AMB-02)
+  const handleCityChange = async (cityName) => {
+    setSelectedCity(cityName);
+    setLocationConsent(false);
+    loadEnvironmentalData(cityName, null, null, false);
+    if (isSignedIn) {
+      try {
+        const token = await getToken();
+        await ambientalService.updatePreferences(token, {
+          city_name: cityName,
+          use_location: false,
+        });
+      } catch (e) {
+        console.warn("No se pudo guardar la preferencia de ciudad:", e);
+      }
+    }
   };
 
   // Agregar ciudad personalizada (RF-AMB-02)
-  const handleCustomCitySubmit = (e) => {
+  const handleCustomCitySubmit = async (e) => {
     e.preventDefault();
     if (!customCityInput.trim()) return;
     const cityName = customCityInput.trim();
@@ -184,7 +272,7 @@ function EnvironmentalMonitorPage() {
         uvLevel: "Alto",
         aqi: 38,
         aqiStatus: "Buena",
-        aiSummary: `Condiciones equilibradas en ${cityName}, pero con radiación solar suficiente para requerir protección antioxidante y solar.`,
+        aiSummary: `Condiciones para ${cityName}, calculadas para proteger tu barrera cutánea frente a la radiación solar.`,
         aiTips: [
           "Mantén tu limpieza facial suave mañana y noche.",
           "Aplica protector solar FPS 50+ antes de salir.",
@@ -192,9 +280,24 @@ function EnvironmentalMonitorPage() {
         ]
       };
     }
-    setSelectedCity(cityName);
-    setLocationConsent(false);
     setCustomCityInput("");
+    await handleCityChange(cityName);
+  };
+
+  // Alternar sincronización con creador de rutinas (RF-AMB-10)
+  const handleToggleRoutineSync = async () => {
+    const nextVal = !syncedWithRoutine;
+    setSyncedWithRoutine(nextVal);
+    if (isSignedIn) {
+      try {
+        const token = await getToken();
+        await ambientalService.updatePreferences(token, {
+          sync_with_routine: nextVal,
+        });
+      } catch (e) {
+        console.warn("No se pudo sincronizar preferencia de rutina:", e);
+      }
+    }
   };
 
   return (
@@ -369,10 +472,7 @@ function EnvironmentalMonitorPage() {
             <select
               className="city-select"
               value={selectedCity}
-              onChange={(e) => {
-                setSelectedCity(e.target.value);
-                setLocationConsent(false);
-              }}
+              onChange={(e) => handleCityChange(e.target.value)}
               aria-label="Seleccionar ciudad manualmente"
             >
               {Object.keys(CITY_DATA).map((city) => (
@@ -433,7 +533,7 @@ function EnvironmentalMonitorPage() {
               <input
                 type="checkbox"
                 checked={syncedWithRoutine}
-                onChange={() => setSyncedWithRoutine(!syncedWithRoutine)}
+                onChange={handleToggleRoutineSync}
               />
               <span className="context-check">
                 {syncedWithRoutine && <CheckCircle2 size={16} />}

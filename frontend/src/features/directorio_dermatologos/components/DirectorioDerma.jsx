@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useAuth } from "@clerk/react";
 import {
   MapPin,
   Navigation,
@@ -17,6 +18,7 @@ import {
   CornerUpRight
 } from "lucide-react";
 import MainLayout from "../../../shared/components/MainLayout";
+import { directorioService } from "../services/directorioService";
 import "./DirectorioDerma.css";
 
 // Datos simulados de especialistas cercanos con información pública (RF-DER-05)
@@ -121,16 +123,23 @@ const DERMATOLOGISTS_DATA = [
 ];
 
 function DirectorioDerma() {
+  const { getToken, isSignedIn } = useAuth();
+
   // RF-DER-01: Solicitar ubicación con consentimiento
   const [locationConsent, setLocationConsent] = useState(false);
   const [locationStatus, setLocationStatus] = useState("León, Gto. (Zona centro)");
   const [isLocating, setIsLocating] = useState(false);
+  const [coords, setCoords] = useState({ lat: null, lon: null });
 
   // RF-DER-02, RF-DER-06 y RF-DER-07: Búsqueda y filtros
   const [searchQuery, setSearchQuery] = useState("");
   const [maxDistance, setMaxDistance] = useState(20); // en km
   const [selectedCareType, setSelectedCareType] = useState("todos");
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+
+  // Lista de dermatólogos obtenida del Backend o datos locales
+  const [backendDoctors, setBackendDoctors] = useState(DERMATOLOGISTS_DATA);
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
 
   // RF-DER-03 y RF-DER-04: Alternar vista en Lista o Mapa
   const [viewMode, setViewMode] = useState("list");
@@ -141,14 +150,72 @@ function DirectorioDerma() {
 
   // RF-DER-12: Mostrar recomendación cuando IA detecta situación fuera del alcance cosmético
   const [showAiReferral, setShowAiReferral] = useState(true);
+  const [aiReferralData, setAiReferralData] = useState(null);
+
+  // Cargar dermatólogos desde el Backend
+  const fetchDoctors = useCallback(async () => {
+    setIsLoadingDoctors(true);
+    try {
+      const token = isSignedIn ? await getToken() : null;
+      const res = await directorioService.getSpecialists(token, {
+        lat: coords.lat,
+        lon: coords.lon,
+        q: searchQuery,
+        maxDistance,
+        careType: selectedCareType,
+        onlyFavorites,
+      });
+
+      if (res && res.specialists) {
+        setBackendDoctors(res.specialists);
+      }
+    } catch (err) {
+      console.warn("Error cargando dermatólogos desde el backend, usando catálogo local:", err);
+      // Mantener catálogo local en caso de fallo
+    } finally {
+      setIsLoadingDoctors(false);
+    }
+  }, [coords, searchQuery, maxDistance, selectedCareType, onlyFavorites, getToken, isSignedIn]);
+
+  // Cargar favoritos y derivación de IA al montar o cambiar sesión
+  useEffect(() => {
+    async function loadUserData() {
+      if (!isSignedIn) return;
+      try {
+        const token = await getToken();
+        // Cargar favoritos
+        const favsRes = await directorioService.getFavorites(token);
+        if (favsRes && favsRes.favoriteIds) {
+          setFavorites(favsRes.favoriteIds);
+        }
+        // Cargar derivación de IA (RF-DER-12)
+        const refRes = await directorioService.getAiReferral(token);
+        if (refRes && refRes.has_active_referral) {
+          setAiReferralData(refRes);
+          setShowAiReferral(true);
+        }
+      } catch (err) {
+        console.warn("No se pudieron cargar datos del usuario para el directorio:", err);
+      }
+    }
+    loadUserData();
+  }, [isSignedIn, getToken]);
+
+  // Consultar especialistas cuando cambian los filtros
+  useEffect(() => {
+    fetchDoctors();
+  }, [fetchDoctors]);
 
   // Solicitar geolocalización al usuario (RF-DER-01)
   const handleRequestLocation = () => {
     setIsLocating(true);
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        () => {
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
           setLocationConsent(true);
+          setCoords({ lat, lon });
           setLocationStatus("Ubicación actual sincronizada (GPS)");
           setIsLocating(false);
         },
@@ -166,15 +233,26 @@ function DirectorioDerma() {
   };
 
   // Alternar favorito (RF-DER-11)
-  const toggleFavorite = (id) => {
+  const toggleFavorite = async (id) => {
+    // Optimistic UI update
     setFavorites((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
+
+    if (isSignedIn) {
+      try {
+        const token = await getToken();
+        await directorioService.toggleFavorite(token, id);
+      } catch (err) {
+        console.warn("Error al guardar favorito en backend:", err);
+      }
+    }
   };
 
   // Abrir indicaciones en Google Maps (RF-DER-08)
   const handleOpenDirections = (doctor) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${doctor.mapQuery}`;
+    const query = doctor.mapQuery || `${doctor.address} ${doctor.city || ''}`;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -184,18 +262,18 @@ function DirectorioDerma() {
     window.open(doctor.bookingUrl, "_blank", "noopener,noreferrer");
   };
 
-  // Filtrado combinado de especialistas (RF-DER-02, 06, 07, 11)
+  // Filtrado final de seguridad en cliente si el backend está en fallback local
   const filteredDoctors = useMemo(() => {
-    return DERMATOLOGISTS_DATA.filter((doc) => {
+    return backendDoctors.filter((doc) => {
       const matchesSearch =
         doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         doc.specialty.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.clinic.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.focusAreas.some((area) =>
+        (doc.clinic || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (doc.focusAreas || []).some((area) =>
           area.toLowerCase().includes(searchQuery.toLowerCase())
         );
 
-      const matchesDistance = doc.distanceKm <= maxDistance;
+      const matchesDistance = (doc.distanceKm ?? 0) <= maxDistance;
 
       const matchesCareType =
         selectedCareType === "todos" ||
@@ -208,7 +286,7 @@ function DirectorioDerma() {
         matchesSearch && matchesDistance && matchesCareType && matchesFavorite
       );
     });
-  }, [searchQuery, maxDistance, selectedCareType, onlyFavorites, favorites]);
+  }, [backendDoctors, searchQuery, maxDistance, selectedCareType, onlyFavorites, favorites]);
 
   const activeMapDoctor =
     filteredDoctors.find((d) => d.id === selectedDoctorId) ||
@@ -253,14 +331,17 @@ function DirectorioDerma() {
               </div>
               <div className="referral-copy">
                 <strong>
-                  Recomendación de valoración dermatológica profesional
+                  {aiReferralData?.title || "Recomendación de valoración dermatológica profesional"}
                 </strong>
                 <p>
-                  Tu último análisis en Skinova identificó señales de
-                  sensibilidad persistente que requieren valoración médica y se
-                  encuentran fuera del alcance cosmético. Te sugerimos consultar
-                  a uno de los especialistas certificados del directorio.
+                  {aiReferralData?.message ||
+                    "Tu último análisis en Skinova identificó señales de sensibilidad persistente que requieren valoración médica y se encuentran fuera del alcance cosmético. Te sugerimos consultar a uno de los especialistas certificados del directorio."}
                 </p>
+                {aiReferralData?.detected_concern && (
+                  <span className="referral-concern-badge" style={{ fontSize: "12px", opacity: 0.9, marginTop: "4px", display: "inline-block" }}>
+                    Hallazgo identificado: <em>{aiReferralData.detected_concern}</em>
+                  </span>
+                )}
               </div>
             </div>
           )}
