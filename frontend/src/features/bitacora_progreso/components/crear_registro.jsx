@@ -67,7 +67,7 @@ function Icon({ d, size = 20 }) {
   );
 }
 
-export default function CreaRegistroProgreso({ routines = [], onSave }) {
+export default function CreaRegistroProgreso({ routines = [], onSave, isSaving: propIsSaving }) {
   const [notes, setNotes] = useState('');
   const [image, setImage] = useState(null);
   const [perception, setPerception] = useState('');
@@ -76,6 +76,9 @@ export default function CreaRegistroProgreso({ routines = [], onSave }) {
   const [habits, setHabits] = useState(createEmptyHabits);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [internalSaving, setInternalSaving] = useState(false);
+
+  const saving = propIsSaving !== undefined ? propIsSaving : internalSaving;
 
   const touch = () => {
     setError('');
@@ -108,7 +111,7 @@ export default function CreaRegistroProgreso({ routines = [], onSave }) {
     setSaved(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e?.preventDefault?.();
 
     if (!perception && !notes.trim() && !image) {
@@ -144,11 +147,22 @@ export default function CreaRegistroProgreso({ routines = [], onSave }) {
         : null,
     };
 
-    if (onSave) onSave(payload);
-    else console.log('Registro de progreso:', payload);
-
-    handleClear();
-    setSaved(true);
+    try {
+      setInternalSaving(true);
+      setError('');
+      if (onSave) {
+        await onSave(payload);
+      } else {
+        console.log('Registro de progreso:', payload);
+      }
+      handleClear();
+      setSaved(true);
+    } catch (err) {
+      setError(err?.message || 'Error al guardar el registro. Intenta de nuevo.');
+      setSaved(false);
+    } finally {
+      setInternalSaving(false);
+    }
   };
 
   return (
@@ -164,27 +178,6 @@ export default function CreaRegistroProgreso({ routines = [], onSave }) {
 
         <div className="sk-grid">
           <div className="sk-main">
-            <section className="sk-card" aria-labelledby="sk-observa">
-              <h2 id="sk-observa" className="sk-card__title">
-                Observa tu piel
-              </h2>
-              <p className="sk-card__text">
-                Una foto con luz natural y unas líneas sobre lo que notas es suficiente.
-              </p>
-              <div className="sk-aichat">
-                <AiChat
-                  productText={notes}
-                  onProductTextChange={handleNotes}
-                  capturedImage={image}
-                  onImageCaptured={handleImage}
-                  onSubmit={handleSubmit}
-                  onClearAll={handleClear}
-                  labelProduct="Comentarios sobre tu piel"
-                  labelCamera="Fotografía de tu piel (opcional)"
-                />
-              </div>
-            </section>
-
             <section className="sk-card" aria-labelledby="sk-entiende">
               <h2 id="sk-entiende" className="sk-card__title">
                 ¿Cómo la sientes hoy?
@@ -237,6 +230,28 @@ export default function CreaRegistroProgreso({ routines = [], onSave }) {
                     </option>
                   ))}
                 </select>
+              </div>
+            </section>
+
+            <section className="sk-card" aria-labelledby="sk-observa">
+              <h2 id="sk-observa" className="sk-card__title">
+                Observa tu piel
+              </h2>
+              <p className="sk-card__text">
+                Una foto con luz natural y unas líneas sobre lo que notas es suficiente.
+              </p>
+              <div className="sk-aichat">
+                <AiChat
+                  productText={notes}
+                  onProductTextChange={handleNotes}
+                  capturedImage={image}
+                  onImageCaptured={handleImage}
+                  onSubmit={handleSubmit}
+                  onClearAll={handleClear}
+                  labelProduct="Comentarios sobre tu piel"
+                  labelCamera="Fotografía de tu piel (opcional)"
+                  showActions={false}
+                />
               </div>
             </section>
           </div>
@@ -389,8 +404,13 @@ export default function CreaRegistroProgreso({ routines = [], onSave }) {
                   <span>Registro guardado. Ya forma parte de tu historial.</span>
                 </p>
               )}
-              <button type="button" className="sk-btn sk-btn--primary" onClick={handleSubmit}>
-                Guardar registro
+              <button
+                type="button"
+                className="sk-btn sk-btn--primary"
+                onClick={handleSubmit}
+                disabled={saving}
+              >
+                {saving ? 'Guardando...' : 'Guardar registro'}
               </button>
               <button type="button" className="sk-btn sk-btn--secondary" onClick={handleClear}>
                 Limpiar

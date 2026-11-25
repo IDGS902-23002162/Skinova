@@ -17,3 +17,15 @@ class Notification(db.Model):
     __table_args__ = (
         db.Index('ix_notifications_user_created', 'user_id', 'created_at'),
     )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'type': self.type,
+            'title': self.title,
+            'message': self.message,
+            'action_path': self.action_path,
+            'read_at': self.read_at.isoformat() if self.read_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
