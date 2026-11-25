@@ -15,7 +15,15 @@ export function useSuscripcion() {
   const subscriptionApi = createSubscriptionApi(fetchConAuth);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  // ponytail: abre el modal de éxito inmediatamente con los query params sin esperar roundtrips de red
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('success') === 'true' || Boolean(params.get('session_id'));
+    } catch {
+      return false;
+    }
+  });
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
@@ -36,6 +44,10 @@ export function useSuscripcion() {
     const sessionId = searchParams.get('session_id');
     const isSuccess = searchParams.get('success') === 'true';
 
+    if (sessionId || isSuccess) {
+      setIsSuccessModalOpen(true);
+    }
+
     const checkSubscription = async () => {
       if (sessionId) {
         try {
@@ -44,7 +56,6 @@ export function useSuscripcion() {
           if (isMounted && res.ok && data?.subscription) {
             setSubscription(data.subscription);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data.subscription));
-            setIsSuccessModalOpen(true);
           }
         } catch (err) {
           console.error('Error al verificar sesión de Stripe:', err);
