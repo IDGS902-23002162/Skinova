@@ -7,7 +7,7 @@ from app.extensions import db
 from app.auth import require_auth
 from app.modules.users.models import User, Subscription
 from app.modules.perfil_salud.models import UserProfile
-from app.modules.mobil.models import PwaVisit, UserActivityLog
+from app.modules.mobil.models import PwaVisit, UserActivityLog, ApiRequestLog
 
 mobil_bp = Blueprint('mobil', __name__, url_prefix='/api/mobil')
 
@@ -651,4 +651,109 @@ def toggle_user_account_status(user_id):
         }), 200
     except Exception as e:
         db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@mobil_bp.route('/performance', methods=['GET'])
+@require_auth
+def get_performance_metrics():
+    """Métricas en vivo de rendimiento, endpoints más solicitados, endpoints IA y tráfico por hora."""
+    try:
+        ApiRequestLog.__table__.create(db.engine, checkfirst=True)
+
+        now_utc = datetime.now(timezone.utc)
+        start_of_today = now_utc.replace(hour=0, minute=0, second=0, microsecond=0).replace(tzinfo=None)
+
+        logs = ApiRequestLog.query.all()
+        total = len(logs)
+
+        if total > 0:
+            avg_response_ms = round(sum(l.duration_ms for l in logs) / total)
+            ai_logs = [l for l in logs if l.is_ai]
+            ai_avg_response_ms = round(sum(l.duration_ms for l in ai_logs) / len(ai_logs)) if ai_logs else 0
+            errors_detected = sum(1 for l in logs if l.status_code >= 400)
+            server_errors = sum(1 for l in logs if l.status_code >= 500)
+            availability = round(((total - errors_detected) / total) * 100, 1)
+            uptime_pct = round(((total - server_errors) / total) * 100, 1)
+        else:
+            avg_response_ms = 0
+            ai_avg_response_ms = 0
+            errors_detected = 0
+            availability = 100.0
+            uptime_pct = 100.0
+
+        requests_today = sum(
+            1 for l in logs
+            if l.created_at and l.created_at.replace(tzinfo=None) >= start_of_today
+        )
+
+        # Agrupar por (method, path)
+        grouped = {}
+        for l in logs:
+            key = (l.method, l.path)
+            entry = grouped.setdefault(key, {
+                "method": l.method,
+                "path": l.path,
+                "calls": 0,
+                "totalMs": 0.0,
+                "errors": 0,
+                "isAi": bool(l.is_ai),
+            })
+            entry["calls"] += 1
+            entry["totalMs"] += l.duration_ms
+            if l.status_code >= 400:
+                entry["errors"] += 1
+
+        endpoints = [
+            {
+                "method": e["method"],
+                "path": e["path"],
+                "calls": e["calls"],
+                "avgMs": round(e["totalMs"] / e["calls"]),
+                "errors": e["errors"],
+                "isAi": e["isAi"],
+            }
+            for e in grouped.values()
+        ]
+        endpoints.sort(key=lambda x: x["calls"], reverse=True)
+        ai_endpoints = [ep for ep in endpoints if ep["isAi"]]
+
+        # Peticiones por hora (últimas 12 horas en hora local del servidor)
+        now_local = datetime.now()
+        hourly_buckets = {}
+        ordered_hours = []
+        for offset in range(11, -1, -1):
+            slot = (now_local - timedelta(hours=offset)).replace(minute=0, second=0, microsecond=0)
+            label = slot.strftime("%H:00")
+            ordered_hours.append(label)
+            hourly_buckets[label] = {"hour": label, "count": 0, "errors": 0}
+
+        cutoff_utc = (now_utc - timedelta(hours=12)).replace(tzinfo=None)
+        for l in logs:
+            if not l.created_at:
+                continue
+            created_naive = l.created_at.replace(tzinfo=None)
+            if created_naive >= cutoff_utc:
+                # Convertir UTC naive a local para alinear con el reloj del dashboard
+                local_dt = l.created_at.replace(tzinfo=timezone.utc).astimezone()
+                label = local_dt.strftime("%H:00")
+                if label in hourly_buckets:
+                    hourly_buckets[label]["count"] += 1
+                    if l.status_code >= 400:
+                        hourly_buckets[label]["errors"] += 1
+
+        return jsonify({
+            "metrics": {
+                "avg_response_ms": avg_response_ms,
+                "ai_avg_response_ms": ai_avg_response_ms,
+                "requests_today": requests_today,
+                "availability": availability,
+                "errors_detected": errors_detected,
+                "uptime_pct": uptime_pct,
+            },
+            "endpoints": endpoints,
+            "ai_endpoints": ai_endpoints,
+            "hourly_requests": [hourly_buckets[h] for h in ordered_hours],
+        }), 200
+    except Exception as e:
         return jsonify({"error": str(e)}), 500

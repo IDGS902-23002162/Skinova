@@ -15,6 +15,7 @@ export default function SubscriptionsPage() {
     subscription,
     isPremiumActive,
     isSubscriptionEnding,
+    isLoadingSubscription,
     isLoadingCheckout,
     isCanceling,
     isModalOpen,
@@ -114,9 +115,10 @@ export default function SubscriptionsPage() {
                   className="plan-button plan-button-primary"
                   type="button"
                   onClick={() => setIsModalOpen(true)}
-                  disabled={isPremiumActive || isSubscriptionEnding || isSuccessModalOpen || isLoadingCheckout}
+                  disabled={isLoadingSubscription || isPremiumActive || isSubscriptionEnding || isSuccessModalOpen || isLoadingCheckout}
+                  style={isLoadingSubscription ? { opacity: 0.7, cursor: 'wait' } : {}}
                 >
-                  {isLoadingCheckout ? "Procesando..." : "Obtener Premium"}
+                  {isLoadingCheckout ? "Procesando..." : isLoadingSubscription ? "Cargando..." : "Obtener Premium"}
                 </button>
               </div>
             </div>

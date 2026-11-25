@@ -37,6 +37,10 @@ export function useSuscripcion() {
     }
   });
 
+  const [isLoadingSubscription, setIsLoadingSubscription] = useState(() => {
+    return !localStorage.getItem(STORAGE_KEY);
+  });
+
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
 
@@ -49,35 +53,42 @@ export function useSuscripcion() {
     }
 
     const checkSubscription = async () => {
-      if (sessionId) {
-        try {
-          const res = await subscriptionApi.verifyCheckoutSession(sessionId);
-          const data = await res.json();
-          if (isMounted && res.ok && data?.subscription) {
-            setSubscription(data.subscription);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data.subscription));
-          }
-        } catch (err) {
-          console.error('Error al verificar sesión de Stripe:', err);
-        }
-      } else {
-        if (isSuccess && isMounted) {
-          setIsSuccessModalOpen(true);
-        }
-        try {
-          const res = await subscriptionApi.getSubscription();
-          if (isMounted && res.ok) {
+      try {
+        if (sessionId) {
+          try {
+            const res = await subscriptionApi.verifyCheckoutSession(sessionId);
             const data = await res.json();
-            if (data?.subscription) {
+            if (isMounted && res.ok && data?.subscription) {
               setSubscription(data.subscription);
               localStorage.setItem(STORAGE_KEY, JSON.stringify(data.subscription));
-            } else {
-              setSubscription(null);
-              localStorage.removeItem(STORAGE_KEY);
             }
+          } catch (err) {
+            console.error('Error al verificar sesión de Stripe:', err);
           }
-        } catch (err) {
-          console.error('Error al cargar suscripción:', err);
+        } else {
+          if (isSuccess && isMounted) {
+            setIsSuccessModalOpen(true);
+          }
+          try {
+            const res = await subscriptionApi.getSubscription();
+            if (isMounted && res.ok) {
+              const data = await res.json();
+              if (data?.subscription) {
+                setSubscription(data.subscription);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data.subscription));
+              } else {
+                const freeSub = { status: 'free' };
+                setSubscription(freeSub);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(freeSub));
+              }
+            }
+          } catch (err) {
+            console.error('Error al cargar suscripción:', err);
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingSubscription(false);
         }
       }
     };
@@ -165,6 +176,7 @@ export function useSuscripcion() {
     isPremiumActive,
     isSubscriptionEnding,
     isPeriodActive,
+    isLoadingSubscription,
     isLoadingCheckout,
     isCanceling,
     isModalOpen,

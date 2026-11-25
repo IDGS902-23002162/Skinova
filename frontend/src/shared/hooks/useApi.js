@@ -4,6 +4,7 @@ import { useCallback, useRef, useEffect } from "react";
 export function useApi() {
   const { getToken } = useAuth();
   const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
 
   useEffect(() => {
     getTokenRef.current = getToken;
@@ -20,7 +21,10 @@ export function useApi() {
   const fetchConAuth = useCallback(
     async (endpoint, opciones = {}) => {
       // Obtiene el token actualizado de Clerk
-      const token = await getTokenRef.current?.();
+      let token = await (getTokenRef.current?.() || getToken?.());
+      if (!token && getToken) {
+        token = await getToken({ skipCache: true });
+      }
 
       // Asegura que el endpoint comience con '/' si no lo tiene
       const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
@@ -34,7 +38,7 @@ export function useApi() {
         },
       });
     },
-    [BASE_URL]
+    [getToken, BASE_URL]
   );
 
   return { fetchConAuth };
