@@ -16,7 +16,7 @@ export default function CancelSubscriptionModal({ isOpen, onClose, onConfirm, is
           <span className="cancel-tag">GESTIÓN DE PLAN</span>
           <h2 className="cancel-modal-title">¿Deseas cancelar tu suscripción?</h2>
           <p className="cancel-modal-subtitle">
-            Al cancelar Skinova Premium, tu plan volverá a <strong>Skinova Free</strong>.
+            Cuando termine tu suscripción actual tu plan volverá a <strong>Skinova Free</strong>.
           </p>
         </div>
 

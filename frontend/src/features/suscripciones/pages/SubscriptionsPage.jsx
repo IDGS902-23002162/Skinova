@@ -114,9 +114,9 @@ export default function SubscriptionsPage() {
                   className="plan-button plan-button-primary"
                   type="button"
                   onClick={() => setIsModalOpen(true)}
-                  disabled={isPremiumActive || isSubscriptionEnding}
+                  disabled={isPremiumActive || isSubscriptionEnding || isSuccessModalOpen || isLoadingCheckout}
                 >
-                  Obtener Premium
+                  {isLoadingCheckout ? "Procesando..." : "Obtener Premium"}
                 </button>
               </div>
             </div>
