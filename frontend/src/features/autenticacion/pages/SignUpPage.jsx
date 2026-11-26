@@ -3,9 +3,12 @@ import { Link } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { useRegister } from "../hooks/useRegister";
 import FullScreenLoader from "../../../shared/components/FullScreenLoader";
+import { useAppConfig } from "../../../shared/hooks/useAppConfig";
 import "./CustomAuth.css";
 
 export default function SignUpPage() {
+  const { config } = useAppConfig();
+  const registrationDisabled = config.features.registration_enabled === false;
   const {
     emailAddress,
     setEmailAddress,
@@ -29,7 +32,11 @@ export default function SignUpPage() {
         <div className="custom-auth-form-container">
           <h1 className="custom-auth-title">Crea tu cuenta</h1>
 
-          {!pendingVerification ? (
+          {registrationDisabled ? (
+            <div className="custom-auth-error" style={{ textAlign: "center", padding: "1.25rem", borderRadius: "12px" }}>
+              El registro de nuevos usuarios está deshabilitado temporalmente por el administrador.
+            </div>
+          ) : !pendingVerification ? (
             <>
               <button
                 className="custom-auth-social-btn"

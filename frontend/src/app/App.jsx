@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth, useUser, UserButton, AuthenticateWithRedirectCallback } from "@clerk/react";
 import SignInPage from "../features/autenticacion/pages/SignInPage";
 import SignUpPage from "../features/autenticacion/pages/SignUpPage";
 import NotFoundPage from "../shared/pages/NotFoundPage";
 import FullScreenLoader from "../shared/components/FullScreenLoader";
+import MaintenanceModal from "../shared/components/MaintenanceModal";
+import { useAppConfig } from "../shared/hooks/useAppConfig";
 import LogoutTransition from "../features/autenticacion/components/LogoutTransition";
 import MainLayout from "../shared/components/MainLayout";
 import { Heart } from "lucide-react";
+import { useApi } from "../shared/hooks/useApi";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
 import ConsultaIaView from "../features/consulta_ia/pages/consulta_ia";
 import { ProfileProvider } from "../features/perfil_salud/hooks/useProfileData";
@@ -99,6 +102,16 @@ export function useTrackPwaVisits() {
 function AdminGuard({ children }) {
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
+  const { fetchConAuth } = useApi();
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn && user?.publicMetadata?.role === "admin") {
+      if (!sessionStorage.getItem("skinova_admin_login_logged")) {
+        sessionStorage.setItem("skinova_admin_login_logged", "1");
+        fetchConAuth("/mobil/audit/admin-login", { method: "POST" }).catch(() => {});
+      }
+    }
+  }, [isLoaded, isSignedIn, user?.publicMetadata?.role, fetchConAuth]);
 
   if (!isLoaded) return <FullScreenLoader isVisible={true} text="Verificando permisos..." />;
   if (!isSignedIn) return <Navigate to="/sign-in" replace />;
@@ -184,6 +197,30 @@ function Home() {
 export default function App() {
   // <--- Aquí se activa el tracking en cada cambio de ruta
   useTrackPwaVisits();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useUser();
+  const { config } = useAppConfig(location.pathname);
+  const features = config.features;
+  const isAdmin = user?.publicMetadata?.role === "admin";
+  const path = location.pathname.toLowerCase();
+  const skipGlobalMaintenance =
+    isAdmin ||
+    path.startsWith("/admin") ||
+    path.startsWith("/sign-in") ||
+    path.startsWith("/sso-callback") ||
+    path.startsWith("/logout-animation");
+
+  if (features.maintenance_mode && !skipGlobalMaintenance) {
+    return <MaintenanceModal global />;
+  }
+
+  const guardModule = (flag, label, element) =>
+    features[flag] === false && !isAdmin ? (
+      <MaintenanceModal moduleName={label} onBack={() => navigate("/")} />
+    ) : (
+      element
+    );
 
   return (
     <Routes>
@@ -199,11 +236,11 @@ export default function App() {
       <Route path="/subscriptions" element={<SubscriptionsPage />} />
       <Route path="/rutinas" element={<RoutineCreatorPage />} />
       <Route path="/ambiente" element={<EnvironmentalMonitorPage />} />
-      <Route path="/directorio" element={<DirectorioDerma />} />
-      <Route path="/comunidad" element={<ModuloComunidadForo />} />
+      <Route path="/directorio" element={guardModule("directorio", "Directorio de dermatólogos", <DirectorioDerma />)} />
+      <Route path="/comunidad" element={guardModule("comunidad", "Comunidad / Foro", <ModuloComunidadForo />)} />
       <Route path="/habitos" element={<ModuloHabitosDesafios />} />
       <Route path="/neceser" element={<ModuloMiNeceser />} />
-      <Route path="/consulta" element={<ConsultaIaView />} />
+      <Route path="/consulta" element={guardModule("consulta_ia", "Consulta IA", <ConsultaIaView />)} />
       <Route path="/progreso" element={<ModuloBitacoraProgreso />} />
       <Route path="/notificaciones" element={<ModuloNotificaciones />} />
       <Route

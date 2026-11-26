@@ -103,6 +103,10 @@ def create_app(config_name='default'):
     def health_check():
         return {'status': 'ok'}
 
+    @app.route('/api/config', methods=['GET'])
+    def public_app_config():
+        return mobil_models.get_app_settings(), 200
+
     @app.route('/api/auth/me')
     @require_auth
     def auth_me():
@@ -114,13 +118,34 @@ def create_app(config_name='default'):
     @app.before_request
     def _track_request_start():
         g._req_start = time.perf_counter()
+        if (
+            request.method == 'OPTIONS'
+            or not request.path.startswith('/api/')
+            or request.path in ('/api/config', '/api/auth/me', '/api/me')
+            or request.path.startswith('/api/mobil/')
+        ):
+            return None
+
+        features = mobil_models.get_app_settings().get('features', {})
+        if features.get('maintenance_mode'):
+            return {'error': 'Sistema en mantenimiento', 'maintenance': True}, 503
+        if not features.get('consulta_ia', True) and (
+            request.path.startswith('/api/products')
+            or request.path.startswith('/api/perfil-salud/analyze')
+            or request.path.startswith('/api/perfil-salud/evaluations/analyze')
+        ):
+            return {'error': 'Consulta IA en mantenimiento', 'feature': 'consulta_ia'}, 503
+        if not features.get('comunidad', True) and request.path.startswith('/api/comunidad'):
+            return {'error': 'Comunidad en mantenimiento', 'feature': 'comunidad'}, 503
+        if not features.get('directorio', True) and request.path.startswith('/api/directorio'):
+            return {'error': 'Directorio en mantenimiento', 'feature': 'directorio'}, 503
 
     @app.after_request
     def _track_request_end(response):
         if (
             request.method == 'OPTIONS'
             or not request.path.startswith('/api/')
-            or request.path == '/api/mobil/performance'
+            or request.path in ('/api/mobil/performance', '/api/mobil/bitacora')
         ):
             return response
 
@@ -138,6 +163,26 @@ def create_app(config_name='default'):
                 is_ai=is_ai,
             )
             db.session.add(log)
+
+            # ponytail: reutiliza after_request para poblar SystemLog sin middleware extra
+            evt = None
+            if response.status_code >= 500:
+                evt = ('error', f"Error {response.status_code} en {request.method} {path}")
+            elif response.status_code in (401, 403):
+                evt = ('warning', f"Acceso denegado ({response.status_code}) en {request.method} {path}")
+            elif is_ai and duration_ms > 5000:
+                evt = ('warning', f"Respuesta lenta de IA ({round(duration_ms / 1000, 2)}s) en {path}")
+            elif path in ('/api/verify-checkout-session', '/api/cancel-subscription') and response.status_code < 400:
+                evt = ('success', f"Operación de suscripción completada ({path})")
+
+            if evt:
+                db.session.add(mobil_models.SystemLog(
+                    event_type=evt[0],
+                    message=evt[1],
+                    origin=getattr(g, 'user_id', None) or 'sistema',
+                    component=request.endpoint or path,
+                ))
+
             db.session.commit()
         except Exception:
             db.session.rollback()
