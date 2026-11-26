@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Zap,
   Clock,
@@ -6,7 +6,10 @@ import {
   CheckCircle,
   BarChart2,
   ArrowRight,
+  Sparkles,
+  RefreshCw,
 } from "lucide-react";
+import { useApi } from "../../../shared/hooks/useApi";
 import "./Rendimiento.css";
 
 // ── Metric Card ────────────────────────────────────────────────────────────────
@@ -25,17 +28,22 @@ function MetricCard({ icon: Icon, label, value, unit, status, color }) {
   );
 }
 
+// ── Formato de duración para IA (segundos) ─────────────────────────────────────
+const formatAiSec = (ms) => (ms ? (ms / 1000).toFixed(2) : "0.00");
+
 // ── Endpoint Row ───────────────────────────────────────────────────────────────
-function EndpointRow({ method, path, calls, avgMs, errors }) {
-  const methodColors = { GET: "#2D6658", POST: "#A9C4B5", DELETE: "#C98268", PATCH: "#E7DFD2" };
+function EndpointRow({ method, path, calls, avgMs, errors, isAi }) {
+  const methodColors = { GET: "#2D6658", POST: "#A9C4B5", PUT: "#5a7a71", PATCH: "#8b7e6a", DELETE: "#C98268" };
   return (
     <div className="rend-endpoint-row">
-      <span className="rend-method" style={{ background: methodColors[method] ?? "#163B35" }}>
-        {method}
-      </span>
-      <span className="rend-path">{path}</span>
+      <div className="rend-ep-main">
+        <span className="rend-method" style={{ background: methodColors[method] ?? "#163B35" }}>
+          {method}
+        </span>
+        <span className="rend-path">{path}</span>
+      </div>
       <span className="rend-calls">{calls.toLocaleString()} llamadas</span>
-      <span className="rend-avg">{avgMs}ms prom.</span>
+      <span className="rend-avg">{isAi ? `${formatAiSec(avgMs)}s` : `${avgMs}ms`} prom.</span>
       <span className={`rend-errors ${errors > 0 ? "has-errors" : ""}`}>
         {errors > 0 ? `${errors} errores` : "✓ OK"}
       </span>
@@ -43,16 +51,67 @@ function EndpointRow({ method, path, calls, avgMs, errors }) {
   );
 }
 
-const ENDPOINTS = [
-  { method: "GET",    path: "/api/user/profile",         calls: 18420, avgMs: 84,  errors: 0  },
-  { method: "POST",   path: "/api/consulta/ia",          calls: 9201,  avgMs: 320, errors: 12 },
-  { method: "GET",    path: "/api/rutinas",              calls: 7840,  avgMs: 61,  errors: 0  },
-  { method: "POST",   path: "/api/bitacora",             calls: 5120,  avgMs: 102, errors: 3  },
-  { method: "DELETE", path: "/api/suscripciones/cancel", calls: 390,   avgMs: 145, errors: 1  },
-];
+// ── Tabla reutilizable de endpoints ────────────────────────────────────────────
+function EndpointsTable({ items, emptyText }) {
+  if (!items.length) {
+    return <div className="rend-empty">{emptyText}</div>;
+  }
+  return (
+    <div className="rend-endpoints-table">
+      <div className="rend-endpoints-header">
+        <span>Método</span>
+        <span>Ruta</span>
+        <span>Volumen</span>
+        <span>Prom.</span>
+        <span>Estado</span>
+      </div>
+      {items.map((ep) => (
+        <EndpointRow key={`${ep.method}-${ep.path}`} {...ep} />
+      ))}
+    </div>
+  );
+}
 
 // ── Componente principal ───────────────────────────────────────────────────────
 export default function Rendimiento() {
+  const { fetchConAuth } = useApi();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showAllEndpoints, setShowAllEndpoints] = useState(false);
+
+  const loadMetrics = useCallback(async () => {
+    try {
+      const res = await fetchConAuth("/mobil/performance");
+      if (res.ok) {
+        setData(await res.json());
+      }
+    } catch (err) {
+      console.error("Error cargando rendimiento:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchConAuth]);
+
+  useEffect(() => {
+    loadMetrics();
+    const timer = setInterval(loadMetrics, 15000);
+    return () => clearInterval(timer);
+  }, [loadMetrics]);
+
+  const m = data?.metrics ?? {
+    avg_response_ms: 0,
+    ai_avg_response_ms: 0,
+    requests_today: 0,
+    availability: 100,
+    errors_detected: 0,
+    uptime_pct: 100,
+  };
+  const endpoints = data?.endpoints ?? [];
+  const aiEndpoints = data?.ai_endpoints ?? [];
+  const hourly = data?.hourly_requests ?? [];
+  const visibleEndpoints = showAllEndpoints ? endpoints : endpoints.slice(0, 5);
+  const maxHourly = Math.max(1, ...hourly.map((h) => h.count));
+
   return (
     <div className="rend-root">
       <header className="rend-header">
@@ -60,46 +119,77 @@ export default function Rendimiento() {
           <h1 className="rend-title">Rendimiento del Sistema</h1>
           <p className="rend-subtitle">Tiempos de respuesta, peticiones y disponibilidad</p>
         </div>
-        <span className="rend-live-badge">
-          <span className="rend-live-dot" /> En vivo
-        </span>
+        <div className="rend-header-actions">
+          <span className="rend-live-badge">
+            <span className="rend-live-dot" /> En vivo
+          </span>
+        </div>
       </header>
 
       {/* Métricas clave */}
       <div className="rend-metrics-grid">
-        <MetricCard icon={Zap}           label="Tiempo prom. respuesta" value="97"    unit="ms"   status="ok"      color="#2D6658" />
-        <MetricCard icon={BarChart2}     label="Peticiones hoy"         value="48.2"  unit="k"    status="ok"      color="#A9C4B5" />
-        <MetricCard icon={CheckCircle}   label="Disponibilidad"         value="99.8"  unit="%"    status="ok"      color="#163B35" />
-        <MetricCard icon={AlertTriangle} label="Errores detectados"     value="16"    unit="err"  status="warning" color="#C98268" />
-        <MetricCard icon={Clock}         label="Uptime acumulado"       value="99.1"  unit="%"    status="ok"      color="#2D6658" />
+        <MetricCard icon={Zap} label="Tiempo prom. respuesta" value={m.avg_response_ms} unit="ms" status="ok" color="#2D6658" />
+        <MetricCard icon={Sparkles} label="Tiempo de respuesta promedio de IA" value={formatAiSec(m.ai_avg_response_ms)} unit="s" status="ok" color="#163B35" />
+        <MetricCard icon={BarChart2} label="Peticiones hoy" value={m.requests_today} unit="" status="ok" color="#A9C4B5" />
+        <MetricCard icon={CheckCircle} label="Disponibilidad" value={m.availability} unit="%" status={m.availability < 98 ? "warning" : "ok"} color="#163B35" />
+        <MetricCard icon={AlertTriangle} label="Errores detectados" value={m.errors_detected} unit="err" status={m.errors_detected > 0 ? "warning" : "ok"} color="#C98268" />
+        <MetricCard icon={Clock} label="Uptime acumulado" value={m.uptime_pct} unit="%" status="ok" color="#2D6658" />
       </div>
+
+      {/* Sección exclusiva de Endpoints IA */}
+      <section className="rend-section rend-ai-section">
+        <div className="rend-section-head">
+          <h2 className="rend-section-title rend-ai-title">
+            Endpoints de Inteligencia Artificial
+          </h2>
+          <span className="rend-ai-avg-badge">
+            Tiempo de respuesta promedio de IA: <strong>{formatAiSec(m.ai_avg_response_ms)} s</strong>
+          </span>
+        </div>
+        <EndpointsTable
+          items={aiEndpoints}
+          emptyText={loading ? "Cargando endpoints de IA..." : "Aún no hay peticiones registradas a endpoints de IA."}
+        />
+      </section>
 
       {/* Endpoints más solicitados */}
       <section className="rend-section">
         <div className="rend-section-head">
           <h2 className="rend-section-title">Endpoints más solicitados</h2>
-          <button className="rend-link-btn">Ver todos <ArrowRight size={14} /></button>
+          {endpoints.length > 5 && (
+            <button type="button" className="rend-link-btn" onClick={() => setShowAllEndpoints((v) => !v)}>
+              {showAllEndpoints ? "Ver menos" : `Ver todos (${endpoints.length})`} <ArrowRight size={14} />
+            </button>
+          )}
         </div>
-        <div className="rend-endpoints-table">
-          <div className="rend-endpoints-header">
-            <span>Método</span>
-            <span>Ruta</span>
-            <span>Volumen</span>
-            <span>Prom.</span>
-            <span>Estado</span>
-          </div>
-          {ENDPOINTS.map((ep) => (
-            <EndpointRow key={ep.path} {...ep} />
-          ))}
-        </div>
+        <EndpointsTable
+          items={visibleEndpoints}
+          emptyText={loading ? "Cargando métricas..." : "Aún no hay peticiones registradas."}
+        />
       </section>
 
-      {/* Gráfica placeholder */}
+      {/* Gráfica en tiempo real: Peticiones por hora */}
       <section className="rend-section">
-        <h2 className="rend-section-title">Peticiones por hora</h2>
-        <div className="rend-chart-ph">
-          <BarChart2 size={44} strokeWidth={1} />
-          <p>Gráfica en tiempo real próximamente</p>
+        <h2 className="rend-section-title">Peticiones por hora (últimas 12 h)</h2>
+        <div className="rend-chart-card">
+          {hourly.length === 0 ? (
+            <div className="rend-empty">Sin datos horarios aún</div>
+          ) : (
+            <div className="rend-hourly-chart">
+              {hourly.map((slot) => (
+                <div key={slot.hour} className="rend-hour-col" title={`${slot.hour}: ${slot.count} peticiones (${slot.errors} errores)`}>
+                  <span className="rend-hour-count">{slot.count}</span>
+                  <div className="rend-hour-track">
+                    <div
+                      className="rend-hour-bar"
+                      style={{ height: `${Math.max(4, Math.round((slot.count / maxHourly) * 100))}%` }}
+                    />
+                  </div>
+                  <span className="rend-hour-label">{slot.hour}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>

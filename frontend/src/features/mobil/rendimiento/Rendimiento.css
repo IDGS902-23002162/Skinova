@@ -31,24 +31,25 @@
 .rend-metric-label { font-size: .72rem; color: #7a9a92; }
 
 /* Endpoints */
-.rend-section { display: flex; flex-direction: column; gap: .75rem; }
-.rend-section-head { display: flex; align-items: center; justify-content: space-between; }
+.rend-section { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
+.rend-section-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
 .rend-section-title { font-size: 1rem; font-weight: 600; color: #163B35; margin: 0; }
 .rend-link-btn { display: inline-flex; align-items: center; gap: .3rem; background: none; border: none; color: #2D6658; font-size: .82rem; font-weight: 600; cursor: pointer; }
 
 .rend-endpoints-table { display: flex; flex-direction: column; gap: .4rem; }
 .rend-endpoints-header {
-  display: grid; grid-template-columns: 60px 1fr 100px 80px 80px;
+  display: grid; grid-template-columns: 60px 1fr 110px 90px 85px;
   padding: .4rem .9rem; font-size: .68rem; letter-spacing: .06em;
   font-weight: 700; color: #7a9a92; text-transform: uppercase;
 }
 .rend-endpoint-row {
-  display: grid; grid-template-columns: 60px 1fr 100px 80px 80px;
+  display: grid; grid-template-columns: 1fr 110px 90px 85px;
   align-items: center; gap: .5rem;
   background: #fff; border-radius: 12px; padding: .75rem .9rem;
   box-shadow: 0 1px 5px rgba(22,59,53,.05);
 }
-.rend-method { font-size: .68rem; font-weight: 800; color: #F6F3EC; padding: 2px 7px; border-radius: 6px; text-align: center; letter-spacing: .04em; }
+.rend-ep-main { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+.rend-method { flex-shrink: 0; min-width: 52px; font-size: .68rem; font-weight: 800; color: #F6F3EC; padding: 2px 7px; border-radius: 6px; text-align: center; letter-spacing: .04em; }
 .rend-path   { font-size: .8rem; color: #163B35; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rend-calls  { font-size: .78rem; color: #7a9a92; }
 .rend-avg    { font-size: .78rem; color: #2D6658; font-weight: 600; }
@@ -62,9 +63,60 @@
   box-shadow: 0 2px 10px rgba(22,59,53,.06); font-size: .88rem;
 }
 
+.rend-header-actions { display: flex; align-items: center; gap: .6rem; }
+.rend-refresh-btn {
+  display: inline-flex; align-items: center; gap: .35rem;
+  background: #fff; border: 1.5px solid #E7DFD2; border-radius: 999px;
+  padding: .3rem .8rem; font-size: .78rem; font-weight: 600; color: #163B35; cursor: pointer;
+}
+.rend-refresh-btn:hover { background: #F6F3EC; }
+
+.rend-ai-section {
+  background: rgba(22, 59, 53, 0.03);
+  border: 1px solid rgba(45, 102, 88, 0.14);
+  border-radius: 16px;
+  padding: 1rem;
+}
+.rend-ai-title { display: inline-flex; align-items: center; gap: .4rem; }
+.rend-ai-avg-badge {
+  background: #163B35; color: #F6F3EC; font-size: .78rem;
+  padding: .3rem .75rem; border-radius: 999px;
+}
+
+.rend-empty {
+  background: #fff; border-radius: 12px; padding: 1.2rem;
+  text-align: center; font-size: .85rem; color: #7a9a92;
+}
+
+.rend-chart-card {
+  background: #fff; border-radius: 16px; padding: 1.2rem;
+  box-shadow: 0 2px 10px rgba(22,59,53,.06); overflow-x: auto;
+}
+.rend-hourly-chart {
+  display: grid; grid-template-columns: repeat(12, minmax(34px, 1fr));
+  gap: .5rem; align-items: end; height: 150px; min-width: 440px;
+}
+.rend-hour-col { display: flex; flex-direction: column; align-items: center; gap: .3rem; height: 100%; }
+.rend-hour-count { font-size: .7rem; font-weight: 600; color: #5a7a71; }
+.rend-hour-track {
+  flex: 1; width: 100%; max-width: 28px; background: #F6F3EC;
+  border-radius: 6px; display: flex; align-items: flex-end; overflow: hidden;
+}
+.rend-hour-bar { width: 100%; background: #2D6658; border-radius: 6px 6px 0 0; transition: height .3s ease; }
+.rend-hour-label { font-size: .68rem; color: #7a9a92; white-space: nowrap; }
+
 @media (max-width: 640px) {
-  .rend-root { padding: 1rem; }
-  .rend-endpoints-header, .rend-endpoint-row { grid-template-columns: 50px 1fr 70px; }
-  .rend-calls, .rend-avg { display: none; }
+  .rend-root { padding: 1rem; gap: 1.1rem; }
+  .rend-metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  .rend-metric-card { padding: .9rem; }
+  .rend-metric-value { font-size: 1.35rem; }
+  .rend-ai-avg-badge { font-size: .72rem; width: 100%; text-align: center; }
+  .rend-endpoints-header { display: none; }
+  .rend-endpoint-row {
+    display: flex; flex-wrap: wrap; justify-content: space-between;
+    gap: .45rem .75rem; padding: .85rem;
+  }
+  .rend-ep-main { flex: 1 1 100%; align-items: flex-start; }
+  .rend-path { white-space: normal; word-break: break-all; font-size: .78rem; }
 }
 

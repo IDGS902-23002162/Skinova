@@ -24,6 +24,13 @@ export function useVerificacionOnboarding() {
         const res = await fetchConAuth('/me');
         if (res.ok) {
           const data = await res.json();
+          // ponytail: precarga la suscripción en caché local desde el inicio de sesión
+          if (data.subscription) {
+            localStorage.setItem("skinova_subscription", JSON.stringify(data.subscription));
+          } else {
+            localStorage.setItem("skinova_subscription", JSON.stringify({ status: "free" }));
+          }
+
           if (data.onboarding_completed) {
             sessionStorage.setItem(STORAGE_KEY, "true");
             if (isMounted) setStatus("completed");

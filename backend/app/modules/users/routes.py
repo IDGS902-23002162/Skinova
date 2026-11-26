@@ -66,13 +66,21 @@ def get_me():
             profile = UserProfile.query.filter_by(user_id=user.id).first()
     
     # Responde con el formato esperado
+    sub = Subscription.query.filter_by(user_id=user.id).first()
     return jsonify({
         "id": user.id,
         "role": user.role,
         "onboarding_completed": profile.onboarding_completed,
         "profile": {
             "preferred_name": profile.preferred_name
-        }
+        },
+        "subscription": {
+            "id": sub.id,
+            "plan_code": sub.plan_code,
+            "status": sub.status,
+            "cancel_at_period_end": sub.cancel_at_period_end,
+            "current_period_end": sub.current_period_end.isoformat() if sub.current_period_end else None
+        } if sub else None
     }), 200
 
 @users_bp.route('/onboarding', methods=['PUT'])

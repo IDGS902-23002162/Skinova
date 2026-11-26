@@ -1,4 +1,6 @@
-from flask import Flask, g
+import time
+from datetime import datetime, timezone
+from flask import Flask, g, request
 from flask_cors import CORS
 
 from config import config
@@ -6,9 +8,18 @@ from app.extensions import db, migrate
 from app.auth import require_auth
 
 
+AI_ENDPOINT_PATHS = {
+    '/api/products/analyze',
+    '/api/perfil-salud/evaluations/analyze',
+    '/api/perfil-salud/analyze',
+    '/api/face-id/verify',
+}
+
+
 def create_app(config_name='default'):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+    app.config['START_TIME'] = datetime.now(timezone.utc)
 
     CORS(
         app,
@@ -99,5 +110,38 @@ def create_app(config_name='default'):
             'authenticated': True,
             'clerk_user_id': g.user_id
         }
+
+    @app.before_request
+    def _track_request_start():
+        g._req_start = time.perf_counter()
+
+    @app.after_request
+    def _track_request_end(response):
+        if (
+            request.method == 'OPTIONS'
+            or not request.path.startswith('/api/')
+            or request.path == '/api/mobil/performance'
+        ):
+            return response
+
+        start = getattr(g, '_req_start', None)
+        duration_ms = round((time.perf_counter() - start) * 1000, 1) if start else 0.0
+        path = request.url_rule.rule if request.url_rule else request.path
+        is_ai = path in AI_ENDPOINT_PATHS or 'analyze' in path or 'face-id' in path
+
+        try:
+            log = mobil_models.ApiRequestLog(
+                method=request.method,
+                path=path,
+                status_code=response.status_code,
+                duration_ms=duration_ms,
+                is_ai=is_ai,
+            )
+            db.session.add(log)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        return response
 
     return app
