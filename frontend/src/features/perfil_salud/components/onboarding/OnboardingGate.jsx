@@ -31,7 +31,7 @@ export default function OnboardingGate({ children }) {
     };
     
     syncAndCheckUser();
-  }, []);
+  }, [fetchConAuth]);
 
   if (status === "loading") {
     return <FullScreenLoader isVisible={true} text="Cargando entorno..." />;
