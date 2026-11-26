@@ -5,6 +5,7 @@ from app.extensions import db
 from app.auth import require_auth
 from app.modules.users.models import User, Subscription
 from app.modules.perfil_salud.models import UserProfile, UserRestriction
+from app.modules.mobil.models import get_app_settings
 import stripe
 import os
 
@@ -37,6 +38,8 @@ def get_me():
     user = User.query.filter_by(clerk_user_id=clerk_user_id).first()
     
     if not user:
+        if not get_app_settings()['features'].get('registration_enabled', True):
+            return jsonify({"error": "El registro de nuevos usuarios está deshabilitado", "registration_disabled": True}), 403
         # El usuario no existe, creamos su cuenta y su perfil atómico
         try:
             user = User(clerk_user_id=clerk_user_id)
@@ -147,15 +150,19 @@ def create_checkout_session():
         return jsonify({"error": "User not found"}), 404
         
     try:
+        plans = get_app_settings().get('plans', [])
+        premium = next((p for p in plans if p.get('code') == 'skinova_premium'), None)
+        unit_amount = int(round(float(premium.get('price', 149)) * 100)) if premium else 14900
+
         checkout_session = stripe.checkout.Session.create(
             line_items=[
                 {
                     'price_data': {
                         'currency': 'mxn',
                         'product_data': {
-                            'name': 'Skinova Premium',
+                            'name': premium.get('name', 'Skinova Premium') if premium else 'Skinova Premium',
                         },
-                        'unit_amount': 9900,
+                        'unit_amount': unit_amount,
                         'recurring': {
                             'interval': 'month'
                         }

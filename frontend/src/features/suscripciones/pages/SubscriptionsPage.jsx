@@ -7,10 +7,15 @@ import SuccessModal from '../components/SuccessModal';
 import CancelSubscriptionModal from '../components/CancelSubscriptionModal';
 import { Check } from 'lucide-react';
 import { useSuscripcion } from '../hooks/useSuscripcion';
+import { useAppConfig } from '../../../shared/hooks/useAppConfig';
 import './SubscriptionsPage.css';
 
 export default function SubscriptionsPage() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { config } = useAppConfig();
+  const freePlan = config.plans.find((p) => p.code === 'free') || { name: 'Skinova Free', price: 0 };
+  const premiumPlan = config.plans.find((p) => p.code === 'skinova_premium') || { name: 'Skinova Premium', price: 149 };
+  const premiumPriceLabel = `$${premiumPlan.price} MXN / mes`;
   const {
     subscription,
     isPremiumActive,
@@ -55,7 +60,7 @@ export default function SubscriptionsPage() {
                 <h2>Skinova Free</h2>
               </div>
               <div className="plan-price">
-                <strong>$0</strong>
+                <strong>${freePlan.price}</strong>
                 <span>MXN · para siempre</span>
               </div>
             </div>
@@ -89,7 +94,7 @@ export default function SubscriptionsPage() {
                   <h2>Skinova Premium</h2>
                 </div>
                 <div className="plan-price">
-                  <strong>$99</strong>
+                  <strong>${premiumPlan.price}</strong>
                   <span>MXN / mes</span>
                 </div>
               </div>
@@ -163,11 +168,14 @@ export default function SubscriptionsPage() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleCheckout}
+          planName={premiumPlan.name === 'Premium' ? 'Skinova Premium' : premiumPlan.name}
+          planPrice={premiumPriceLabel}
         />
         <SuccessModal
           isOpen={isSuccessModalOpen}
           onClose={handleCloseSuccessModal}
           onExplore={handleExplore}
+          planPrice={premiumPriceLabel}
         />
         <CancelSubscriptionModal
           isOpen={isCancelModalOpen}

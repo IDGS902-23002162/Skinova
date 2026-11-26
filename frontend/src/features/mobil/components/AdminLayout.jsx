@@ -1,6 +1,7 @@
 import React from "react";
 import AdminNavigation from "./AdminNavigation";
 import "./AdminLayout.css";
+import "./MobilShared.css";
 
 /**
  * AdminLayout — wrapper que coloca la navegación de admin

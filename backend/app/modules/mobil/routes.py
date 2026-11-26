@@ -1,13 +1,16 @@
 import os
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import func
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from clerk_backend_api import Clerk
 from app.extensions import db
 from app.auth import require_auth
 from app.modules.users.models import User, Subscription
 from app.modules.perfil_salud.models import UserProfile
-from app.modules.mobil.models import PwaVisit, UserActivityLog, ApiRequestLog
+from app.modules.mobil.models import (
+    PwaVisit, UserActivityLog, ApiRequestLog, SystemLog, get_app_settings, save_app_setting
+)
+from app.modules.notificaciones.models import Notification
 
 mobil_bp = Blueprint('mobil', __name__, url_prefix='/api/mobil')
 
@@ -157,7 +160,9 @@ def get_dashboard_analytics():
             visits_growth_str = "0%"
 
         # 4. Suscripciones activas vs. Ingresos reales (excluyendo cortesías de admin)
-        plan_price_mxn = 99.0
+        plans_cfg = get_app_settings().get('plans', [])
+        premium_cfg = next((p for p in plans_cfg if p.get('code') == 'skinova_premium'), None)
+        plan_price_mxn = float(premium_cfg.get('price', 149)) if premium_cfg else 149.0
         courtesy_user_ids = _get_admin_courtesy_user_ids()
 
         all_premium_subs = Subscription.query.filter(
@@ -590,6 +595,12 @@ def update_user_subscription(user_id):
             details=f"Plan actualizado a {new_plan} con estado {normalized_status}"
         )
         db.session.add(log)
+        db.session.add(SystemLog(
+            event_type='info',
+            message=f"Admin actualizó suscripción de {user.id} a {new_plan} ({normalized_status})",
+            origin=g.user_id,
+            component='GestionUsuarios',
+        ))
         db.session.commit()
 
         return jsonify({
@@ -641,6 +652,12 @@ def toggle_user_account_status(user_id):
             details=f"Cuenta {'suspendida' if banned_state else 'reactivada'}"
         )
         db.session.add(log)
+        db.session.add(SystemLog(
+            event_type='warning' if banned_state else 'info',
+            message=f"Admin {'suspendió' if banned_state else 'reactivó'} la cuenta {user.id}",
+            origin=g.user_id,
+            component='GestionUsuarios',
+        ))
         db.session.commit()
 
         return jsonify({
@@ -756,4 +773,150 @@ def get_performance_metrics():
             "hourly_requests": [hourly_buckets[h] for h in ordered_hours],
         }), 200
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@mobil_bp.route('/audit/admin-login', methods=['POST'])
+@require_auth
+def log_admin_login():
+    """Registra inicio de sesión exclusivamente si el usuario tiene badge/rol admin en Clerk."""
+    try:
+        SystemLog.__table__.create(db.engine, checkfirst=True)
+        clerk = get_clerk_client()
+        if not clerk:
+            return jsonify({"logged": False, "reason": "clerk_not_configured"}), 200
+
+        cu = clerk.users.get(user_id=g.user_id)
+        role = (getattr(cu, 'public_metadata', None) or {}).get('role')
+        if role != 'admin':
+            return jsonify({"error": "Solo administradores"}), 403
+
+        email = None
+        if getattr(cu, 'email_addresses', None):
+            email = cu.email_addresses[0].email_address
+        origin = email or g.user_id
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr or 'IP desconocida').split(',')[0].strip()
+
+        db.session.add(SystemLog(
+            event_type='login',
+            message=f"Admin inició sesión desde IP {ip}",
+            origin=origin,
+            component='AdminGuard',
+        ))
+        db.session.commit()
+        return jsonify({"logged": True}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@mobil_bp.route('/bitacora', methods=['GET'])
+@require_auth
+def get_admin_bitacora():
+    """Devuelve los eventos internos del servidor para la bitácora de administración."""
+    try:
+        SystemLog.__table__.create(db.engine, checkfirst=True)
+        rows = SystemLog.query.order_by(SystemLog.created_at.desc()).limit(200).all()
+
+        counts = {"error": 0, "login": 0, "warning": 0, "info": 0, "success": 0}
+        logs = []
+        for r in rows:
+            t = r.event_type if r.event_type in counts else "info"
+            counts[t] += 1
+            dt = r.created_at
+            if dt:
+                local_dt = dt.replace(tzinfo=timezone.utc).astimezone() if dt.tzinfo is None else dt.astimezone()
+                time_str = local_dt.strftime("%d/%m %H:%M:%S")
+            else:
+                time_str = "--:--:--"
+            logs.append({
+                "id": r.id,
+                "type": t,
+                "message": r.message,
+                "user": r.origin,
+                "component": r.component,
+                "time": time_str,
+            })
+
+        return jsonify({"logs": logs, "counts": counts}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@mobil_bp.route('/admin/config', methods=['GET', 'PUT'])
+@require_auth
+def admin_config():
+    """Consulta y actualiza planes de suscripción y feature flags globales."""
+    if request.method == 'GET':
+        return jsonify(get_app_settings()), 200
+
+    try:
+        data = request.get_json() or {}
+        if 'plans' in data and isinstance(data['plans'], list):
+            save_app_setting('plans', data['plans'])
+        if 'features' in data and isinstance(data['features'], dict):
+            current = get_app_settings()['features']
+            current.update(data['features'])
+            save_app_setting('features', current)
+
+        db.session.add(SystemLog(
+            event_type='info',
+            message="Configuración global actualizada desde Administración",
+            origin=g.user_id,
+            component='Administracion',
+        ))
+        db.session.commit()
+        return jsonify(get_app_settings()), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@mobil_bp.route('/notifications/broadcast', methods=['POST'])
+@require_auth
+def broadcast_notification():
+    """Envía una notificación a todos los usuarios o a un segmento (premium/free)."""
+    try:
+        data = request.get_json() or {}
+        message = (data.get('message') or '').strip()
+        segment = data.get('segment', 'all')
+        if not message:
+            return jsonify({"error": "El mensaje es obligatorio"}), 400
+
+        users = User.query.all()
+        active_premium_ids = {
+            s.user_id for s in Subscription.query.filter_by(plan_code='skinova_premium').all()
+            if (s.status or '').lower() in ('active', 'activo')
+        }
+
+        if segment == 'premium':
+            target_ids = [u.id for u in users if u.id in active_premium_ids]
+        elif segment == 'free':
+            target_ids = [u.id for u in users if u.id not in active_premium_ids]
+        else:
+            target_ids = [u.id for u in users]
+
+        notifs = [
+            Notification(
+                user_id=uid,
+                type='admin_broadcast',
+                title='Aviso de Skinova',
+                message=message,
+                action_path='/notificaciones',
+            )
+            for uid in target_ids
+        ]
+        if notifs:
+            db.session.bulk_save_objects(notifs)
+
+        db.session.add(SystemLog(
+            event_type='success',
+            message=f"Notificación enviada a {len(target_ids)} usuarios (segmento: {segment})",
+            origin=g.user_id,
+            component='Administracion',
+        ))
+        db.session.commit()
+        return jsonify({"success": True, "sent_count": len(target_ids)}), 201
+    except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500

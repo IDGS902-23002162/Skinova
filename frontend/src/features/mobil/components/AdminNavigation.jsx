@@ -10,6 +10,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import "./AdminNavigation.css";
+import logoImage from "../../../assets/nuevo-logo-letra-blanca.png";
 
 const adminModules = [
   {
@@ -43,7 +44,7 @@ const adminModules = [
   {
     id: "administracion",
     path: "/admin/administracion",
-    label: "Administración",
+    label: "Admin",
     sublabel: "Config & Notificaciones",
     icon: Settings,
   },
@@ -82,8 +83,11 @@ export default function AdminNavigation() {
       {/* ── Sidebar Desktop ───────────────────────────────────────── */}
       <aside className="admin-nav-sidebar">
         <div className="admin-nav-brand">
-          <span className="admin-nav-brand-icon">S</span>
-          <span className="admin-nav-brand-name">Skinova</span>
+          <img
+            src={logoImage}
+            alt="Skinova"
+            style={{ width: "100%", maxWidth: "130px", objectFit: "contain" }}
+          />
           <span className="admin-nav-badge">Admin</span>
         </div>
 
@@ -181,4 +185,3 @@ export default function AdminNavigation() {
     </>
   );
 }
-

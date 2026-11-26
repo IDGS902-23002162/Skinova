@@ -2,7 +2,7 @@ import React from 'react';
 import { X, Sparkles, Check, ArrowRight, ShieldCheck } from 'lucide-react';
 import './SuccessModal.css';
 
-export default function SuccessModal({ isOpen, onClose, onExplore }) {
+export default function SuccessModal({ isOpen, onClose, onExplore, planPrice = "$149 MXN / mes" }) {
   if (!isOpen) return null;
 
   return (
@@ -23,7 +23,7 @@ export default function SuccessModal({ isOpen, onClose, onExplore }) {
 
         <div className="success-note">
           <ShieldCheck size={16} />
-          <span>Suscripción de $99 MXN / mes · Administra o cancela cuando quieras.</span>
+          <span>Suscripción de {planPrice} · Administra o cancela cuando quieras.</span>
         </div>
 
         <div className="success-modal-actions">

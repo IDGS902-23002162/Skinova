@@ -20,7 +20,7 @@ class ProgressEntry(db.Model):
     )
 
     def to_dict(self):
-        return {
+        return {    
             'id': self.id,
             'user_id': self.user_id,
             'routine_id': self.routine_id,

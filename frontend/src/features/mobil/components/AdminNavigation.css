@@ -204,25 +204,35 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 0.5rem 0.5rem 0.75rem;
+  padding: 0.45rem 0.5rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(22, 59, 53, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .admin-nav-mobile-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 3px;
-  padding: 0.4rem 0.6rem;
-  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  border-radius: 12px;
   text-decoration: none;
-  color: rgba(169, 196, 181, 0.6);
+  color: rgba(169, 196, 181, 0.68);
   font-family: "Manrope", "DM Sans", sans-serif;
-  font-size: 0.65rem;
+  font-size: 0.66rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  transition: color 0.18s, background 0.18s;
-  min-width: 56px;
+  letter-spacing: 0.02em;
+  transition: color 0.18s, background 0.18s, transform 0.12s;
+  min-width: 58px;
+  min-height: 44px;
   text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-nav-mobile-item:active {
+  transform: scale(0.95);
 }
 
 .admin-nav-mobile-item:hover {

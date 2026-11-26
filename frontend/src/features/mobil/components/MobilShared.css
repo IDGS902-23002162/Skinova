@@ -1,0 +1,116 @@
+/* MobilShared.css — Design system & shimmer skeletons compartidos para el panel admin */
+
+@keyframes mobilShimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skel {
+  display: block;
+  background: linear-gradient(90deg, #eef3f0 25%, #ddeae5 50%, #eef3f0 75%);
+  background-size: 800px 100%;
+  animation: mobilShimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+.mobil-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(22, 59, 53, 0.08);
+}
+
+.mobil-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.mobil-header-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(45, 102, 88, 0.12);
+  color: #2D6658;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.28rem 0.75rem;
+  border-radius: 999px;
+  width: fit-content;
+  letter-spacing: 0.02em;
+}
+
+.mobil-title {
+  font-family: "DM Serif Display", serif;
+  font-size: 1.85rem;
+  color: #163B35;
+  margin: 0.1rem 0 0;
+  line-height: 1.2;
+}
+
+.mobil-subtitle {
+  font-size: 0.88rem;
+  color: #5a7a71;
+  margin: 0;
+}
+
+.mobil-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #E7DFD2;
+  border-radius: 999px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(22, 59, 53, 0.05);
+}
+
+.mobil-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38rem;
+  height: 32px;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  background: #F6F3EC;
+  border: none;
+  color: #163B35;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobil-refresh-btn:hover:not(:disabled) {
+  background: #2D6658;
+  color: #F6F3EC;
+}
+
+.mobil-refresh-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.mobil-refresh-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.mobil-refresh-btn.is-loading svg {
+  animation: mobilSpin 1s linear infinite;
+}
+
+@keyframes mobilSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+  .mobil-title { font-size: 1.5rem; }
+  .mobil-refresh-btn { height: 34px; padding: 0 0.7rem; }
+  .mobil-refresh-label { display: none; }
+}
+

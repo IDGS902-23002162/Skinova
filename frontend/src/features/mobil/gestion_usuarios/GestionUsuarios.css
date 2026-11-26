@@ -978,21 +978,37 @@
     white-space: nowrap;
   }
 
-  /* 3. Ajuste fino para pantallas móviles pequeñas */
+  /* 3. Ajuste fino para pantallas móviles pequeñas (HIG touch targets + input >= 16px) */
+  .gu-mini-val {
+    font-variant-numeric: tabular-nums;
+  }
+
   @media (max-width: 480px) {
+    .gu-refresh-btn {
+      width: 44px;
+      height: 44px;
+    }
+
+    .gu-search-input,
+    .gu-filter-select {
+      font-size: 16px;
+      min-height: 44px;
+    }
+
     .gu-user-card {
       padding: 1rem;
     }
 
     .gu-admin-action-btn {
-      padding: 0.45rem 0.65rem;
-      font-size: 0.78rem;
+      padding: 0.5rem 0.75rem;
+      min-height: 40px;
+      font-size: 0.8rem;
     }
 
-    /* Opcional: si prefieres mostrar solo el ícono de editar en pantallas muy angostas, descomenta esto:
-  .gu-admin-action-btn span {
-    display: none;
-  }
-  */
+    .gu-modal-card {
+      max-height: 90dvh;
+      overflow-y: auto;
+      border-radius: 20px;
+    }
   }
 }
