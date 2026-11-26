@@ -62,8 +62,10 @@ def create_app(config_name='default'):
     from app.modules.ai_history import models as ai_history_models
     from app.modules.notificaciones import models as notificaciones_models
     from app.modules.mobil import models as mobil_models
+    from app.modules.monitoreo_ambiental import models as monitoreo_ambiental_models
 
     from app.modules.users.routes import users_bp
+    from app.modules.creador_rutinas.routes import rutinas_bp
     from app.modules.mi_neceser.routes import mi_neceser_bp
     from app.modules.habitos_desafios.routes import habitos_desafios_bp
     from app.modules.comunidad.routes import comunidad_bp
@@ -71,17 +73,24 @@ def create_app(config_name='default'):
     from app.modules.notificaciones.routes import notifications_bp
     from app.modules.bitacora.routes import bitacora_bp
     from app.modules.face_id.routes import face_id_bp
+    from app.modules.monitoreo_ambiental.routes import ambiente_bp
+    from app.modules.directorio.routes import directorio_bp
     from app.modules.busqueda_ia.routes import ai_analysis_bp
+
     app.register_blueprint(ai_analysis_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(mi_neceser_bp)
     app.register_blueprint(habitos_desafios_bp)
     app.register_blueprint(comunidad_bp)
     app.register_blueprint(mobil_bp)
-   
     app.register_blueprint(notifications_bp)
     app.register_blueprint(bitacora_bp)
     app.register_blueprint(face_id_bp)
+    app.register_blueprint(rutinas_bp)
+    app.register_blueprint(ambiente_bp)
+    app.register_blueprint(directorio_bp)
+    
+
 
     # Rutas de perfil_salud:
     from app.modules.perfil_salud.routes import perfil_salud_bp

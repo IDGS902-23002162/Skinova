@@ -7,7 +7,7 @@ from app.extensions import db
 from app.modules.notificaciones.models import Notification
 from app.modules.perfil_salud.models import UserProfile
 from app.modules.mi_neceser.models import UserProduct
-from app.modules.creador_rutinas.models import Routine, RoutineStep
+from app.modules.creador_rutinas.models import RoutineVersion as Routine, RoutineStep
 
 logger = logging.getLogger(__name__)
 
@@ -309,8 +309,8 @@ class NotificationService:
         if existing:
             return existing
 
-        routine = Routine.query.filter_by(user_id=user_id, period="morning", active=True).first()
-        routine_name = routine.name if routine and routine.name else "Rutina de la mañana"
+        routine = Routine.query.filter_by(user_id=user_id, is_active=True).first()
+        routine_name = routine.version_label if routine and routine.version_label else "Rutina de la mañana"
 
         title = "Es hora de tu rutina de la mañana ☀️"
         message = f"Comienza tu día con {routine_name}. Limpieza, hidratación y no olvides tu protector solar."
@@ -343,8 +343,8 @@ class NotificationService:
         if existing:
             return existing
 
-        routine = Routine.query.filter_by(user_id=user_id, period="night", active=True).first()
-        routine_name = routine.name if routine and routine.name else "Rutina de la noche"
+        routine = Routine.query.filter_by(user_id=user_id, is_active=True).first()
+        routine_name = routine.version_label if routine and routine.version_label else "Rutina de la noche"
 
         title = "Hora de tu rutina nocturna 🌙"
         message = f"Cierra tu día cuidando tu piel con {routine_name}. Limpieza profunda y activos reparadores."
