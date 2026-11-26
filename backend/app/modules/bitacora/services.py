@@ -7,7 +7,7 @@ from app.extensions import db
 from app.modules.bitacora.models import ProgressEntry, ProgressPhoto, HabitLog, Notification
 from app.modules.perfil_salud.models import UserProfile
 from app.modules.mi_neceser.models import UserProduct
-from app.modules.creador_rutinas.models import Routine, RoutineStep
+from app.modules.creador_rutinas.models import RoutineVersion as Routine, RoutineStep
 
 logger = logging.getLogger(__name__)
 
@@ -289,8 +289,8 @@ class BitacoraService:
         if existing:
             return existing
 
-        routine = Routine.query.filter_by(user_id=user_id, period="morning", active=True).first()
-        name = routine.name if routine and routine.name else "Rutina de la mañana"
+        routine = Routine.query.filter_by(user_id=user_id, is_active=True).first()
+        name = routine.version_label if routine and routine.version_label else "Rutina de la mañana"
 
         return cls.create_notification(
             user_id=user_id,
@@ -316,8 +316,8 @@ class BitacoraService:
         if existing:
             return existing
 
-        routine = Routine.query.filter_by(user_id=user_id, period="night", active=True).first()
-        name = routine.name if routine and routine.name else "Rutina de la noche"
+        routine = Routine.query.filter_by(user_id=user_id, is_active=True).first()
+        name = routine.version_label if routine and routine.version_label else "Rutina de la noche"
 
         return cls.create_notification(
             user_id=user_id,
@@ -817,23 +817,19 @@ class BitacoraService:
 
     @classmethod
     def get_user_routines(cls, user_id: str) -> List[Dict[str, Any]]:
-        """Obtiene las rutinas activas del usuario o inicializa rutinas base si no existen."""
-        routines = Routine.query.filter_by(user_id=user_id, active=True).all()
+        """Obtiene las versiones de rutina activas del usuario o inicializa una base si no existe."""
+        routines = Routine.query.filter_by(user_id=user_id, is_active=True).all()
         if not routines:
-            # Crear rutinas base automáticas para este usuario
-            m_routine = Routine(user_id=user_id, name="Rutina Matutina", period="morning", active=True)
-            n_routine = Routine(user_id=user_id, name="Rutina Nocturna", period="night", active=True)
-            db.session.add(m_routine)
-            db.session.add(n_routine)
+            base_routine = Routine(user_id=user_id, version_label="v1.0 (Base)", is_active=True)
+            db.session.add(base_routine)
             db.session.commit()
-            routines = [m_routine, n_routine]
+            routines = [base_routine]
 
         return [
             {
                 "id": r.id,
-                "name": r.name,
-                "period": r.period,
-                "active": r.active
+                "name": r.version_label,
+                "active": r.is_active
             }
             for r in routines
         ]
@@ -880,7 +876,7 @@ class BitacoraService:
             d = e.to_dict()
             if e.routine_id:
                 r = Routine.query.filter_by(id=e.routine_id).first()
-                d["routine_name"] = r.name if r else None
+                d["routine_name"] = r.version_label if r else None
             else:
                 d["routine_name"] = None
 

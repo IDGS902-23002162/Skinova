@@ -8,7 +8,7 @@ class ProgressEntry(db.Model):
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    routine_id = db.Column(db.String(36), db.ForeignKey('routines.id'))
+    routine_id = db.Column(db.Integer, db.ForeignKey('routine_versions.id', ondelete='SET NULL'), nullable=True)
     perception = db.Column(db.String(50)) # better | same | worse | irritated | dry...
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))

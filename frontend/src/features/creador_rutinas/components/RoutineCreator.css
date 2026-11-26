@@ -1,336 +1,666 @@
-/* EL CONTENEDOR MÁGICO: Evita que ocupe toda la pantalla */
+/* =========================================================
+   CONTENEDOR PRINCIPAL CENTRADO
+   ========================================================= */
 .routine-creator-wrapper {
-  max-width: 800px; /* Ancho máximo limitado */
-  margin: 0 auto; /* Centrado en la pantalla */
-  padding: 32px;
-  background-color: var(--crema, #F6F3EC);
-  min-height: 100vh;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 36px 24px 80px 24px;
+  color: #1c2b27;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* =========================================================
+   CABECERA CENTRADA
+   ========================================================= */
+.page-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.header-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 18px;
+  width: 100%;
+  margin-bottom: 24px;
 }
 
 .page-header h1 {
-  font-family: 'DM Serif Display', serif;
-  color: var(--bosque-profundo, #163B35);
-  font-size: 2.2rem;
-  margin-bottom: 8px;
+  font-family: "Playfair Display", "Georgia", serif;
+  font-size: 2.35rem;
+  font-weight: 700;
+  color: #163a32;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
 }
 
 .page-header p {
-  color: var(--carbon, #1D2825);
-  margin-bottom: 32px;
+  font-size: 1rem;
+  color: #52635e;
+  margin: 0;
+  max-width: 560px;
+  line-height: 1.5;
 }
 
-/* LISTA Y TARJETAS */
+/* Fila de botones principales centrados */
+.header-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-save-routine,
+.btn-add-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1.5px solid #163a32;
+}
+
+.btn-save-routine {
+  background-color: #ffffff;
+  color: #163a32;
+}
+
+.btn-save-routine:hover {
+  background-color: #eef3f1;
+}
+
+.btn-save-routine.saved {
+  background-color: #e6f0ec;
+  border-color: #2c6356;
+  color: #163a32;
+}
+
+.btn-add-step {
+  background-color: #163a32;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(22, 58, 50, 0.18);
+}
+
+.btn-add-step:hover {
+  background-color: #204f44;
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   BARRA DE CONTEXTO (PERFIL, ALERGIAS, PRESUPUESTO, VERSIÓN)
+   ========================================================= */
+.routine-context-bar {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1px solid #e6e0d2;
+  border-radius: 18px;
+  padding: 18px 22px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 16px rgba(22, 58, 50, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.profile-constraints {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.constraint-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #f6f3eb;
+  color: #2e3f3a;
+  border: 1px solid #e3dccd;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.83rem;
+}
+
+.constraint-chip strong {
+  color: #163a32;
+}
+
+.allergy-chip {
+  background-color: #fdf6ec;
+  border-color: #edd8b4;
+  color: #7c5318;
+}
+
+.safe-chip {
+  background-color: #eaf3ef;
+  border-color: #c3dbd1;
+  color: #1b4d41;
+  font-weight: 500;
+}
+
+/* Controles de Presupuesto y Versión */
+.routine-preferences-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed #e6e0d2;
+  width: 100%;
+}
+
+.pref-select-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #faf8f3;
+  border: 1px solid #dcd5c5;
+  padding: 7px 14px;
+  border-radius: 12px;
+  font-size: 0.86rem;
+  color: #3a4c47;
+}
+
+.pref-select-box label {
+  font-weight: 600;
+  color: #163a32;
+}
+
+.pref-select-box select {
+  background: transparent;
+  border: none;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #163a32;
+  cursor: pointer;
+  outline: none;
+}
+
+/* =========================================================
+   TARJETA DE AJUSTE INTELIGENTE IA
+   ========================================================= */
+.smart-adjustment-card {
+  width: 100%;
+  background: linear-gradient(135deg, #edf4f1 0%, #f8fbf9 100%);
+  border: 1px solid #c3d8cf;
+  border-radius: 18px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  box-shadow: 0 4px 14px rgba(22, 58, 50, 0.04);
+}
+
+.smart-adjustment-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 5px;
+}
+
+.smart-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #163a32;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 2px;
+}
+
+.smart-adjustment-info strong {
+  font-size: 0.96rem;
+  color: #163a32;
+}
+
+.smart-adjustment-info p {
+  font-size: 0.86rem;
+  color: #495d57;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.btn-apply-smart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #163a32;
+  color: #ffffff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.btn-apply-smart:hover {
+  background-color: #215247;
+}
+
+/* Banner de notificación / estado */
+.routine-status-toast {
+  width: 100%;
+  background-color: #163a32;
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.88rem;
+}
+
+.routine-status-toast button {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* =========================================================
+   SELECTOR MORNING / NIGHT CENTRADO
+   ========================================================= */
+.routine-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e8e3d6;
+  padding: 5px;
+  border-radius: 999px;
+  gap: 4px;
+  margin: 4px auto 0 auto;
+}
+
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: #5c6965;
+  font-size: 0.94rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn.active {
+  background-color: #ffffff;
+  color: #163a32;
+  border-color: #163a32;
+  box-shadow: 0 2px 8px rgba(22, 58, 50, 0.08);
+}
+
+/* =========================================================
+   LISTA Y TARJETAS DE PASOS DE LA RUTINA
+   ========================================================= */
 .routine-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
 }
 
 .product-card {
   display: flex;
-  background: #FFFFFF;
-  border: 1px solid var(--arena, #E7DFD2);
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(29, 40, 37, 0.04);
+  align-items: stretch;
+  background-color: #ffffff;
+  border: 1px solid #eae4d7;
+  border-radius: 20px;
+  padding: 22px 24px;
+  box-shadow: 0 6px 20px rgba(22, 58, 50, 0.04);
+  transition: all 0.2s ease;
   position: relative;
-  transition: opacity 0.3s ease;
+}
+
+.product-card:hover {
+  border-color: #cfd8d4;
+  box-shadow: 0 8px 24px rgba(22, 58, 50, 0.07);
 }
 
 .product-card.completed {
-  opacity: 0.6;
-  background: var(--crema, #F6F3EC);
+  background-color: #faf9f5;
+  border-color: #dce3df;
 }
 
-/* LÍNEA DE TIEMPO (TIMELINE) */
+.product-card.completed .product-copy h2 {
+  text-decoration: line-through;
+  color: #7b8a85;
+}
+
+.product-card.paused-card {
+  opacity: 0.65;
+  background-color: #f5f3ed;
+}
+
+/* Línea de tiempo izquierda */
 .timeline {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-right: 24px;
-  min-width: 32px;
+  margin-right: 20px;
+  min-width: 34px;
 }
 
 .step-dot {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: var(--salvia, #A9C4B5);
-  color: var(--bosque-profundo, #163B35);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  background-color: #c5d4cd;
+  color: #163a32;
   font-weight: 700;
-  font-family: 'Manrope', sans-serif;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
 .step-dot.done-dot {
-  background: var(--bosque-profundo, #163B35);
-  color: #fff;
+  background-color: #163a32;
+  color: #ffffff;
 }
 
 .timeline-line {
   width: 2px;
-  background: var(--salvia, #A9C4B5);
-  flex-grow: 1;
+  flex: 1;
+  background-color: #dce3df;
   margin-top: 8px;
-  opacity: 0.5;
 }
 
-/* CONTENIDO DE LA TARJETA */
+/* Contenido central de la tarjeta */
 .product-copy {
-  flex-grow: 1;
+  flex: 1;
+  text-align: left;
 }
 
 .product-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
 .step-label {
-  font-size: 12px;
+  font-size: 0.76rem;
   font-weight: 700;
-  color: var(--bosque-medio, #2D6658);
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  color: #4f6b63;
 }
 
 .badge {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-weight: 600;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
 }
 
 .badge.inventory {
-  background: var(--crema, #F6F3EC);
-  color: var(--bosque-medio, #2D6658);
+  background-color: #f5efe4;
+  color: #78552b;
 }
 
 .badge.ai {
-  background: #E8F0ED;
-  color: var(--bosque-profundo, #163B35);
+  background-color: #e8f2ee;
+  color: #163a32;
+}
+
+.badge.paused-badge {
+  background-color: #fee2e2;
+  color: #991b1b;
 }
 
 .product-copy h2 {
-  font-family: 'DM Serif Display', serif;
-  color: var(--bosque-profundo, #163B35);
-  font-size: 1.4rem;
+  font-family: "Playfair Display", "Georgia", serif;
+  font-size: 1.38rem;
+  font-weight: 700;
+  color: #163a32;
   margin: 0 0 12px 0;
 }
 
 .instructions {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 16px;
-  font-size: 14px;
-  color: var(--carbon, #1D2825);
+  gap: 5px;
+  font-size: 0.92rem;
+  color: #4a5b56;
+  margin-bottom: 14px;
 }
 
-/* BOTÓN DE CHECKBOX CUSTOM */
-.done-control {
-  display: flex;
+.inst-block strong {
+  color: #1c2b27;
+}
+
+.incompatibility-note {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--bosque-medio, #2D6658);
+  gap: 7px;
+  background-color: #fdf8ee;
+  border: 1px solid #eedcb9;
+  color: #7c561a;
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  margin-bottom: 14px;
 }
 
-.done-control input {
-  display: none; /* Oculta el checkbox nativo feo */
+/* Fila inferior de la tarjeta (Checkbox + Enlace web) */
+.card-bottom-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0ece1;
+}
+
+.done-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: #163a32;
+  position: relative;
+  user-select: none;
+}
+
+.done-control input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
 .custom-check {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--bosque-medio, #2D6658);
+  width: 22px;
+  height: 22px;
   border-radius: 6px;
-  display: flex;
-  justify-content: center;
+  border: 2px solid #163a32;
+  display: inline-flex;
   align-items: center;
-  color: #fff;
-  background: transparent;
-  transition: all 0.2s;
+  justify-content: center;
+  background-color: #ffffff;
+  color: #ffffff;
+  transition: all 0.15s ease;
 }
 
 .done-control input:checked + .custom-check {
-  background: var(--bosque-profundo, #163B35);
-  border-color: var(--bosque-profundo, #163B35);
+  background-color: #163a32;
 }
 
-/* ACCIONES (Botones de la derecha) */
+.web-search-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #20574a;
+  background-color: #eef5f2;
+  padding: 6px 12px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.web-search-link:hover {
+  background-color: #dcebe4;
+}
+
+/* Botones de información y opciones a la derecha de la tarjeta */
 .card-actions {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 6px;
+  margin-left: 12px;
   position: relative;
 }
 
-.card-actions button {
-  background: transparent;
+.tip-button,
+.more-button {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   border: none;
+  background-color: #f6f3eb;
+  color: #36524b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  color: var(--bosque-medio, #2D6658);
-  padding: 8px;
-  border-radius: 8px;
+  transition: background 0.2s ease;
 }
 
-.card-actions button:hover {
-  background: var(--crema, #F6F3EC);
+.tip-button:hover,
+.more-button:hover {
+  background-color: #e6efe9;
+  color: #163a32;
 }
 
 .tip-button.has-warning {
-  color: var(--terracota, #C98268);
+  background-color: #fef3c7;
+  color: #b45309;
 }
 
-/* MENÚS EMERGENTES (Tooltips) */
-.tooltip, .context-menu {
+/* Tooltip y Menú contextual */
+.tooltip {
   position: absolute;
-  top: 40px;
-  right: 40px;
-  background: #fff;
-  border: 1px solid var(--arena, #E7DFD2);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-  border-radius: 12px;
-  padding: 16px;
-  width: 200px;
-  z-index: 10;
+  top: 42px;
+  right: 0;
+  width: 260px;
+  background-color: #163a32;
+  color: #ffffff;
+  padding: 14px;
+  border-radius: 14px;
+  font-size: 0.83rem;
+  line-height: 1.45;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+  z-index: 20;
+  text-align: left;
 }
 
-.warning-tooltip {
-  border-left: 4px solid var(--terracota, #C98268);
+.tooltip strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.86rem;
+}
+
+.tooltip p {
+  margin: 0;
+  color: #e4ece9;
 }
 
 .context-menu {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  width: 245px;
+  background-color: #ffffff;
+  border: 1px solid #e2dcd0;
+  border-radius: 14px;
+  padding: 6px;
+  box-shadow: 0 10px 25px rgba(22, 58, 50, 0.14);
+  z-index: 20;
   display: flex;
   flex-direction: column;
-  padding: 8px;
+  gap: 4px;
 }
 
 .context-menu button {
-  text-align: left;
-  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
+  padding: 9px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: #1c2b27;
+  cursor: pointer;
+  text-align: left;
+}
+
+.context-menu button:hover {
+  background-color: #f3f0e8;
 }
 
 .context-menu button.danger {
-  color: var(--terracota, #C98268);
+  color: #b91c1c;
 }
 
-/* ESTRUCTURA DE LA CABECERA (Header) */
-.header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-}
-
-/* BOTÓN: Añadir Paso */
-.btn-add-step {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: var(--bosque-profundo, #163B35);
-  color: var(--crema, #F6F3EC);
-  border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-family: 'Manrope', sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-  box-shadow: 0 4px 12px rgba(22, 59, 53, 0.15);
-}
-
-.btn-add-step:hover {
-  background-color: var(--bosque-medio, #2D6658);
-  transform: translateY(-2px);
-}
-
-/* PESTAÑAS: Mañana y Noche */
-/* DISEÑO MINIMALISTA TIPO PÍLDORA PARA EL SELECTOR */
-.routine-toggle {
-  display: inline-flex;
-  background-color: var(--arena, #E7DFD2);
-  border-radius: 24px;
-  padding: 4px;
-  margin-bottom: 32px;
-}
-
-.toggle-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 20px;
-  border: none;
-  background: transparent;
-  color: var(--carbon, #1D2825);
-  font-family: 'Manrope', sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  opacity: 0.7;
-}
-
-.toggle-btn:hover {
-  opacity: 1;
-}
-
-.toggle-btn.active {
-  background-color: #FFFFFF;
-  color: var(--bosque-profundo, #163B35);
-  font-weight: 600;
-  opacity: 1;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-
-
-
-
-
-.tab-button.active {
-  color: var(--bosque-profundo, #163B35);
-  font-weight: 700;
-  opacity: 1;
-}
-
-.tab-button.active::after {
-  content: '';
-  position: absolute;
-  bottom: -13px; /* Se ajusta a la línea inferior del borde */
-  left: 0;
-  width: 100%;
-  height: 3px;
-  background-color: var(--bosque-profundo, #163B35);
-  border-radius: 4px 4px 0 0;
+.context-menu button.danger:hover {
+  background-color: #fee2e2;
 }
 
 /* =========================================================
-   DISEÑO RESPONSIVO MÓVIL (No afecta la vista de escritorio)
+   DISEÑO RESPONSIVO MÓVIL
    ========================================================= */
 @media (max-width: 768px) {
   .routine-creator-wrapper {
-    padding: 20px 16px 100px 16px; /* Espacio extra abajo para el menú móvil */
+    padding: 20px 16px 100px 16px;
   }
 
   .page-header h1 {
-    font-size: 1.75rem;
-  }
-
-  .header-top {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 14px;
+    font-size: 1.85rem;
   }
 
   .header-buttons {
@@ -338,70 +668,64 @@
     flex-direction: column;
   }
 
-  .btn-add-step,
-  .btn-save-routine {
+  .btn-save-routine,
+  .btn-add-step {
     width: 100%;
-    justify-content: center;
   }
 
-  /* Barra de perfil, presupuesto y versiones en columna */
   .routine-context-bar {
-    flex-direction: column;
-    align-items: stretch;
     padding: 14px;
   }
 
   .routine-preferences-controls {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .pref-select-box {
     justify-content: space-between;
   }
 
-  /* Banner de ajuste inteligente apilado */
   .smart-adjustment-card {
     flex-direction: column;
     align-items: stretch;
-    padding: 16px;
+    text-align: center;
+  }
+
+  .smart-adjustment-info {
+    align-items: center;
+    text-align: center;
   }
 
   .btn-apply-smart {
     width: 100%;
-    justify-content: center;
   }
 
-  /* Selector píldora (Morning / Night) al 100% del ancho en celular */
   .routine-toggle {
     display: flex;
     width: 100%;
-    margin-bottom: 20px;
   }
 
   .toggle-btn {
     flex: 1;
     justify-content: center;
     padding: 10px 12px;
-    font-size: 14px;
+    font-size: 0.86rem;
   }
 
-  /* Ajuste de las tarjetas de pasos para pantallas angostas */
   .product-card {
     padding: 16px;
   }
 
   .timeline {
-    margin-right: 14px;
+    margin-right: 12px;
     min-width: 28px;
   }
 
   .step-dot {
     width: 28px;
     height: 28px;
-    font-size: 13px;
+    font-size: 0.8rem;
   }
 
   .product-copy h2 {
@@ -411,7 +735,6 @@
   .card-bottom-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
   }
 
   .web-search-link {
@@ -420,17 +743,8 @@
     box-sizing: border-box;
   }
 
-  /* Evita que los tooltips se salgan de la pantalla del celular */
   .tooltip,
   .context-menu {
-    right: 0;
-    top: 44px;
-    width: min(230px, 78vw);
-  }
-}
-
-@media (max-width: 480px) {
-  .routine-preferences-controls {
-    grid-template-columns: 1fr;
+    width: min(240px, 76vw);
   }
 }
