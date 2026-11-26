@@ -1,5 +1,5 @@
 /* Bitacora.css */
-.bit-root { padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 1100px; }
+.bit-root { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 .bit-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
 .bit-title    { font-family: "DM Serif Display", serif; font-size: 1.8rem; color: #163B35; margin: 0 0 .25rem; }
 .bit-subtitle { font-size: .88rem; color: #5a7a71; margin: 0; }
@@ -12,17 +12,42 @@
 .bit-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #C98268; animation: bpulse 1.5s infinite; }
 @keyframes bpulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-/* Summary chips */
-.bit-summary-row { display: flex; gap: .5rem; flex-wrap: wrap; }
-.bit-summary-chip {
-  display: inline-flex; align-items: center; gap: .4rem;
-  background: #fff; border: 1.5px solid #E7DFD2;
-  border-radius: 999px; padding: .35rem .85rem;
-  font-size: .78rem; font-weight: 600; cursor: pointer;
-  transition: background .18s, border-color .18s;
+/* Summary chips (grid simétrico) */
+.bit-summary-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: .55rem;
 }
-.bit-chip-count { background: #F6F3EC; border-radius: 999px; padding: 1px 7px; font-size: .68rem; }
-.bit-summary-chip.selected { border-color: #2D6658; background: #d4ede4; }
+.bit-summary-chip {
+  display: flex; align-items: center; justify-content: space-between; gap: .4rem;
+  background: #fff; border: 1.5px solid #E7DFD2;
+  border-radius: 12px; padding: .55rem .75rem;
+  font-size: .78rem; font-weight: 600; color: #163B35; cursor: pointer;
+  min-width: 0;
+  transition: background .18s, border-color .18s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.bit-summary-chip:active { transform: scale(0.97); }
+.bit-chip-left { display: inline-flex; align-items: center; gap: .38rem; min-width: 0; overflow: hidden; }
+.bit-chip-left span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bit-chip-left svg { flex-shrink: 0; color: var(--evt-color, #2D6658); }
+.bit-chip-count {
+  background: #F6F3EC; color: #163B35; border-radius: 999px;
+  padding: 2px 8px; font-size: .72rem; font-weight: 700; flex-shrink: 0;
+}
+.bit-summary-chip.selected {
+  border-color: var(--evt-color, #2D6658);
+  background: color-mix(in srgb, var(--evt-color, #2D6658) 12%, #fff);
+}
+.evt-all { --evt-color: #163B35; }
+
+@media (max-width: 960px) {
+  .bit-summary-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 520px) {
+  .bit-summary-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+}
 
 /* Type colors */
 .evt-error   { --evt-color: #C98268; }
@@ -97,9 +122,20 @@
 .bit-log-time  { font-size: .72rem; color: #7a9a92; font-family: monospace; white-space: nowrap; }
 .bit-empty { text-align: center; padding: 2rem; color: #7a9a92; font-size: .88rem; }
 
+.bit-chip-count,
+.bit-log-time {
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 640px) {
-  .bit-root { padding: 1rem; gap: 1rem; }
+  .bit-root { padding: 1rem; gap: 1rem; overflow-x: hidden; }
+  .bit-summary-chip,
+  .bit-refresh-btn,
+  .bit-filter-btn,
+  .bit-origin-pill { min-height: 40px; }
   .bit-toolbar { flex-wrap: wrap; }
+  .bit-search { min-height: 44px; }
+  .bit-search input { font-size: 16px; }
   .bit-log-row { grid-template-columns: 28px 1fr; align-items: start; gap: .6rem; }
   .bit-log-right { grid-column: 2; justify-content: space-between; width: 100%; margin-top: .25rem; }
 }

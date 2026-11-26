@@ -3,29 +3,37 @@ import {
   Settings,
   Bell,
   CreditCard,
-  ToggleLeft,
-  ToggleRight,
   Send,
   ChevronRight,
   Save,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { useApi } from "../../../shared/hooks/useApi";
 import "./Administracion.css";
 
-// ── Toggle Switch ──────────────────────────────────────────────────────────────
+// ── Toggle Switch (Apple HIG pill switch) ──────────────────────────────────────
 function Toggle({ label, description, value, onToggle, disabled }) {
   return (
     <div
       className={`adm-toggle-row ${disabled ? "disabled" : ""}`}
+      role="switch"
+      aria-checked={Boolean(value)}
+      tabIndex={0}
       onClick={() => !disabled && onToggle()}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && !disabled) {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
     >
       <div className="adm-toggle-info">
         <span className="adm-toggle-label">{label}</span>
         {description && <span className="adm-toggle-desc">{description}</span>}
       </div>
-      <span className={`adm-toggle-switch ${value ? "on" : "off"}`}>
-        {value ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+      <span className={`adm-ios-switch ${value ? "on" : "off"}`}>
+        <span className="adm-ios-thumb" />
       </span>
     </div>
   );
@@ -60,6 +68,7 @@ export default function Administracion() {
   const [notifMsg, setNotifMsg] = useState("");
   const [segment, setSegment] = useState("all");
   const [sendingNotif, setSendingNotif] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState("");
 
   const showToast = (msg) => {
@@ -68,6 +77,7 @@ export default function Administracion() {
   };
 
   const loadConfig = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await fetchConAuth("/mobil/admin/config");
       if (res.ok) {
@@ -77,6 +87,8 @@ export default function Administracion() {
       }
     } catch (err) {
       console.error("Error cargando administración:", err);
+    } finally {
+      setLoading(false);
     }
   }, [fetchConAuth]);
 
@@ -149,20 +161,51 @@ export default function Administracion() {
     }
   };
 
+  const showSkeletons = loading && plans.length === 0;
+
   return (
     <div className="adm-root">
-      <header className="adm-header">
-        <div>
-          <h1 className="adm-title">Administración</h1>
-          <p className="adm-subtitle">Configuración global, precios y notificaciones</p>
+      <header className="mobil-header">
+        <div className="mobil-header-top">
+          <div className="mobil-header-tag">
+            <Settings size={13} /> Módulo 5 · Configuración
+          </div>
+          <div className="mobil-header-actions">
+            {feedback && <span className="adm-toast">{feedback}</span>}
+            <button
+              type="button"
+              className={`mobil-refresh-btn ${loading ? "is-loading" : ""}`}
+              onClick={loadConfig}
+              disabled={loading}
+              title="Actualizar configuración"
+            >
+              <RefreshCw size={14} />
+              <span className="mobil-refresh-label">Actualizar</span>
+            </button>
+          </div>
         </div>
-        {feedback && <span className="adm-toast">{feedback}</span>}
+        <h1 className="mobil-title">Administración</h1>
+        <p className="mobil-subtitle">Configuración global, precios y notificaciones</p>
       </header>
 
       <div className="adm-grid">
         {/* Planes y precios */}
         <SectionCard icon={CreditCard} title="Planes de suscripción">
-          {plans.map((plan, idx) =>
+          {showSkeletons ? (
+            <>
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="adm-plan-row">
+                  <div className="adm-plan-info" style={{ flex: 1, gap: 6 }}>
+                    <div className="skel" style={{ width: "40%", height: 14 }} />
+                    <div className="skel" style={{ width: "75%", height: 11 }} />
+                  </div>
+                  <div className="skel" style={{ width: 90, height: 28, borderRadius: 8 }} />
+                </div>
+              ))}
+              <div className="skel" style={{ width: "100%", height: 38, borderRadius: 10 }} />
+            </>
+          ) : (
+            plans.map((plan, idx) =>
             editingIdx === idx ? (
               <form key={plan.code || idx} className="adm-plan-editor" onSubmit={handleSavePlan}>
                 <div className="adm-editor-row">
@@ -214,9 +257,10 @@ export default function Administracion() {
                 </div>
               </div>
             )
-          )}
+          ))}
 
-          {editingIdx === "new" ? (
+          {!showSkeletons && (
+            editingIdx === "new" ? (
             <form className="adm-plan-editor" onSubmit={handleSavePlan}>
               <div className="adm-editor-row">
                 <input
@@ -255,7 +299,7 @@ export default function Administracion() {
             <button type="button" className="adm-add-plan-btn" onClick={startNewPlan}>
               + Agregar nuevo plan
             </button>
-          )}
+          ))}
         </SectionCard>
 
         {/* Notificaciones masivas */}
@@ -289,36 +333,50 @@ export default function Administracion() {
 
         {/* Funciones toggle */}
         <SectionCard icon={Settings} title="Activar / desactivar funciones">
-          <Toggle
-            label="Consulta IA"
-            description="Habilita el módulo de consulta con Gemini"
-            value={features.consulta_ia}
-            onToggle={() => handleToggle("consulta_ia")}
-          />
-          <Toggle
-            label="Comunidad / Foro"
-            description="Permite a usuarios publicar en el foro"
-            value={features.comunidad}
-            onToggle={() => handleToggle("comunidad")}
-          />
-          <Toggle
-            label="Directorio de dermats"
-            description="Muestra el directorio de dermatólogos"
-            value={features.directorio}
-            onToggle={() => handleToggle("directorio")}
-          />
-          <Toggle
-            label="Modo mantenimiento"
-            description="Muestra pantalla de mantenimiento a los usuarios"
-            value={features.maintenance_mode}
-            onToggle={() => handleToggle("maintenance_mode")}
-          />
-          <Toggle
-            label="Registro de nuevos"
-            description="Permite que nuevos usuarios se registren"
-            value={features.registration_enabled}
-            onToggle={() => handleToggle("registration_enabled")}
-          />
+          {showSkeletons ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="adm-toggle-row" style={{ pointerEvents: "none" }}>
+                <div className="adm-toggle-info" style={{ flex: 1, gap: 6 }}>
+                  <div className="skel" style={{ width: "45%", height: 14 }} />
+                  <div className="skel" style={{ width: "70%", height: 10 }} />
+                </div>
+                <div className="skel" style={{ width: 32, height: 20, borderRadius: 999 }} />
+              </div>
+            ))
+          ) : (
+            <>
+              <Toggle
+                label="Consulta IA"
+                description="Habilita el módulo de consulta con Gemini"
+                value={features.consulta_ia}
+                onToggle={() => handleToggle("consulta_ia")}
+              />
+              <Toggle
+                label="Comunidad / Foro"
+                description="Permite a usuarios publicar en el foro"
+                value={features.comunidad}
+                onToggle={() => handleToggle("comunidad")}
+              />
+              <Toggle
+                label="Directorio de dermats"
+                description="Muestra el directorio de dermatólogos"
+                value={features.directorio}
+                onToggle={() => handleToggle("directorio")}
+              />
+              <Toggle
+                label="Modo mantenimiento"
+                description="Muestra pantalla de mantenimiento a los usuarios"
+                value={features.maintenance_mode}
+                onToggle={() => handleToggle("maintenance_mode")}
+              />
+              <Toggle
+                label="Registro de nuevos"
+                description="Permite que nuevos usuarios se registren"
+                value={features.registration_enabled}
+                onToggle={() => handleToggle("registration_enabled")}
+              />
+            </>
+          )}
         </SectionCard>
       </div>
     </div>

@@ -51,8 +51,43 @@ function EndpointRow({ method, path, calls, avgMs, errors, isAi }) {
   );
 }
 
+// ── Skeletons ──────────────────────────────────────────────────────────────────
+function SkeletonMetricCard() {
+  return (
+    <div className="rend-metric-card">
+      <div className="rend-metric-top">
+        <div className="skel" style={{ width: 22, height: 22, borderRadius: 7 }} />
+        <div className="skel" style={{ width: 8, height: 8, borderRadius: "50%" }} />
+      </div>
+      <div className="skel" style={{ width: "55%", height: 26, margin: "4px 0" }} />
+      <div className="skel" style={{ width: "80%", height: 11 }} />
+    </div>
+  );
+}
+
+function SkeletonEndpoints({ rows = 3 }) {
+  return (
+    <div className="rend-endpoints-table">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="rend-endpoint-row">
+          <div className="rend-ep-main">
+            <div className="skel" style={{ width: 52, height: 20, borderRadius: 6 }} />
+            <div className="skel" style={{ flex: 1, height: 14 }} />
+          </div>
+          <div className="skel" style={{ width: 76, height: 12 }} />
+          <div className="skel" style={{ width: 64, height: 12 }} />
+          <div className="skel" style={{ width: 52, height: 12 }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Tabla reutilizable de endpoints ────────────────────────────────────────────
-function EndpointsTable({ items, emptyText }) {
+function EndpointsTable({ items, loading, skeletonRows = 3, emptyText }) {
+  if (loading && !items.length) {
+    return <SkeletonEndpoints rows={skeletonRows} />;
+  }
   if (!items.length) {
     return <div className="rend-empty">{emptyText}</div>;
   }
@@ -112,43 +147,70 @@ export default function Rendimiento() {
   const visibleEndpoints = showAllEndpoints ? endpoints : endpoints.slice(0, 5);
   const maxHourly = Math.max(1, ...hourly.map((h) => h.count));
 
+  const showSkeletons = loading && !data;
+
   return (
     <div className="rend-root">
-      <header className="rend-header">
-        <div>
-          <h1 className="rend-title">Rendimiento del Sistema</h1>
-          <p className="rend-subtitle">Tiempos de respuesta, peticiones y disponibilidad</p>
+      <header className="mobil-header">
+        <div className="mobil-header-top">
+          <div className="mobil-header-tag">
+            <Zap size={13} /> Módulo 3 · En vivo
+          </div>
+          <div className="mobil-header-actions">
+            <span className="rend-live-badge" style={{ border: "none", padding: "0 .5rem" }}>
+              <span className="rend-live-dot" /> En vivo
+            </span>
+            <button
+              type="button"
+              className={`mobil-refresh-btn ${loading ? "is-loading" : ""}`}
+              onClick={loadMetrics}
+              disabled={loading}
+              title="Actualizar ahora"
+            >
+              <RefreshCw size={14} />
+              <span className="mobil-refresh-label">Actualizar</span>
+            </button>
+          </div>
         </div>
-        <div className="rend-header-actions">
-          <span className="rend-live-badge">
-            <span className="rend-live-dot" /> En vivo
-          </span>
-        </div>
+        <h1 className="mobil-title">Rendimiento del Sistema</h1>
+        <p className="mobil-subtitle">Tiempos de respuesta, peticiones, IA y disponibilidad</p>
       </header>
 
       {/* Métricas clave */}
       <div className="rend-metrics-grid">
-        <MetricCard icon={Zap} label="Tiempo prom. respuesta" value={m.avg_response_ms} unit="ms" status="ok" color="#2D6658" />
-        <MetricCard icon={Sparkles} label="Tiempo de respuesta promedio de IA" value={formatAiSec(m.ai_avg_response_ms)} unit="s" status="ok" color="#163B35" />
-        <MetricCard icon={BarChart2} label="Peticiones hoy" value={m.requests_today} unit="" status="ok" color="#A9C4B5" />
-        <MetricCard icon={CheckCircle} label="Disponibilidad" value={m.availability} unit="%" status={m.availability < 98 ? "warning" : "ok"} color="#163B35" />
-        <MetricCard icon={AlertTriangle} label="Errores detectados" value={m.errors_detected} unit="err" status={m.errors_detected > 0 ? "warning" : "ok"} color="#C98268" />
-        <MetricCard icon={Clock} label="Uptime acumulado" value={m.uptime_pct} unit="%" status="ok" color="#2D6658" />
+        {showSkeletons ? (
+          Array.from({ length: 6 }).map((_, i) => <SkeletonMetricCard key={i} />)
+        ) : (
+          <>
+            <MetricCard icon={Zap} label="Tiempo prom. respuesta" value={m.avg_response_ms} unit="ms" status="ok" color="#2D6658" />
+            <MetricCard icon={Sparkles} label="Tiempo de respuesta promedio de IA" value={formatAiSec(m.ai_avg_response_ms)} unit="s" status="ok" color="#163B35" />
+            <MetricCard icon={BarChart2} label="Peticiones hoy" value={m.requests_today} unit="" status="ok" color="#A9C4B5" />
+            <MetricCard icon={CheckCircle} label="Disponibilidad" value={m.availability} unit="%" status={m.availability < 98 ? "warning" : "ok"} color="#163B35" />
+            <MetricCard icon={AlertTriangle} label="Errores detectados" value={m.errors_detected} unit="err" status={m.errors_detected > 0 ? "warning" : "ok"} color="#C98268" />
+            <MetricCard icon={Clock} label="Uptime acumulado" value={m.uptime_pct} unit="%" status="ok" color="#2D6658" />
+          </>
+        )}
       </div>
 
       {/* Sección exclusiva de Endpoints IA */}
       <section className="rend-section rend-ai-section">
         <div className="rend-section-head">
           <h2 className="rend-section-title rend-ai-title">
-            Endpoints de Inteligencia Artificial
+            <Sparkles size={17} /> Endpoints de Inteligencia Artificial
           </h2>
-          <span className="rend-ai-avg-badge">
-            Tiempo de respuesta promedio de IA: <strong>{formatAiSec(m.ai_avg_response_ms)} s</strong>
-          </span>
+          {showSkeletons ? (
+            <div className="skel" style={{ width: 220, height: 28, borderRadius: 999 }} />
+          ) : (
+            <span className="rend-ai-avg-badge">
+              Tiempo de respuesta promedio de IA: <strong>{formatAiSec(m.ai_avg_response_ms)} s</strong>
+            </span>
+          )}
         </div>
         <EndpointsTable
           items={aiEndpoints}
-          emptyText={loading ? "Cargando endpoints de IA..." : "Aún no hay peticiones registradas a endpoints de IA."}
+          loading={showSkeletons}
+          skeletonRows={3}
+          emptyText="Aún no hay peticiones registradas a endpoints de IA."
         />
       </section>
 
@@ -164,7 +226,9 @@ export default function Rendimiento() {
         </div>
         <EndpointsTable
           items={visibleEndpoints}
-          emptyText={loading ? "Cargando métricas..." : "Aún no hay peticiones registradas."}
+          loading={showSkeletons}
+          skeletonRows={5}
+          emptyText="Aún no hay peticiones registradas."
         />
       </section>
 
@@ -172,7 +236,19 @@ export default function Rendimiento() {
       <section className="rend-section">
         <h2 className="rend-section-title">Peticiones por hora (últimas 12 h)</h2>
         <div className="rend-chart-card">
-          {hourly.length === 0 ? (
+          {showSkeletons ? (
+            <div className="rend-hourly-chart">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="rend-hour-col">
+                  <div className="skel" style={{ width: 18, height: 10 }} />
+                  <div className="rend-hour-track">
+                    <div className="skel" style={{ width: "100%", height: `${35 + (i % 4) * 15}%`, borderRadius: "6px 6px 0 0" }} />
+                  </div>
+                  <div className="skel" style={{ width: 28, height: 10 }} />
+                </div>
+              ))}
+            </div>
+          ) : hourly.length === 0 ? (
             <div className="rend-empty">Sin datos horarios aún</div>
           ) : (
             <div className="rend-hourly-chart">

@@ -1,5 +1,5 @@
 /* Rendimiento.css */
-.rend-root { padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 1100px; }
+.rend-root { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; }
 .rend-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
 .rend-title    { font-family: "DM Serif Display", serif; font-size: 1.8rem; color: #163B35; margin: 0 0 .25rem; }
 .rend-subtitle { font-size: .88rem; color: #5a7a71; margin: 0; }
@@ -105,12 +105,21 @@
 .rend-hour-bar { width: 100%; background: #2D6658; border-radius: 6px 6px 0 0; transition: height .3s ease; }
 .rend-hour-label { font-size: .68rem; color: #7a9a92; white-space: nowrap; }
 
+.rend-metric-value,
+.rend-calls,
+.rend-avg,
+.rend-hour-count {
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 640px) {
-  .rend-root { padding: 1rem; gap: 1.1rem; }
+  .rend-root { padding: 1rem; gap: 1.1rem; overflow-x: hidden; }
+  .rend-refresh-btn,
+  .rend-link-btn { min-height: 40px; padding: .4rem .85rem; }
   .rend-metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
-  .rend-metric-card { padding: .9rem; }
+  .rend-metric-card { padding: .9rem; min-width: 0; }
   .rend-metric-value { font-size: 1.35rem; }
-  .rend-ai-avg-badge { font-size: .72rem; width: 100%; text-align: center; }
+  .rend-ai-avg-badge { font-size: .74rem; width: 100%; text-align: center; }
   .rend-endpoints-header { display: none; }
   .rend-endpoint-row {
     display: flex; flex-wrap: wrap; justify-content: space-between;

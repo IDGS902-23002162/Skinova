@@ -88,36 +88,73 @@ export default function Bitacora() {
     return true;
   });
 
+  const showSkeletons = loading && logs.length === 0;
+
   return (
     <div className="bit-root">
-      <header className="bit-header">
-        <div>
-          <h1 className="bit-title">Bitácora y Seguridad</h1>
-          <p className="bit-subtitle">Eventos internos del servidor y accesos de administradores</p>
+      <header className="mobil-header">
+        <div className="mobil-header-top">
+          <div className="mobil-header-tag">
+            <ShieldAlert size={13} /> Módulo 4 · Auditoría
+          </div>
+          <div className="mobil-header-actions">
+            <span className="bit-live-badge" style={{ border: "none", padding: "0 .5rem" }}>
+              <span className="bit-live-dot" /> En vivo
+            </span>
+            <button
+              type="button"
+              className={`mobil-refresh-btn ${loading ? "is-loading" : ""}`}
+              onClick={loadLogs}
+              disabled={loading}
+              title="Actualizar ahora"
+            >
+              <RefreshCw size={14} />
+              <span className="mobil-refresh-label">Actualizar</span>
+            </button>
+          </div>
         </div>
-        <div className="bit-header-actions">
-          <button type="button" className="bit-refresh-btn" onClick={loadLogs} title="Actualizar ahora">
-            <RefreshCw size={14} className={loading ? "spin" : ""} /> Actualizar
-          </button>
-          <span className="bit-live-badge">
-            <span className="bit-live-dot" /> En vivo
-          </span>
-        </div>
+        <h1 className="mobil-title">Bitácora y Seguridad</h1>
+        <p className="mobil-subtitle">Eventos internos del servidor y accesos de administradores</p>
       </header>
 
-      {/* Resumen */}
+      {/* Resumen en grid simétrico */}
       <div className="bit-summary-row">
-        {Object.entries(EVENT_TYPES).map(([key, { label, icon: Icon, cls }]) => (
-          <button
-            key={key}
-            className={`bit-summary-chip ${cls} ${activeFilter === key ? "selected" : ""}`}
-            onClick={() => setActiveFilter(activeFilter === key ? "Todos" : key)}
-          >
-            <Icon size={14} />
-            <span>{label}</span>
-            <span className="bit-chip-count">{counts[key] ?? 0}</span>
-          </button>
-        ))}
+        {showSkeletons ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bit-summary-chip" style={{ pointerEvents: "none" }}>
+              <div className="skel" style={{ width: 64, height: 14 }} />
+              <div className="skel" style={{ width: 24, height: 18, borderRadius: 999 }} />
+            </div>
+          ))
+        ) : (
+          <>
+            <button
+              type="button"
+              className={`bit-summary-chip evt-all ${activeFilter === "Todos" ? "selected" : ""}`}
+              onClick={() => setActiveFilter("Todos")}
+            >
+              <span className="bit-chip-left">
+                <Info size={14} />
+                <span>Todos</span>
+              </span>
+              <span className="bit-chip-count">{logs.length}</span>
+            </button>
+            {Object.entries(EVENT_TYPES).map(([key, { label, icon: Icon, cls }]) => (
+              <button
+                type="button"
+                key={key}
+                className={`bit-summary-chip ${cls} ${activeFilter === key ? "selected" : ""}`}
+                onClick={() => setActiveFilter(activeFilter === key ? "Todos" : key)}
+              >
+                <span className="bit-chip-left">
+                  <Icon size={14} />
+                  <span>{label}</span>
+                </span>
+                <span className="bit-chip-count">{counts[key] ?? 0}</span>
+              </button>
+            ))}
+          </>
+        )}
       </div>
 
       {/* Toolbar */}
@@ -166,10 +203,22 @@ export default function Bitacora() {
 
       {/* Logs */}
       <div className="bit-logs-list">
-        {filtered.length === 0 ? (
-          <div className="bit-empty">
-            {loading ? "Cargando registros de bitácora..." : "No hay eventos que coincidan con los filtros."}
-          </div>
+        {showSkeletons ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bit-log-row">
+              <div className="skel" style={{ width: 32, height: 32, borderRadius: 8 }} />
+              <div className="bit-log-body" style={{ gap: 6 }}>
+                <div className="skel" style={{ width: "75%", height: 14 }} />
+                <div className="skel" style={{ width: "45%", height: 11 }} />
+              </div>
+              <div className="bit-log-right">
+                <div className="skel" style={{ width: 68, height: 20, borderRadius: 999 }} />
+                <div className="skel" style={{ width: 72, height: 12 }} />
+              </div>
+            </div>
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="bit-empty">No hay eventos que coincidan con los filtros.</div>
         ) : (
           filtered.map((log) => <LogRow key={log.id} {...log} />)
         )}

@@ -253,8 +253,7 @@ export default function GestionUsuarios() {
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterPlan, setFilterPlan] = useState("all");
+  const [activeFilter, setActiveFilter] = useState("todos");
   const [selectedUser, setSelectedUser] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [notification, setNotification] = useState(null);
@@ -280,29 +279,60 @@ export default function GestionUsuarios() {
     loadUsers();
   }, [loadUsers]);
 
-  // Filtrado instantáneo en el cliente (0 ms de delay, sin llamadas extra al backend)
-  const filteredUsers = useMemo(() => {
+  // Contadores por segmento y filtrado instantáneo en el cliente
+  const { filteredUsers, filterCounts } = useMemo(() => {
     const q = searchTerm.toLowerCase().trim();
+    const counts = {
+      todos: users.length,
+      premium_activo: 0,
+      gratuito: 0,
+      cancelado: 0,
+      vencido: 0,
+      suspendido: 0,
+    };
 
-    return users.filter((u) => {
-      const planName = u.subscription?.plan || "Gratuito";
-      const accountStatus = u.account_status || "activo";
+    const filtered = users.filter((u) => {
+      const plan = (u.subscription?.plan || "Gratuito").toLowerCase();
+      const subStatus = (u.subscription?.status || "activo").toLowerCase();
+      const isSuspended = Boolean(u.banned || u.account_status === "suspendido");
+
+      const isPremiumActivo = plan === "premium" && subStatus === "activo" && !isSuspended;
+      const isGratuito = plan === "gratuito";
+      const isCancelado = plan === "premium" && subStatus === "cancelado";
+      const isVencido = plan === "premium" && subStatus === "vencido";
+
+      if (isPremiumActivo) counts.premium_activo++;
+      if (isGratuito) counts.gratuito++;
+      if (isCancelado) counts.cancelado++;
+      if (isVencido) counts.vencido++;
+      if (isSuspended) counts.suspendido++;
 
       const matchesQ =
         !q ||
         (u.name || "").toLowerCase().includes(q) ||
         (u.email || "").toLowerCase().includes(q) ||
-        planName.toLowerCase().includes(q);
+        plan.includes(q);
 
-      const matchesStatus =
-        filterStatus === "all" || accountStatus.toLowerCase() === filterStatus.toLowerCase();
+      if (!matchesQ) return false;
 
-      const matchesPlan =
-        filterPlan === "all" || planName.toLowerCase() === filterPlan.toLowerCase();
-
-      return matchesQ && matchesStatus && matchesPlan;
+      switch (activeFilter) {
+        case "premium_activo":
+          return isPremiumActivo;
+        case "gratuito":
+          return isGratuito;
+        case "cancelado":
+          return isCancelado;
+        case "vencido":
+          return isVencido;
+        case "suspendido":
+          return isSuspended;
+        default:
+          return true;
+      }
     });
-  }, [users, searchTerm, filterStatus, filterPlan]);
+
+    return { filteredUsers: filtered, filterCounts: counts };
+  }, [users, searchTerm, activeFilter]);
 
   const showNotice = (msg, type = "success") => {
     setNotification({ msg, type });
@@ -363,59 +393,75 @@ export default function GestionUsuarios() {
       )}
 
       {/* Header */}
-      <header className="gu-header">
-        <div>
-          <div className="gu-header-tag">
-            <Users size={14} /> Módulo 2
+      <header className="mobil-header">
+        <div className="mobil-header-top">
+          <div className="mobil-header-tag">
+            <Users size={14} /> Módulo 2 · Usuarios
           </div>
-          <h1 className="gu-title">Usuarios y Suscripciones</h1>
-          <p className="gu-subtitle">
-            Consultar estado de cuenta, último acceso y administración de suscripciones.
-          </p>
+          <div className="mobil-header-actions">
+            <button
+              className={`mobil-refresh-btn ${loading ? "is-loading" : ""}`}
+              onClick={loadUsers}
+              disabled={loading}
+              title="Actualizar lista"
+            >
+              <RefreshCw size={14} />
+              <span className="mobil-refresh-label">Actualizar</span>
+            </button>
+          </div>
         </div>
-
-        <button
-          className={`gu-refresh-btn ${loading ? "is-loading" : ""}`}
-          onClick={loadUsers}
-          disabled={loading}
-          title="Actualizar lista"
-        >
-          <RefreshCw size={17} />
-        </button>
+        <h1 className="mobil-title">Usuarios y Suscripciones</h1>
+        <p className="mobil-subtitle">
+          Consultar estado de cuenta, último acceso y administración de suscripciones.
+        </p>
       </header>
 
       {/* Mini stats */}
       <div className="gu-stats-row">
-        <MiniStat
-          icon={Users}
-          label="Total usuarios"
-          value={stats.total_users || users.length}
-          color="#2D6658"
-        />
-        <MiniStat
-          icon={Crown}
-          label="Suscripciones activas"
-          value={stats.active_subscriptions}
-          color="#3A8A76"
-        />
-        <MiniStat
-          icon={XCircle}
-          label="Canceladas"
-          value={stats.cancelled_subscriptions}
-          color="#C98268"
-        />
-        <MiniStat
-          icon={Clock}
-          label="Vencidas"
-          value={stats.expired_subscriptions}
-          color="#D97706"
-        />
-        <MiniStat
-          icon={TrendingUp}
-          label="Nuevos este mes"
-          value={`+${stats.new_this_month}`}
-          color="#163B35"
-        />
+        {loading && users.length === 0 ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="gu-mini-stat">
+              <div className="skel" style={{ width: 32, height: 32, borderRadius: 9 }} />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                <div className="skel" style={{ width: "45%", height: 18 }} />
+                <div className="skel" style={{ width: "75%", height: 10 }} />
+              </div>
+            </div>
+          ))
+        ) : (
+          <>
+            <MiniStat
+              icon={Users}
+              label="Total usuarios"
+              value={stats.total_users || users.length}
+              color="#2D6658"
+            />
+            <MiniStat
+              icon={Crown}
+              label="Suscripciones activas"
+              value={stats.active_subscriptions}
+              color="#3A8A76"
+            />
+            <MiniStat
+              icon={XCircle}
+              label="Canceladas"
+              value={stats.cancelled_subscriptions}
+              color="#C98268"
+            />
+            <MiniStat
+              icon={Clock}
+              label="Vencidas"
+              value={stats.expired_subscriptions}
+              color="#D97706"
+            />
+            <MiniStat
+              icon={TrendingUp}
+              label="Nuevos este mes"
+              value={`+${stats.new_this_month}`}
+              color="#163B35"
+            />
+          </>
+        )}
       </div>
 
       {/* Search & Filter Toolbar */}
@@ -437,69 +483,24 @@ export default function GestionUsuarios() {
 
         {/* Chips de filtro rápido */}
         <div className="gu-filter-chips">
-          <button
-            className={`gu-chip ${filterStatus === "all" && filterPlan === "all" ? "active" : ""}`}
-            onClick={() => {
-              setFilterStatus("all");
-              setFilterPlan("all");
-            }}
-          >
-            Todos
-          </button>
-          <button
-            className={`gu-chip ${filterStatus === "activo" ? "active" : ""}`}
-            onClick={() => {
-              setFilterStatus("activo");
-              setFilterPlan("all");
-            }}
-          >
-            Activos
-          </button>
-          <button
-            className={`gu-chip ${filterPlan === "premium" ? "active" : ""}`}
-            onClick={() => {
-              setFilterPlan("premium");
-              setFilterStatus("all");
-            }}
-          >
-            <Crown size={12} /> Premium
-          </button>
-          <button
-            className={`gu-chip ${filterPlan === "gratuito" ? "active" : ""}`}
-            onClick={() => {
-              setFilterPlan("gratuito");
-              setFilterStatus("all");
-            }}
-          >
-            Gratuito
-          </button>
-          <button
-            className={`gu-chip ${filterStatus === "cancelado" ? "active" : ""}`}
-            onClick={() => {
-              setFilterStatus("cancelado");
-              setFilterPlan("all");
-            }}
-          >
-            Cancelados
-          </button>
-          <button
-            className={`gu-chip ${filterStatus === "vencido" ? "active" : ""}`}
-            onClick={() => {
-              setFilterStatus("vencido");
-              setFilterPlan("all");
-            }}
-          >
-            Vencidos
-          </button>
-          <button
-            className={`gu-chip ${filterStatus === "suspendido" ? "active" : ""}`}
-            onClick={() => {
-              setFilterStatus("suspendido");
-              setFilterPlan("all");
-            }}
-          >
-            Suspendidos
-          </button>
+          {[
+            { id: "todos", label: "Todos" },
+            { id: "premium_activo", label: "Premium Activos", icon: Crown },
+            { id: "gratuito", label: "Gratuitos" },
+            { id: "cancelado", label: "Cancelados" },
+            { id: "vencido", label: "Vencidos" },
+            { id: "suspendido", label: "Suspendidos" },
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              className={`gu-chip ${activeFilter === id ? "active" : ""}`}
+              onClick={() => setActiveFilter(id)}
+            >
+              {Icon && <Icon size={12} />}
+              <span>{label}</span>
+              <span className="gu-chip-count">({filterCounts[id]})</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -510,9 +511,26 @@ export default function GestionUsuarios() {
 
       {/* Users List */}
       {loading && users.length === 0 ? (
-        <div className="gu-empty-state">
-          <RefreshCw size={28} className="spin" />
-          <p>Cargando lista de usuarios...</p>
+        <div className="gu-users-grid">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="gu-user-card" style={{ gap: "0.85rem" }}>
+              <div className="gu-user-top">
+                <div className="gu-user-main">
+                  <div className="skel" style={{ width: 44, height: 44, borderRadius: "50%", flexShrink: 0 }} />
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div className="skel" style={{ width: "65%", height: 14 }} />
+                    <div className="skel" style={{ width: "85%", height: 11 }} />
+                  </div>
+                </div>
+                <div className="skel" style={{ width: 72, height: 32, borderRadius: 9 }} />
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <div className="skel" style={{ width: 84, height: 22, borderRadius: 999 }} />
+                <div className="skel" style={{ width: 70, height: 22, borderRadius: 999 }} />
+              </div>
+              <div className="skel" style={{ width: "100%", height: 12 }} />
+            </div>
+          ))}
         </div>
       ) : filteredUsers.length === 0 ? (
         <div className="gu-empty-state">

@@ -140,50 +140,51 @@ export default function AdminDashboard() {
   return (
     <div className="admin-content-root">
       {/* ── Header ───────────────────────────────────────────────── */}
-      <header className="admin-header">
-        <div className="admin-header-info">
-          <div className="admin-header-pill">
+      <header className="mobil-header">
+        <div className="mobil-header-top">
+          <div className="mobil-header-tag">
             <ShieldCheck size={14} /> Módulo 1 • Dashboard & Analítica
           </div>
-          <h1 className="admin-title">Panel de Control</h1>
-          <p className="admin-subtitle">
-            Hola, <strong>{displayName}</strong> • Métricas en tiempo real de la PWA
-          </p>
-        </div>
 
-        <div className="admin-header-actions">
-          <button
-            className={`admin-refresh-btn ${loading ? "is-loading" : ""}`}
-            onClick={loadDashboardData}
-            title="Actualizar analítica"
-            aria-label="Actualizar datos"
-            disabled={loading}
-          >
-            <RefreshCw size={17} />
-          </button>
+          <div className="mobil-header-actions">
+            <button
+              className={`mobil-refresh-btn ${loading ? "is-loading" : ""}`}
+              onClick={loadDashboardData}
+              title="Actualizar analítica"
+              aria-label="Actualizar datos"
+              disabled={loading}
+            >
+              <RefreshCw size={14} />
+              <span className="mobil-refresh-label">Actualizar</span>
+            </button>
 
-          <div className="admin-clerk-user-slot">
-            <UserButton
-              afterSignOutUrl="/"
-              appearance={{
-                variables: {
-                  colorPrimary: "#2D6658",
-                  colorText: "#163B35",
-                  colorBackground: "#F6F3EC",
-                  borderRadius: "12px",
-                },
-                elements: {
-                  userButtonAvatarBox: {
-                    width: "40px",
-                    height: "40px",
-                    border: "2px solid #2D6658",
-                    boxShadow: "0 2px 8px rgba(45, 102, 88, 0.25)",
+            <div className="admin-clerk-user-slot">
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  variables: {
+                    colorPrimary: "#2D6658",
+                    colorText: "#163B35",
+                    colorBackground: "#F6F3EC",
+                    borderRadius: "12px",
                   },
-                },
-              }}
-            />
+                  elements: {
+                    userButtonAvatarBox: {
+                      width: "34px",
+                      height: "34px",
+                      border: "2px solid #2D6658",
+                    },
+                  },
+                }}
+              />
+            </div>
           </div>
         </div>
+
+        <h1 className="mobil-title">Panel de Control</h1>
+        <p className="mobil-subtitle">
+          Hola, <strong>{displayName}</strong> • Métricas en tiempo real de la PWA
+        </p>
       </header>
 
       {/* Error banner */}
