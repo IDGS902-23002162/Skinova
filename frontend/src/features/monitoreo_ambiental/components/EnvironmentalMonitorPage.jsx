@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/react";
 import {
@@ -12,316 +12,258 @@ import {
   AlertTriangle,
   RefreshCw,
   CheckCircle2,
-  ArrowRight
+  WifiOff,
+  ArrowRight,
+  Search
 } from "lucide-react";
 import MainLayout from "../../../shared/components/MainLayout";
-import { ambientalService } from "../services/ambientalService";
 import "./EnvironmentalMonitor.css";
 
-// Datos simulados por ciudad para probar cambios dinámicos (incluyendo UV alto y bajo)
-const CITY_DATA = {
-  "León, Gto": {
-    temp: 28,
-    feelsLike: 29,
-    condition: "Soleado y seco",
-    humidity: 26,
-    humidityStatus: "Baja (Ambiente seco)",
-    uv: 9,
-    uvLevel: "Muy Alto",
-    aqi: 42,
-    aqiStatus: "Buena",
-    aiSummary:
-      "La combinación de radiación UV muy alta y baja humedad favorece la deshidratación transepidérmica y el estrés oxidativo.",
-    aiTips: [
-      "Prioriza un sérum con Ácido Hialurónico sobre la piel húmeda hoy.",
-      "Reaplica tu Protector Solar FPS 50+ cada 2 horas si estás al exterior.",
-      "Sella tu hidratación con una crema reparadora de barrera."
-    ]
-  },
-  "Ciudad de México": {
-    temp: 23,
-    feelsLike: 24,
-    condition: "Parcialmente nublado",
-    humidity: 48,
-    humidityStatus: "Óptima",
-    uv: 7,
-    uvLevel: "Alto",
-    aqi: 85,
-    aqiStatus: "Moderada (Partículas PM2.5)",
-    aiSummary:
-      "La presencia moderada de contaminación urbana y radiación UV alta requiere reforzar los antioxidantes por la mañana y la limpieza nocturna.",
-    aiTips: [
-      "Utiliza tu Sérum de Vitamina C por la mañana para neutralizar radicales libres.",
-      "Realiza doble limpieza esta noche para retirar micropartículas contaminantes.",
-      "No omitas el protector solar aunque observes nubes."
-    ]
-  },
-  "Monterrey, N.L.": {
-    temp: 33,
-    feelsLike: 35,
-    condition: "Caluroso y despejado",
-    humidity: 35,
-    humidityStatus: "Moderada-Baja",
-    uv: 10,
-    uvLevel: "Extremo",
-    aqi: 60,
-    aqiStatus: "Aceptable",
-    aiSummary:
-      "Las altas temperaturas aumentan la producción de sebo mientras que el índice UV extremo exige máxima fotoprotección con texturas ligeras.",
-    aiTips: [
-      "Opta por hidratantes en gel o emulsiones ligeras para no saturar los poros.",
-      "Usa protector solar de toque seco y busca sombra entre las 11:00 y 16:00 hrs.",
-      "Evita exfoliantes fuertes si hoy tuviste exposición solar directa."
-    ]
-  },
-  "Bogotá, Col": {
-    temp: 15,
-    feelsLike: 14,
-    condition: "Fresco y nublado",
-    humidity: 72,
-    humidityStatus: "Alta",
-    uv: 4,
-    uvLevel: "Moderado",
-    aqi: 32,
-    aqiStatus: "Buena",
-    aiSummary:
-      "El clima frío y húmedo mantiene la hidratación superficial, pero el viento frío puede sensibilizar la piel reactiva.",
-    aiTips: [
-      "Usa un limpiador gentil que calme posibles rojeces por el frío.",
-      "Aplica protector solar de forma habitual; la altitud mantiene la radiación activa.",
-      "Ideal para incorporar activos renovadores suaves en tu rutina nocturna."
-    ]
-  }
+const API_BASE = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8002/api").replace(/\/$/, "");
+
+const FALLBACK_WEATHER = {
+  city: "León, Guanajuato",
+  lat: 21.1253,
+  lon: -101.6713,
+  temp: 24,
+  feelsLike: 24,
+  condition: "Despejado",
+  humidity: 42,
+  humidityStatus: "Óptima",
+  uv: 5,
+  uvLevel: "Moderado",
+  aqi: 38,
+  aqiStatus: "Buena",
+  aiSummary:
+    "Condiciones estables para tu piel. Mantén tu limpieza suave y protector solar diario.",
+  aiTips: [
+    "Aplica protector solar FPS 50+ como último paso de tu rutina matutina.",
+    "Mantén la hidratación facial acorde al nivel de humedad actual.",
+    "Realiza limpieza facial suave por la noche."
+  ]
 };
 
 function EnvironmentalMonitorPage() {
   const navigate = useNavigate();
-  const { getToken, isSignedIn, isLoaded } = useAuth();
-  const [cityError, setCityError] = useState("");
+  const { getToken, isLoaded, isSignedIn } = useAuth();
 
-  // RF-AMB-01 y RF-AMB-02: Consentimiento de ubicación y selección manual
+  // RF-AMB-01 y RF-AMB-02: Ubicación GPS y búsqueda predictiva
   const [locationConsent, setLocationConsent] = useState(false);
-  const [selectedCity, setSelectedCity] = useState("León, Gto");
-  const [customCityInput, setCustomCityInput] = useState("");
+  const [selectedCity, setSelectedCity] = useState("León, Guanajuato");
+  const [coords, setCoords] = useState({ lat: 21.1253, lon: -101.6713 });
 
-  // RF-AMB-10: Incorporar condiciones al creador de rutinas
+  // Estado del buscador predictivo
+  const [searchQuery, setSearchQuery] = useState("");
+  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearchingCities, setIsSearchingCities] = useState(false);
+  const searchBoxRef = useRef(null);
+
+  // Datos ambientales actuales
+  const [envData, setEnvData] = useState(FALLBACK_WEATHER);
+  const [searchError, setSearchError] = useState("");
+
+  // RF-AMB-10: Sincronización con Creador de Rutinas
   const [syncedWithRoutine, setSyncedWithRoutine] = useState(true);
 
-  // RF-AMB-11 y RF-AMB-12: Auto-actualización y resiliencia ante caída de API
-  const [lastUpdated, setLastUpdated] = useState("Cargando...");
+  // RF-AMB-11 y RF-AMB-12: Actualización y resiliencia
+  const [lastUpdated, setLastUpdated] = useState("Sincronizado");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+  const [apiOffline, setApiOffline] = useState(false);
 
-  // Datos ambientales (live backend o fallback local)
-  const [envData, setEnvData] = useState(() => CITY_DATA["León, Gto"]);
+  const isHighUV = (envData.uv ?? 0) >= 6;
 
-  // Carga inicial y obtención desde Backend
-  const loadEnvironmentalData = useCallback(async (cityName, lat = null, lon = null, force = false) => {
-    setIsRefreshing(true);
-    setCityError(null);
-    try {
-      const token = isSignedIn ? await getToken() : null;
-      const data = await ambientalService.getCurrent(token, {
-        city: cityName,
-        lat,
-        lon,
-        refresh: force,
-      });
-
-      setEnvData({
-        temp: data.temp,
-        feelsLike: data.feelsLike,
-        condition: data.condition,
-        humidity: data.humidity,
-        humidityStatus: data.humidityStatus,
-        uv: data.uv,
-        uvLevel: data.uvLevel,
-        aqi: data.aqi,
-        aqiStatus: data.aqiStatus,
-        aiSummary: data.aiSummary || CITY_DATA[cityName]?.aiSummary || "Condiciones analizadas para tu tipo de piel.",
-        aiTips: (data.aiTips && data.aiTips.length > 0)
-          ? data.aiTips
-          : (CITY_DATA[cityName]?.aiTips || [
-              "Mantén tu hidratación adecuada según sientas la piel.",
-              "Aplica protector solar FPS 50+ si sales al exterior.",
-              "Limpia tu piel suavemente al terminar el día."
-            ]),
-        isFallback: data.isFallback,
-      });
-
-      if (data.city) {
-        setSelectedCity(data.city);
+  // Cerrar lista predictiva al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target)) {
+        setShowSuggestions(false);
       }
-      if (data.syncWithRoutine !== undefined) {
-        setSyncedWithRoutine(data.syncWithRoutine);
-      }
-      if (data.useLocation !== undefined) {
-        setLocationConsent(data.useLocation);
-      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-      const now = new Date();
-      setLastUpdated(
-        `Actualizado a las ${now.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}`
-      );
-    } catch (err) {
-      // Si el backend indica ciudad no encontrada, mostrar error y no cambiar datos
-      if (err?.response?.status === 400 || err?.status === 400 || (err?.message && err.message.includes("400"))) {
-        setCityError("Ciudad no encontrada. Por favor escribe una ciudad real.");
-        setLastUpdated("Ciudad no válida");
-      } else {
-        console.warn("Fallo al conectar con backend ambiental (RF-AMB-12):", err);
-        setLastUpdated("Error al actualizar datos");
-      }
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [getToken, isSignedIn]);
+  // Consultar condiciones ambientales desde el backend
+  const fetchEnvironment = useCallback(
+    async ({ city = null, lat = null, lon = null, isGps = false } = {}) => {
+      if (apiOffline) return;
+      setIsRefreshing(true);
+      setSearchError("");
 
-  const fetchWeatherData = useCallback(
-    async ({ city, lat, lon, isGps = false }) => {
       try {
-        setIsRefreshing(true);
-        setCityError("");
-        const token = isLoaded && isSignedIn ? await getToken() : null;
-        const data = await ambientalService.getCurrentEnvironment(token, {
-          city,
-          lat,
-          lon,
+        const token = isSignedIn ? await getToken() : null;
+        const params = new URLSearchParams();
+        if (city && !isGps) params.append("city", city);
+        if (lat != null) params.append("lat", lat);
+        if (lon != null) params.append("lon", lon);
+
+        const res = await fetch(`${API_BASE}/ambiente/current?${params.toString()}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
-        // SOLO se actualiza la ciudad cuando la API confirma que es real
-        setCurrentData(data);
-        setSelectedCity(data.city || city);
-        setLocationConsent(isGps);
+        const data = await res.json();
+        if (!res.ok) {
+          setSearchError(data.error || "No se pudo obtener el clima para esa ciudad.");
+          setIsRefreshing(false);
+          return;
+        }
+
+        setEnvData(data);
+        if (data.city) setSelectedCity(data.city);
+        if (data.lat != null && data.lon != null) {
+          setCoords({ lat: data.lat, lon: data.lon });
+        }
+        if (typeof data.syncWithRoutine === "boolean") {
+          setSyncedWithRoutine(data.syncWithRoutine);
+        }
+        if (isGps) {
+          setLocationConsent(true);
+        } else if (typeof data.useLocation === "boolean" && !city) {
+          setLocationConsent(data.useLocation);
+        }
 
         const now = new Date();
         setLastUpdated(
-          `Actualizado a las ${now.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}`
+          `Actualizado ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
         );
       } catch (err) {
-        if (err.code === "INVALID_CITY") {
-          setCityError(
-            `No se encontró "${city}". Por favor escribe una ciudad real (ej. Guadalajara, Madrid, Tokio).`
-          );
-        } else {
-          setCityError("No se pudieron actualizar los datos climáticos en este momento.");
-        }
+        console.warn("Error conectando con /api/ambiente/current:", err);
+        setSearchError("No se pudo conectar con el servidor ambiental.");
       } finally {
         setIsRefreshing(false);
       }
     },
-    [getToken, isLoaded, isSignedIn]
+    [apiOffline, getToken, isSignedIn]
   );
 
-  // Carga inicial cuando Clerk esté listo
+  // Carga inicial al entrar a la pestaña Ambiente
   useEffect(() => {
     if (!isLoaded) return;
-    fetchWeatherData({ city: selectedCity });
+    fetchEnvironment();
   }, [isLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Al enviar el formulario de ciudad personalizada:
-  const handleCustomCitySubmit = async (e) => {
-    e.preventDefault();
-    const typedCity = customCityInput.trim();
-    if (!typedCity) return;
-    await fetchWeatherData({ city: typedCity, isGps: false });
-    setCustomCityInput("");
+  // Búsqueda predictiva con debounce de 280 ms mientras el usuario escribe
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 2) {
+      setCitySuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingCities(true);
+      try {
+        const res = await fetch(
+          `${API_BASE}/ambiente/cities?q=${encodeURIComponent(trimmed)}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setCitySuggestions(data.cities || []);
+          setShowSuggestions(true);
+        }
+      } catch (err) {
+        console.warn("Error en búsqueda predictiva de ciudades:", err);
+      } finally {
+        setIsSearchingCities(false);
+      }
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Seleccionar una ciudad de la lista predictiva
+  const handleSelectSuggestedCity = async (cityObj) => {
+    setShowSuggestions(false);
+    setSearchQuery("");
+    setLocationConsent(false);
+    setSelectedCity(cityObj.name);
+    setCoords({ lat: cityObj.lat, lon: cityObj.lon });
+
+    await fetchEnvironment({
+      city: cityObj.name,
+      lat: cityObj.lat,
+      lon: cityObj.lon,
+      isGps: false,
+    });
   };
 
-  // Carga al montar
-  useEffect(() => {
-    loadEnvironmentalData(selectedCity);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Enviar búsqueda si presiona Enter sin hacer clic en la lista
+  const handleSearchSubmit = async (e) => {
+    e.preventDefault();
+    if (citySuggestions.length > 0) {
+      await handleSelectSuggestedCity(citySuggestions[0]);
+      return;
+    }
+    if (!searchQuery.trim()) return;
+    const typed = searchQuery.trim();
+    setShowSuggestions(false);
+    setSearchQuery("");
+    setLocationConsent(false);
+    await fetchEnvironment({ city: typed, isGps: false });
+  };
 
-  const currentData = envData || CITY_DATA[selectedCity] || CITY_DATA["León, Gto"];
-  const isHighUV = currentData.uv >= 6; // RF-AMB-09: Alerta por índice UV elevado
-
-  // RF-AMB-11: Actualización automática periódica (cada 60s)
+  // RF-AMB-11: Actualización automática cada 5 minutos usando la ciudad/coordenadas activas
   useEffect(() => {
     const interval = setInterval(() => {
-      loadEnvironmentalData(selectedCity, null, null, false);
-    }, 60000);
+      if (!apiOffline) {
+        fetchEnvironment({
+          city: locationConsent ? null : selectedCity,
+          lat: coords.lat,
+          lon: coords.lon,
+          isGps: locationConsent,
+        });
+      }
+    }, 300000);
 
     return () => clearInterval(interval);
-  }, [selectedCity, loadEnvironmentalData]);
+  }, [apiOffline, fetchEnvironment, locationConsent, selectedCity, coords]);
 
-  // Solicitar geolocalización con consentimiento (RF-AMB-01)
+  // RF-AMB-01: Solicitar geolocalización real con consentimiento
   const handleRequestLocation = () => {
     setIsRefreshing(true);
+    setSearchError("");
+
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
           setLocationConsent(true);
-          setLastUpdated("Ubicación GPS sincronizada");
-          await loadEnvironmentalData(null, lat, lon, true);
-          if (isSignedIn) {
-            try {
-              const token = await getToken();
-              await ambientalService.updatePreferences(token, {
-                use_location: true,
-                latitude: lat,
-                longitude: lon,
-              });
-            } catch (e) {
-              console.warn("No se pudo guardar la preferencia de GPS:", e);
-            }
-          }
+          setCoords({ lat, lon });
+          await fetchEnvironment({ lat, lon, isGps: true });
         },
         () => {
-          // Si el usuario rechaza en el navegador, mantenemos selección manual
           setLocationConsent(false);
           setIsRefreshing(false);
-        }
+          setSearchError("No se otorgó permiso de ubicación en el navegador.");
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
       );
     } else {
-      setLocationConsent(true);
       setIsRefreshing(false);
+      setSearchError("Tu navegador no soporta geolocalización.");
     }
   };
 
-  // Refrescar datos manualmente (RF-AMB-11)
-  const handleManualRefresh = () => {
-    loadEnvironmentalData(selectedCity, null, null, true);
-  };
-
-  // Cambiar ciudad seleccionada (RF-AMB-02)
-  const handleCityChange = async (cityName) => {
-    setSelectedCity(cityName);
-    setLocationConsent(false);
-    loadEnvironmentalData(cityName, null, null, false);
-    if (isSignedIn) {
-      try {
-        const token = await getToken();
-        await ambientalService.updatePreferences(token, {
-          city_name: cityName,
-          use_location: false,
-        });
-      } catch (e) {
-        console.warn("No se pudo guardar la preferencia de ciudad:", e);
-      }
-    }
-  };
-
-  // Alternar sincronización con creador de rutinas (RF-AMB-10)
+  // RF-AMB-10: Guardar sincronización con rutina en backend
   const handleToggleRoutineSync = async () => {
-    const nextVal = !syncedWithRoutine;
-    setSyncedWithRoutine(nextVal);
+    const nextValue = !syncedWithRoutine;
+    setSyncedWithRoutine(nextValue);
+
     if (isSignedIn) {
       try {
         const token = await getToken();
-        await ambientalService.updatePreferences(token, {
-          sync_with_routine: nextVal,
+        await fetch(`${API_BASE}/ambiente/preference`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ sync_with_routine: nextValue }),
         });
-      } catch (e) {
-        console.warn("No se pudo sincronizar preferencia de rutina:", e);
+      } catch (err) {
+        console.warn("No se pudo actualizar la sincronización con rutina:", err);
       }
     }
   };
@@ -342,115 +284,41 @@ function EnvironmentalMonitorPage() {
           <div className="env-header-actions">
             <button
               className="btn-refresh"
-              onClick={handleManualRefresh}
-              disabled={isRefreshing}
+              onClick={() =>
+                fetchEnvironment({
+                  city: locationConsent ? null : selectedCity,
+                  lat: coords.lat,
+                  lon: coords.lon,
+                  isGps: locationConsent,
+                })
+              }
+              disabled={apiOffline || isRefreshing}
               title="Actualizar condiciones ambientales"
             >
-              <RefreshCw
-                size={16}
-                className={isRefreshing ? "spin-icon" : ""}
-              />
-              <span>{lastUpdated}</span>
+              <RefreshCw size={16} className={isRefreshing ? "spin-icon" : ""} />
+              <span>{isRefreshing ? "Actualizando..." : lastUpdated}</span>
             </button>
+
+            
           </div>
         </header>
 
-        {/* Error de ciudad no encontrada */}
-        {cityError && (
-          <div className="env-offline-banner" role="alert" style={{ background: "#fff3cd", borderColor: "#ffc107" }}>
-            <AlertTriangle size={20} style={{ color: "#856404" }} />
+        {/* RF-AMB-12: AVISO DE RESILIENCIA OFFLINE */}
+        {apiOffline && (
+          <div className="env-offline-banner" role="status">
+            <WifiOff size={20} />
             <div>
-              <strong style={{ color: "#856404" }}>Ciudad no encontrada</strong>
-              <p style={{ color: "#856404" }}>{cityError}</p>
+              <strong>Servicio climático temporalmente no disponible</strong>
+              <p>
+                Mostrando las últimas condiciones guardadas para{" "}
+                <b>{selectedCity}</b>. Tu creador de rutinas sigue funcionando con
+                normalidad.
+              </p>
             </div>
           </div>
         )}
 
-        {/* RF-AMB-03 al RF-AMB-07: MÉTRICAS AMBIENTALES ACTUALES */}
-        <section
-          className="metrics-grid"
-          aria-label="Indicadores ambientales actuales"
-        >
-          {/* Temperatura (RF-AMB-03) */}
-          <article className="metric-card">
-            <div className="metric-top">
-              <span className="metric-title">Temperatura</span>
-              <div className="metric-icon">
-                <Thermometer size={20} />
-              </div>
-            </div>
-            <div className="metric-value">{currentData.temp}°C</div>
-            <p className="metric-detail">
-              Sensación térmica de {currentData.feelsLike}°C
-            </p>
-          </article>
-
-          {/* Humedad (RF-AMB-04) */}
-          <article className="metric-card">
-            <div className="metric-top">
-              <span className="metric-title">Humedad</span>
-              <div className="metric-icon">
-                <Droplets size={20} />
-              </div>
-            </div>
-            <div className="metric-value">{currentData.humidity}%</div>
-            <p className="metric-detail">{currentData.humidityStatus}</p>
-          </article>
-
-          {/* Índice UV (RF-AMB-05) */}
-          <article className={`metric-card ${isHighUV ? "uv-highlight" : ""}`}>
-            <div className="metric-top">
-              <span className="metric-title">Índice UV</span>
-              <div className="metric-icon">
-                <Sun size={20} />
-              </div>
-            </div>
-            <div className="metric-value">
-              {currentData.uv}{" "}
-              <span className="metric-badge">{currentData.uvLevel}</span>
-            </div>
-            <p className="metric-detail">
-              {isHighUV
-                ? "Requiere protección solar alta"
-                : "Exposición moderada"}
-            </p>
-          </article>
-
-          <article className="metric-card">
-            <div className="metric-top">
-              <span className="metric-title">Calidad del Aire</span>
-              <div className="metric-icon">
-                <Wind size={20} />
-              </div>
-            </div>
-            <div className="metric-value">
-              {currentData.aqi} <span className="metric-unit">ICA</span>
-            </div>
-            <p className="metric-detail">{currentData.aqiStatus}</p>
-          </article>
-        </section>
-
-        {/* RF-AMB-09: ALERTA POR ÍNDICE UV ELEVADO */}
-        {isHighUV && (
-          <section className="uv-alert-banner" role="alert">
-            <div className="uv-alert-icon">
-              <AlertTriangle size={22} />
-            </div>
-            <div className="uv-alert-content">
-              <strong>
-                Alerta de Radiación Solar: Índice UV {currentData.uv} (
-                {currentData.uvLevel})
-              </strong>
-              <p>
-                El nivel de radiación UV actual puede causar sensibilidad y
-                manchas. Te recomendamos aplicar protector solar FPS 50+ como
-                último paso de tu rutina matutina y reaplicar cada 2 a 3 horas.
-              </p>
-            </div>
-          </section>
-        )}
-
-        {/* RF-AMB-01 y RF-AMB-02: PANEL DE UBICACIÓN Y SELECCIÓN MANUAL */}
+        {/* RF-AMB-01 y RF-AMB-02: UBICACIÓN GPS + BUSCADOR PREDICTIVO DE CIUDAD */}
         <section className="location-bar-card">
           <div className="location-current">
             <div className="location-icon-box">
@@ -460,11 +328,11 @@ function EnvironmentalMonitorPage() {
               <span className="location-label">
                 {locationConsent
                   ? "Ubicación automática (GPS con consentimiento)"
-                  : "Selección manual de ciudad"}
+                  : "Ubicación seleccionada"}
               </span>
               <h2>{selectedCity}</h2>
               <span className="condition-subtitle">
-                Condición actual: <strong>{currentData.condition}</strong>
+                Condición actual: <strong>{envData.condition}</strong>
               </span>
             </div>
           </div>
@@ -476,55 +344,159 @@ function EnvironmentalMonitorPage() {
               onClick={handleRequestLocation}
             >
               <Navigation size={16} />
-              <span>
-                {locationConsent ? "GPS Activo" : "Usar mi ubicación"}
-              </span>
+              <span>{locationConsent ? "GPS Activo" : "Usar mi ubicación"}</span>
             </button>
 
-            <select
-              className="city-select"
-              value={selectedCity}
-              onChange={(e) => handleCityChange(e.target.value)}
-              aria-label="Seleccionar ciudad manualmente"
-            >
-              {Object.keys(CITY_DATA).map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
+            {/* Buscador predictivo de ciudades (sin lista desplegable fija) */}
+            <div className="predictive-city-wrapper" ref={searchBoxRef}>
+              <form onSubmit={handleSearchSubmit} className="custom-city-form">
+                <div className="predictive-input-box">
+                  <Search size={16} className="predictive-search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Buscar ciudad (ej. Guadalajara, Tampico)..."
+                    value={searchQuery}
+                    onFocus={() => {
+                      if (citySuggestions.length > 0) setShowSuggestions(true);
+                    }}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Buscar ciudad de forma predictiva"
+                    autoComplete="off"
+                  />
+                </div>
+                <button type="submit">Buscar</button>
+              </form>
 
-            <form onSubmit={handleCustomCitySubmit} className="custom-city-form">
-              <input
-                type="text"
-                placeholder="Otra ciudad..."
-                value={customCityInput}
-                onChange={(e) => setCustomCityInput(e.target.value)}
-                aria-label="Escribir nombre de ciudad manualmente"
-              />
-              <button type="submit">Cambiar</button>
-            </form>
+              {showSuggestions && (
+                <ul className="city-suggestions-dropdown" role="listbox">
+                  {isSearchingCities ? (
+                    <li className="suggestion-status">Buscando ciudades...</li>
+                  ) : citySuggestions.length === 0 ? (
+                    <li className="suggestion-status">
+                      Sin coincidencias para "{searchQuery}"
+                    </li>
+                  ) : (
+                    citySuggestions.map((item, index) => (
+                      <li key={`${item.label}-${index}`}>
+                        <button
+                          type="button"
+                          className="suggestion-item-btn"
+                          onClick={() => handleSelectSuggestedCity(item)}
+                        >
+                          <MapPin size={14} />
+                          <span>{item.label}</span>
+                        </button>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              )}
+            </div>
           </div>
         </section>
 
-        
+        {searchError && (
+          <div className="env-offline-banner" role="alert">
+            <AlertTriangle size={18} />
+            <span>{searchError}</span>
+          </div>
+        )}
 
-        
+        {/* RF-AMB-09: ALERTA POR ÍNDICE UV ELEVADO */}
+        {isHighUV && (
+          <section className="uv-alert-banner" role="alert">
+            <div className="uv-alert-icon">
+              <AlertTriangle size={22} />
+            </div>
+            <div className="uv-alert-content">
+              <strong>
+                Alerta de Radiación Solar: Índice UV {envData.uv} ({envData.uvLevel})
+              </strong>
+              <p>
+                El nivel de radiación UV actual puede causar sensibilidad y
+                manchas. Aplica protector solar FPS 50+ como último paso de tu
+                rutina matutina y reaplica cada 2 a 3 horas.
+              </p>
+            </div>
+          </section>
+        )}
 
+        {/* RF-AMB-03 al RF-AMB-07: MÉTRICAS AMBIENTALES ACTUALES */}
+        <section
+          className="metrics-grid"
+          aria-label="Indicadores ambientales actuales"
+        >
+          <article className="metric-card">
+            <div className="metric-top">
+              <span className="metric-title">Temperatura</span>
+              <div className="metric-icon">
+                <Thermometer size={20} />
+              </div>
+            </div>
+            <div className="metric-value">{envData.temp}°C</div>
+            <p className="metric-detail">
+              Sensación térmica de {envData.feelsLike}°C
+            </p>
+          </article>
+
+          <article className="metric-card">
+            <div className="metric-top">
+              <span className="metric-title">Humedad</span>
+              <div className="metric-icon">
+                <Droplets size={20} />
+              </div>
+            </div>
+            <div className="metric-value">{envData.humidity}%</div>
+            <p className="metric-detail">{envData.humidityStatus}</p>
+          </article>
+
+          <article className={`metric-card ${isHighUV ? "uv-highlight" : ""}`}>
+            <div className="metric-top">
+              <span className="metric-title">Índice UV</span>
+              <div className="metric-icon">
+                <Sun size={20} />
+              </div>
+            </div>
+            <div className="metric-value">
+              {envData.uv}{" "}
+              <span className="metric-badge">{envData.uvLevel}</span>
+            </div>
+            <p className="metric-detail">
+              {isHighUV
+                ? "Requiere protección solar alta"
+                : "Exposición moderada o baja"}
+            </p>
+          </article>
+
+          <article className="metric-card">
+            <div className="metric-top">
+              <span className="metric-title">Calidad del Aire</span>
+              <div className="metric-icon">
+                <Wind size={20} />
+              </div>
+            </div>
+            <div className="metric-value">
+              {envData.aqi} <span className="metric-unit">ICA</span>
+            </div>
+            <p className="metric-detail">{envData.aqiStatus}</p>
+          </article>
+        </section>
+
+        {/* RF-AMB-08 y RF-AMB-10: RECOMENDACIONES + INTEGRACIÓN CON CREADOR DE RUTINAS */}
         <section className="ai-env-panel">
           <div className="ai-recommendations-card">
             <div className="ai-card-header">
               <span className="ai-pill">
                 <Sparkles size={14} />
-                Recomendación Contextual IA
+                Recomendación Dermatológica Contextual
               </span>
               <h3>¿Qué significa este clima para tu piel?</h3>
             </div>
 
-            <p className="ai-summary-text">{currentData.aiSummary}</p>
+            <p className="ai-summary-text">{envData.aiSummary}</p>
 
             <ul className="ai-tips-list">
-              {currentData.aiTips.map((tip, idx) => (
+              {(envData.aiTips || []).map((tip, idx) => (
                 <li key={idx}>
                   <CheckCircle2 size={18} className="tip-check-icon" />
                   <span>{tip}</span>
