@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   RefreshCw,
   CheckCircle2,
-  WifiOff,
   ArrowRight
 } from "lucide-react";
 import MainLayout from "../../../shared/components/MainLayout";
@@ -97,7 +96,8 @@ const CITY_DATA = {
 
 function EnvironmentalMonitorPage() {
   const navigate = useNavigate();
-  const { getToken, isSignedIn } = useAuth();
+  const { getToken, isSignedIn, isLoaded } = useAuth();
+  const [cityError, setCityError] = useState("");
 
   // RF-AMB-01 y RF-AMB-02: Consentimiento de ubicación y selección manual
   const [locationConsent, setLocationConsent] = useState(false);
@@ -110,15 +110,15 @@ function EnvironmentalMonitorPage() {
   // RF-AMB-11 y RF-AMB-12: Auto-actualización y resiliencia ante caída de API
   const [lastUpdated, setLastUpdated] = useState("Cargando...");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [apiOffline, setApiOffline] = useState(false);
+  
 
   // Datos ambientales (live backend o fallback local)
   const [envData, setEnvData] = useState(() => CITY_DATA["León, Gto"]);
 
   // Carga inicial y obtención desde Backend
   const loadEnvironmentalData = useCallback(async (cityName, lat = null, lon = null, force = false) => {
-    if (apiOffline) return;
     setIsRefreshing(true);
+    setCityError(null);
     try {
       const token = isSignedIn ? await getToken() : null;
       const data = await ambientalService.getCurrent(token, {
@@ -167,15 +167,72 @@ function EnvironmentalMonitorPage() {
         })}`
       );
     } catch (err) {
-      console.warn("Fallo al conectar con backend ambiental, recurriendo a modo resiliente (RF-AMB-12):", err);
-      // Fallback local garantizado
-      const fallback = CITY_DATA[cityName] || CITY_DATA["León, Gto"];
-      setEnvData(fallback);
-      setLastUpdated("Modo resiliente (datos locales)");
+      // Si el backend indica ciudad no encontrada, mostrar error y no cambiar datos
+      if (err?.response?.status === 400 || err?.status === 400 || (err?.message && err.message.includes("400"))) {
+        setCityError("Ciudad no encontrada. Por favor escribe una ciudad real.");
+        setLastUpdated("Ciudad no válida");
+      } else {
+        console.warn("Fallo al conectar con backend ambiental (RF-AMB-12):", err);
+        setLastUpdated("Error al actualizar datos");
+      }
     } finally {
       setIsRefreshing(false);
     }
-  }, [apiOffline, getToken, isSignedIn]);
+  }, [getToken, isSignedIn]);
+
+  const fetchWeatherData = useCallback(
+    async ({ city, lat, lon, isGps = false }) => {
+      try {
+        setIsRefreshing(true);
+        setCityError("");
+        const token = isLoaded && isSignedIn ? await getToken() : null;
+        const data = await ambientalService.getCurrentEnvironment(token, {
+          city,
+          lat,
+          lon,
+        });
+
+        // SOLO se actualiza la ciudad cuando la API confirma que es real
+        setCurrentData(data);
+        setSelectedCity(data.city || city);
+        setLocationConsent(isGps);
+
+        const now = new Date();
+        setLastUpdated(
+          `Actualizado a las ${now.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`
+        );
+      } catch (err) {
+        if (err.code === "INVALID_CITY") {
+          setCityError(
+            `No se encontró "${city}". Por favor escribe una ciudad real (ej. Guadalajara, Madrid, Tokio).`
+          );
+        } else {
+          setCityError("No se pudieron actualizar los datos climáticos en este momento.");
+        }
+      } finally {
+        setIsRefreshing(false);
+      }
+    },
+    [getToken, isLoaded, isSignedIn]
+  );
+
+  // Carga inicial cuando Clerk esté listo
+  useEffect(() => {
+    if (!isLoaded) return;
+    fetchWeatherData({ city: selectedCity });
+  }, [isLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Al enviar el formulario de ciudad personalizada:
+  const handleCustomCitySubmit = async (e) => {
+    e.preventDefault();
+    const typedCity = customCityInput.trim();
+    if (!typedCity) return;
+    await fetchWeatherData({ city: typedCity, isGps: false });
+    setCustomCityInput("");
+  };
 
   // Carga al montar
   useEffect(() => {
@@ -188,13 +245,11 @@ function EnvironmentalMonitorPage() {
   // RF-AMB-11: Actualización automática periódica (cada 60s)
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!apiOffline) {
-        loadEnvironmentalData(selectedCity, null, null, false);
-      }
+      loadEnvironmentalData(selectedCity, null, null, false);
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [apiOffline, selectedCity, loadEnvironmentalData]);
+  }, [selectedCity, loadEnvironmentalData]);
 
   // Solicitar geolocalización con consentimiento (RF-AMB-01)
   const handleRequestLocation = () => {
@@ -234,7 +289,6 @@ function EnvironmentalMonitorPage() {
 
   // Refrescar datos manualmente (RF-AMB-11)
   const handleManualRefresh = () => {
-    if (apiOffline) return;
     loadEnvironmentalData(selectedCity, null, null, true);
   };
 
@@ -254,34 +308,6 @@ function EnvironmentalMonitorPage() {
         console.warn("No se pudo guardar la preferencia de ciudad:", e);
       }
     }
-  };
-
-  // Agregar ciudad personalizada (RF-AMB-02)
-  const handleCustomCitySubmit = async (e) => {
-    e.preventDefault();
-    if (!customCityInput.trim()) return;
-    const cityName = customCityInput.trim();
-    if (!CITY_DATA[cityName]) {
-      CITY_DATA[cityName] = {
-        temp: 25,
-        feelsLike: 26,
-        condition: "Parcialmente despejado",
-        humidity: 45,
-        humidityStatus: "Óptima",
-        uv: 6,
-        uvLevel: "Alto",
-        aqi: 38,
-        aqiStatus: "Buena",
-        aiSummary: `Condiciones para ${cityName}, calculadas para proteger tu barrera cutánea frente a la radiación solar.`,
-        aiTips: [
-          "Mantén tu limpieza facial suave mañana y noche.",
-          "Aplica protector solar FPS 50+ antes de salir.",
-          "Ajusta tu crema hidratante según sientas la piel al final del día."
-        ]
-      };
-    }
-    setCustomCityInput("");
-    await handleCityChange(cityName);
   };
 
   // Alternar sincronización con creador de rutinas (RF-AMB-10)
@@ -317,7 +343,7 @@ function EnvironmentalMonitorPage() {
             <button
               className="btn-refresh"
               onClick={handleManualRefresh}
-              disabled={apiOffline || isRefreshing}
+              disabled={isRefreshing}
               title="Actualizar condiciones ambientales"
             >
               <RefreshCw
@@ -326,30 +352,16 @@ function EnvironmentalMonitorPage() {
               />
               <span>{lastUpdated}</span>
             </button>
-
-            {/* Botón para probar RF-AMB-12 (Resiliencia cuando falla la API) */}
-            <button
-              className={`btn-simulate-offline ${apiOffline ? "active" : ""}`}
-              onClick={() => setApiOffline(!apiOffline)}
-              title="Probar estado sin conexión con proveedor externo (RF-AMB-12)"
-            >
-              <WifiOff size={15} />
-              <span>{apiOffline ? "Proveedor Offline" : "Simular fallo API"}</span>
-            </button>
           </div>
         </header>
 
-        {/* RF-AMB-12: AVISO DE RESILIENCIA SI EL PROVEEDOR NO ESTÁ DISPONIBLE */}
-        {apiOffline && (
-          <div className="env-offline-banner" role="status">
-            <WifiOff size={20} />
+        {/* Error de ciudad no encontrada */}
+        {cityError && (
+          <div className="env-offline-banner" role="alert" style={{ background: "#fff3cd", borderColor: "#ffc107" }}>
+            <AlertTriangle size={20} style={{ color: "#856404" }} />
             <div>
-              <strong>Servicio climático temporalmente no disponible</strong>
-              <p>
-                Mostrando las últimas condiciones guardadas para{" "}
-                <b>{selectedCity}</b>. Tu creador de rutinas y recomendaciones
-                siguen funcionando con normalidad.
-              </p>
+              <strong style={{ color: "#856404" }}>Ciudad no encontrada</strong>
+              <p style={{ color: "#856404" }}>{cityError}</p>
             </div>
           </div>
         )}

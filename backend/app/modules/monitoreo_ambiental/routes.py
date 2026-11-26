@@ -52,13 +52,16 @@ def get_current_environment():
     effective_lat = lat_param if lat_param is not None else (prefs.latitude if prefs else None)
     effective_lon = lon_param if lon_param is not None else (prefs.longitude if prefs else None)
 
-    data = get_environmental_data(
-        city_name=effective_city,
-        lat=effective_lat,
-        lon=effective_lon,
-        user_id=user_id,
-        force_refresh=refresh_param
-    )
+    try:
+        data = get_environmental_data(
+            city_name=effective_city,
+            lat=effective_lat,
+            lon=effective_lon,
+            user_id=user_id,
+            force_refresh=refresh_param
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e), "errorCode": "CITY_NOT_FOUND"}), 400
 
     # Añadir estado de sincronización con rutina
     data["syncWithRoutine"] = prefs.sync_with_routine if prefs else True
@@ -151,7 +154,12 @@ def get_available_cities():
         ]
         return jsonify({"cities": cities_list}), 200
 
-    lat, lon, resolved_name = resolve_coordinates_for_city(query)
+    lat, lon, resolved_name = None, None, None
+    try:
+        lat, lon, resolved_name = resolve_coordinates_for_city(query)
+    except ValueError:
+        return jsonify({"cities": [], "error": "Ciudad no encontrada"}), 404
+
     return jsonify({
         "cities": [
             {"name": resolved_name, "label": resolved_name, "lat": lat, "lon": lon}

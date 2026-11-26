@@ -72,6 +72,7 @@ def create_app(config_name='default'):
     app.register_blueprint(rutinas_bp)
     app.register_blueprint(ambiente_bp)
     app.register_blueprint(directorio_bp)
+    
 
 
     # Rutas de perfil_salud:

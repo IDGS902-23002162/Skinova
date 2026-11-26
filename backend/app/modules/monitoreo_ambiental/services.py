@@ -198,8 +198,8 @@ def resolve_coordinates_for_city(city_name: str) -> Tuple[float, float, str]:
     except Exception as e:
         logger.warning(f"Error en geocodificación externa para '{city_name}': {e}")
 
-    # Fallback por defecto si no se encuentra
-    return 21.1219, -101.6826, clean_name or "León, Gto"
+    # Ciudad no encontrada ni en el diccionario local ni en la geocodificación externa
+    raise ValueError(f"Ciudad no encontrada: '{clean_name}'. Por favor escribe una ciudad real.")
 
 
 def fetch_external_weather(lat: float, lon: float) -> Dict[str, Any]:
@@ -541,7 +541,7 @@ def get_environmental_data(
     target_lat = lat
     target_lon = lon
 
-    # Si no se proveyeron coordenadas, resolverlas
+    # Si no se proveyeron coordenadas, resolverlas (puede lanzar ValueError si la ciudad no existe)
     if target_lat is None or target_lon is None:
         target_lat, target_lon, resolved_name = resolve_coordinates_for_city(target_city)
         if resolved_name:
