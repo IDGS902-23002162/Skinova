@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useAuth } from "@clerk/react";
 
 export function useApi() {
@@ -11,7 +12,7 @@ export function useApi() {
    * @param {string} endpoint - La ruta de la API (ej: '/auth/me')
    * @param {object} opciones - Opciones de fetch (method, body, etc.)
    */
-  const fetchConAuth = async (endpoint, opciones = {}) => {
+  const fetchConAuth = useCallback(async (endpoint, opciones = {}) => {
     // Obtiene el token actualizado de Clerk
     const token = await getToken();
 
@@ -23,10 +24,10 @@ export function useApi() {
       headers: {
         ...opciones.headers,
         "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
+        ...(!(opciones.body instanceof FormData) && { "Content-Type": "application/json" })
       }
     });
-  };
+  }, [BASE_URL, getToken]);
 
   return { fetchConAuth };
 }
