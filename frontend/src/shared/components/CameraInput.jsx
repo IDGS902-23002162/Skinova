@@ -24,14 +24,19 @@ export function AiChat({
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Sincronizar si cambia desde afuera
   useEffect(() => {
     setInternalText(productText);
   }, [productText]);
 
+  // Sincronizar estado tanto al cargar como al eliminar la foto en caché/props
   useEffect(() => {
     if (capturedImage) {
       setCameraState('photo');
+    } else {
+      setCameraState((prev) => (prev === 'camera' ? 'camera' : 'idle'));
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   }, [capturedImage]);
 
@@ -64,7 +69,7 @@ export function AiChat({
     }
   };
 
-  const stopCamera = () => {
+  const stopCamera = (nextState) => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -72,7 +77,11 @@ export function AiChat({
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    setCameraState(capturedImage ? 'photo' : 'idle');
+    if (typeof nextState === 'string') {
+      setCameraState(nextState);
+    } else {
+      setCameraState(capturedImage ? 'photo' : 'idle');
+    }
   };
 
   const capturePhoto = () => {
@@ -87,8 +96,7 @@ export function AiChat({
       if (onImageCaptured) {
         onImageCaptured(dataUrl);
       }
-      stopCamera();
-      setCameraState('photo');
+      stopCamera('photo');
     }
   };
 
@@ -106,8 +114,7 @@ export function AiChat({
       if (onImageCaptured) {
         onImageCaptured(dataUrl);
       }
-      stopCamera();
-      setCameraState('photo');
+      stopCamera('photo');
     };
     reader.readAsDataURL(file);
   };
@@ -125,7 +132,7 @@ export function AiChat({
   const clearAllFields = (e) => {
     if (e) e.preventDefault();
     setInternalText('');
-    stopCamera();
+    stopCamera('idle');
     clearPhoto();
     setErrorMessage('');
     if (onClearAll) {
@@ -165,7 +172,6 @@ export function AiChat({
   return (
     <div className="pa-wrapper">
       <div className="pa-form-inner">
-        {/* Input de texto */}
         <div className="pa-field">
           <label className="pa-label" htmlFor="product-name-input">
             {labelProduct}
@@ -176,7 +182,7 @@ export function AiChat({
             name="product"
             type="text"
             autoComplete="off"
-            placeholder="Ej. Crema hidratante con ceramidas CeraVe..."
+            placeholder=""
             value={internalText}
             onChange={handleTextChange}
             onKeyDown={handleKeyDown}
@@ -184,7 +190,6 @@ export function AiChat({
           />
         </div>
 
-        {/* Sección de Cámara */}
         <fieldset className="pa-field">
           <legend className="pa-label">{labelCamera}</legend>
 
@@ -237,7 +242,7 @@ export function AiChat({
                 <button type="button" className="pa-btn pa-btn--primary" onClick={capturePhoto}>
                   Capturar foto
                 </button>
-                <button type="button" className="pa-btn pa-btn--ghost" onClick={stopCamera}>
+                <button type="button" className="pa-btn pa-btn--ghost" onClick={() => stopCamera()}>
                   Cancelar
                 </button>
               </div>
@@ -261,7 +266,6 @@ export function AiChat({
           <canvas ref={canvasRef} style={{ display: 'none' }} />
         </fieldset>
 
-        {/* Botones de Acción */}
         {showActions && (
           <div className="pa-actions">
             <button
