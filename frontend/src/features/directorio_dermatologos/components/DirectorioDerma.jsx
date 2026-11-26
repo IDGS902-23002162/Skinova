@@ -22,7 +22,7 @@ import { directorioService } from "../services/directorioService";
 import "leaflet/dist/leaflet.css";
 import "./DirectorioDerma.css";
 
-// Coordenadas reales de respaldo en León, Gto.
+// Datos de respaldo en caso de que no haya conexión con el servidor
 const DERMATOLOGISTS_DATA = [
   {
     id: "der-1",
@@ -32,8 +32,6 @@ const DERMATOLOGISTS_DATA = [
     clinic: "Centro Dermatológico del Bajío",
     address: "Av. Cerro Gordo 290, Cons. 402, Campestre, León, Gto.",
     distanceKm: 2.4,
-    careType: "ambos",
-    careLabel: "Presencial y En línea",
     rating: 4.9,
     reviewsCount: 128,
     focusAreas: ["Acné severo", "Rosácea", "Dermatitis atópica", "Manchas"],
@@ -53,8 +51,6 @@ const DERMATOLOGISTS_DATA = [
     clinic: "Hospital Ángeles León · Torre de Especialidades",
     address: "Av. Cerro Gordo 311, Cons. 615, Lomas del Campestre, León, Gto.",
     distanceKm: 3.8,
-    careType: "presencial",
-    careLabel: "Solo Presencial",
     rating: 5.0,
     reviewsCount: 94,
     focusAreas: ["Revisión de lunares", "Melasma", "Cicatrices", "Fotodaño"],
@@ -74,8 +70,6 @@ const DERMATOLOGISTS_DATA = [
     clinic: "Clínica DermaVita Jardines",
     address: "Blvd. Paseo de los Insurgentes 1804, Jardines del Moral, León, Gto.",
     distanceKm: 6.5,
-    careType: "ambos",
-    careLabel: "Presencial y En línea",
     rating: 4.8,
     reviewsCount: 76,
     focusAreas: ["Piel reactiva", "Alergias cutáneas", "Acné hormonal"],
@@ -90,13 +84,11 @@ const DERMATOLOGISTS_DATA = [
   {
     id: "der-4",
     name: "Dr. Mateo Elizondo",
-    specialty: "Teledermatología y Seguimiento Dermoestético",
+    specialty: "Dermatología Clínica y Seguimiento Dermoestético",
     license: "Céd. Prof. 8834120 · Especialista Certificado",
     clinic: "Consultorio Médico Puerta Bajío",
     address: "Blvd. Aeropuerto 104, Torre Médica Sur, León, Gto.",
     distanceKm: 14.2,
-    careType: "en_linea",
-    careLabel: "Atención En Línea",
     rating: 4.7,
     reviewsCount: 61,
     focusAreas: ["Ajuste de retinoides", "Sensibilidad", "Control de sebo"],
@@ -110,25 +102,10 @@ const DERMATOLOGISTS_DATA = [
   }
 ];
 
-// Extrae coordenadas sin importar cómo las nombre el backend y usa respaldo local si vienen nulas
 function getDoctorCoords(doc) {
   if (!doc) return null;
-
-  const rawLat =
-    doc.lat ??
-    doc.latitude ??
-    doc.coords?.lat ??
-    doc.coords?.latitude ??
-    doc.location?.lat;
-
-  const rawLon =
-    doc.lon ??
-    doc.lng ??
-    doc.longitude ??
-    doc.coords?.lon ??
-    doc.coords?.lng ??
-    doc.coords?.longitude ??
-    doc.location?.lng;
+  const rawLat = doc.lat ?? doc.latitude ?? doc.coords?.lat;
+  const rawLon = doc.lon ?? doc.lng ?? doc.longitude ?? doc.coords?.lon;
 
   const lat = rawLat !== null && rawLat !== undefined && rawLat !== "" ? Number(rawLat) : NaN;
   const lon = rawLon !== null && rawLon !== undefined && rawLon !== "" ? Number(rawLon) : NaN;
@@ -136,15 +113,7 @@ function getDoctorCoords(doc) {
   if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
     return { lat, lon };
   }
-
-  // Respaldo si el registro del backend aún no tiene coordenadas en BD
-  const fallback = DERMATOLOGISTS_DATA.find(
-    (item) =>
-      String(item.id) === String(doc.id) ||
-      item.name.toLowerCase().trim() === (doc.name || "").toLowerCase().trim()
-  );
-
-  return fallback ? { lat: fallback.lat, lon: fallback.lon } : null;
+  return null;
 }
 
 function LeafletMap({ doctors = [], selectedDoctor, onSelectDoctor, userCoords }) {
@@ -160,10 +129,13 @@ function LeafletMap({ doctors = [], selectedDoctor, onSelectDoctor, userCoords }
       container._leaflet_id = null;
     }
 
-    const initialCoords = getDoctorCoords(selectedDoctor) || { lat: 21.1253, lon: -101.6713 };
+    const initialCenter =
+      userCoords?.lat != null && userCoords?.lon != null
+        ? [userCoords.lat, userCoords.lon]
+        : [21.1253, -101.6713];
 
     const map = L.map(container, {
-      center: [initialCoords.lat, initialCoords.lon],
+      center: initialCenter,
       zoom: 13,
       scrollWheelZoom: true,
     });
@@ -193,27 +165,36 @@ function LeafletMap({ doctors = [], selectedDoctor, onSelectDoctor, userCoords }
     const layer = markersLayerRef.current;
     if (!map || !layer) return;
 
-    // Asegura que Leaflet conozca el ancho/alto real antes de posicionar pines
     map.invalidateSize();
     layer.clearLayers();
     const bounds = [];
 
-    // Pin opcional de la ubicación del usuario si activó el GPS
+    // Marcador de ubicación actual del usuario
     if (userCoords?.lat != null && userCoords?.lon != null) {
       const userIcon = L.divIcon({
         className: "skinova-user-pin",
         html: `<div style="
-          width: 16px;
-          height: 16px;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
           background-color: #2563EB;
-          border: 3px solid #FFFFFF;
-          border-radius: 50%;
-          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25);
+          color: #FFFFFF;
+          padding: 4px 10px;
+          border-radius: 16px;
+          font-family: 'Manrope', sans-serif;
+          font-size: 11px;
+          font-weight: 700;
+          white-space: nowrap;
+          border: 2px solid #FFFFFF;
+          box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
           transform: translate(-50%, -50%);
-        " title="Tu ubicación"></div>`,
+        ">Tu ubicación</div>`,
         iconSize: null,
       });
-      L.marker([userCoords.lat, userCoords.lon], { icon: userIcon }).addTo(layer);
+      L.marker([userCoords.lat, userCoords.lon], {
+        icon: userIcon,
+        zIndexOffset: 1200,
+      }).addTo(layer);
       bounds.push([userCoords.lat, userCoords.lon]);
     }
 
@@ -257,9 +238,8 @@ function LeafletMap({ doctors = [], selectedDoctor, onSelectDoctor, userCoords }
     });
 
     const activeCoords = getDoctorCoords(selectedDoctor);
-
     if (activeCoords) {
-      map.flyTo([activeCoords.lat, activeCoords.lon], 14, { duration: 0.6 });
+      map.flyTo([activeCoords.lat, activeCoords.lon], 13, { duration: 0.6 });
     } else if (bounds.length > 0) {
       map.fitBounds(bounds, { padding: [45, 45] });
     }
@@ -291,22 +271,21 @@ function DirectorioDerma() {
   const [isLocating, setIsLocating] = useState(false);
   const [coords, setCoords] = useState({ lat: null, lon: null });
 
-  // RF-DER-02, RF-DER-06 y RF-DER-07: Búsqueda y filtros
+  // RF-DER-02 y RF-DER-06: Búsqueda y filtro por distancia
   const [searchQuery, setSearchQuery] = useState("");
   const [maxDistance, setMaxDistance] = useState(20);
-  const [selectedCareType, setSelectedCareType] = useState("todos");
   const [onlyFavorites, setOnlyFavorites] = useState(false);
 
-  // Lista de dermatólogos obtenida del Backend o datos locales
+  // Lista de dermatólogos obtenida del Backend
   const [backendDoctors, setBackendDoctors] = useState(DERMATOLOGISTS_DATA);
   const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
 
   // RF-DER-03 y RF-DER-04: Alternar vista en Lista o Mapa
   const [viewMode, setViewMode] = useState("list");
-  const [selectedDoctorId, setSelectedDoctorId] = useState("der-1");
+  const [selectedDoctorId, setSelectedDoctorId] = useState(null);
 
   // RF-DER-11: Guardar especialistas como favoritos
-  const [favorites, setFavorites] = useState(["der-1"]);
+  const [favorites, setFavorites] = useState([]);
 
   // RF-DER-12: Recomendación de IA
   const [aiReferralData, setAiReferralData] = useState(null);
@@ -320,19 +299,19 @@ function DirectorioDerma() {
         lon: coords.lon,
         q: searchQuery,
         maxDistance,
-        careType: selectedCareType,
         onlyFavorites,
       });
 
       if (res && Array.isArray(res.specialists) && res.specialists.length > 0) {
         setBackendDoctors(res.specialists);
+        setSelectedDoctorId((prev) => prev || res.specialists[0].id);
       }
     } catch (err) {
       console.warn("Error cargando dermatólogos desde el backend, usando catálogo local:", err);
     } finally {
       setIsLoadingDoctors(false);
     }
-  }, [coords, searchQuery, maxDistance, selectedCareType, onlyFavorites, getToken, isSignedIn]);
+  }, [coords, searchQuery, maxDistance, onlyFavorites, getToken, isSignedIn]);
 
   useEffect(() => {
     async function loadUserData() {
@@ -374,12 +353,21 @@ function DirectorioDerma() {
           setLocationConsent(false);
           setLocationStatus("Permiso denegado · Usando ciudad del perfil");
           setIsLocating(false);
-        }
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
       );
     } else {
-      setLocationConsent(true);
-      setLocationStatus("Ubicación activa");
+      setLocationConsent(false);
+      setLocationStatus("Geolocalización no soportada");
       setIsLocating(false);
+    }
+  };
+
+  // Al cambiar a Vista en Mapa, solicita automáticamente autorización de ubicación si aún no está activa
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    if (mode === "map" && !locationConsent && !isLocating) {
+      handleRequestLocation();
     }
   };
 
@@ -415,22 +403,17 @@ function DirectorioDerma() {
         doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         doc.specialty.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (doc.clinic || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (doc.address || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         (doc.focusAreas || []).some((area) =>
           area.toLowerCase().includes(searchQuery.toLowerCase())
         );
 
       const matchesDistance = (doc.distanceKm ?? 0) <= maxDistance;
-
-      const matchesCareType =
-        selectedCareType === "todos" ||
-        doc.careType === selectedCareType ||
-        doc.careType === "ambos";
-
       const matchesFavorite = !onlyFavorites || favorites.includes(doc.id);
 
-      return matchesSearch && matchesDistance && matchesCareType && matchesFavorite;
+      return matchesSearch && matchesDistance && matchesFavorite;
     });
-  }, [backendDoctors, searchQuery, maxDistance, selectedCareType, onlyFavorites, favorites]);
+  }, [backendDoctors, searchQuery, maxDistance, onlyFavorites, favorites]);
 
   const activeMapDoctor =
     filteredDoctors.find((d) => String(d.id) === String(selectedDoctorId)) ||
@@ -482,7 +465,7 @@ function DirectorioDerma() {
               <Search size={18} className="search-icon" />
               <input
                 type="text"
-                placeholder="Buscar por nombre, especialidad, síntoma o clínica..."
+                placeholder="Buscar por nombre, especialidad, colonia o clínica..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 aria-label="Buscar especialistas cercanos"
@@ -527,20 +510,6 @@ function DirectorioDerma() {
                 </select>
               </div>
 
-              <div className="filter-item">
-                <Stethoscope size={15} />
-                <label htmlFor="care-select">Atención:</label>
-                <select
-                  id="care-select"
-                  value={selectedCareType}
-                  onChange={(e) => setSelectedCareType(e.target.value)}
-                >
-                  <option value="todos">Todas las modalidades</option>
-                  <option value="presencial">Presencial</option>
-                  <option value="en_linea">En línea (Teleconsulta)</option>
-                </select>
-              </div>
-
               <button
                 type="button"
                 className={`btn-filter-favs ${onlyFavorites ? "active" : ""}`}
@@ -569,7 +538,7 @@ function DirectorioDerma() {
             <button
               type="button"
               className={`pill-btn ${viewMode === "list" ? "active" : ""}`}
-              onClick={() => setViewMode("list")}
+              onClick={() => handleViewModeChange("list")}
             >
               <List size={17} />
               <span>Vista en Lista</span>
@@ -577,7 +546,7 @@ function DirectorioDerma() {
             <button
               type="button"
               className={`pill-btn ${viewMode === "map" ? "active" : ""}`}
-              onClick={() => setViewMode("map")}
+              onClick={() => handleViewModeChange("map")}
             >
               <MapIcon size={17} />
               <span>Vista en Mapa</span>
@@ -590,7 +559,7 @@ function DirectorioDerma() {
           <div className="empty-results-card">
             <p>
               No se encontraron especialistas con los filtros actuales. Intenta
-              ampliar el rango de distancia o cambiar el tipo de atención.
+              ampliar el rango de distancia o limpiar el buscador.
             </p>
           </div>
         )}
@@ -612,7 +581,6 @@ function DirectorioDerma() {
                         <span className="distance-badge">
                           <MapPin size={12} /> A {doc.distanceKm} km
                         </span>
-                        <span className="care-type-badge">{doc.careLabel}</span>
                         <span className="rating-badge">
                           ★ {doc.rating} ({doc.reviewsCount})
                         </span>
@@ -753,7 +721,6 @@ function DirectorioDerma() {
                 <div className="derm-clinic-box">
                   <strong>{activeMapDoctor.clinic}</strong>
                   <span>{activeMapDoctor.address}</span>
-                  <small>{activeMapDoctor.careLabel}</small>
                 </div>
 
                 {activeMapDoctor.contact?.phone && (

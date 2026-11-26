@@ -1,5 +1,6 @@
 import os
 import math
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from urllib.parse import quote_plus
 from flask import Blueprint, request, jsonify, g
@@ -19,112 +20,146 @@ def _haversine_km(lat1, lon1, lat2, lon2):
     return round(2 * r * math.atan2(math.sqrt(a), math.sqrt(1 - a)), 1)
 
 
-def _search_inegi_denue(lat, lon, radius_km):
-    """Consulta consultorios y clínicas dermatológicas reales en México vía API DENUE del INEGI."""
+def _build_search_centers(lat, lon, radius_km):
+    """
+    El endpoint Buscar del INEGI cubre máx. 5 km por punto.
+    Si el usuario pide 10 km o 20 km, generamos puntos superpuestos para cubrir toda el área.
+    """
+    if radius_km <= 5:
+        return [(lat, lon)]
+
+    # Desplazamiento de ~6.5 km en grados
+    d_lat = 6.5 / 111.0
+    d_lon = 6.5 / (111.0 * max(math.cos(math.radians(lat)), 0.2))
+
+    centers = [
+        (lat, lon),
+        (lat + d_lat, lon),
+        (lat - d_lat, lon),
+        (lat, lon + d_lon),
+        (lat, lon - d_lon),
+    ]
+
+    if radius_km > 12:
+        # Diagonales y extensión para cubrir hasta 20 km completos en toda la ciudad
+        centers.extend([
+            (lat + d_lat, lon + d_lon),
+            (lat + d_lat, lon - d_lon),
+            (lat - d_lat, lon + d_lon),
+            (lat - d_lat, lon - d_lon),
+        ])
+
+    return centers
+
+
+def _query_inegi_point(center_lat, center_lon, token):
+    condicion = "dermatologo,dermatologia,dermatologico,dermatologica"
+    url = f"https://www.inegi.org.mx/app/api/denue/v1/consulta/Buscar/{condicion}/{center_lat},{center_lon}/5000/{token}"
+    try:
+        resp = requests.get(url, timeout=10)
+        if resp.status_code != 200 or not resp.text.strip():
+            return []
+        data = resp.json()
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
+def _search_inegi_denue(user_lat, user_lon, radius_km):
+    """Consulta consultorios dermatológicos en todo el radio seleccionado por el usuario."""
     token = os.getenv("INEGI_DENUE_TOKEN", "").strip().strip('"').strip("'")
     if not token:
         print("[INEGI DENUE]: No se encontró INEGI_DENUE_TOKEN en .env")
         return []
 
-    # El endpoint Buscar del DENUE requiere palabras completas separadas por coma y radio máx. de 5000m
-    condicion = "dermatologo,dermatologia,dermatologico,dermatologica"
-    metros = min(int(radius_km * 1000), 5000)
-    url = f"https://www.inegi.org.mx/app/api/denue/v1/consulta/Buscar/{condicion}/{lat},{lon}/{metros}/{token}"
+    centers = _build_search_centers(user_lat, user_lon, radius_km)
+    raw_places = []
 
-    try:
-        resp = requests.get(url, timeout=10)
-        if resp.status_code != 200:
-            print(f"[INEGI DENUE HTTP {resp.status_code}]: {resp.text[:200]}")
-            return []
+    with ThreadPoolExecutor(max_workers=min(len(centers), 6)) as executor:
+        futures = [
+            executor.submit(_query_inegi_point, c_lat, c_lon, token)
+            for c_lat, c_lon in centers
+        ]
+        for future in as_completed(futures):
+            raw_places.extend(future.result())
 
-        body = resp.text.strip()
-        if not body:
-            print("[INEGI DENUE]: El INEGI devolvió una respuesta vacía para esta zona.")
-            return []
+    specialists = []
+    seen_ids = set()
 
-        raw_places = resp.json()
-        if not isinstance(raw_places, list):
-            print(f"[INEGI DENUE Respuesta inesperada]: {str(raw_places)[:200]}")
-            return []
+    for item in raw_places:
+        place_id = str(item.get("Id", ""))
+        if not place_id or place_id in seen_ids:
+            continue
+        seen_ids.add(place_id)
 
-        specialists = []
-        seen_ids = set()
+        try:
+            doc_lat = float(item.get("Latitud", 0))
+            doc_lon = float(item.get("Longitud", 0))
+        except (ValueError, TypeError):
+            continue
 
-        for item in raw_places:
-            place_id = str(item.get("Id", ""))
-            if not place_id or place_id in seen_ids:
-                continue
-            seen_ids.add(place_id)
+        if not doc_lat or not doc_lon:
+            continue
 
-            try:
-                doc_lat = float(item.get("Latitud", 0))
-                doc_lon = float(item.get("Longitud", 0))
-            except (ValueError, TypeError):
-                continue
+        distance = _haversine_km(user_lat, user_lon, doc_lat, doc_lon)
+        if distance > radius_km:
+            continue
 
-            if not doc_lat or not doc_lon:
-                continue
+        vialidad = f"{item.get('Tipo_vialidad', '')} {item.get('Calle', '')} {item.get('Num_Exterior', '')}".strip()
+        colonia = item.get("Colonia", "").strip()
+        ubicacion = item.get("Ubicacion", "").strip()
+        full_address = ", ".join(filter(None, [vialidad, colonia, ubicacion])).title()
 
-            vialidad = f"{item.get('Tipo_vialidad', '')} {item.get('Calle', '')} {item.get('Num_Exterior', '')}".strip()
-            colonia = item.get("Colonia", "").strip()
-            ubicacion = item.get("Ubicacion", "").strip()
-            full_address = ", ".join(filter(None, [vialidad, colonia, ubicacion])).title()
+        raw_name = (item.get("Nombre") or "Consultorio Dermatológico").strip().title()
+        razon_social = (item.get("Razon_social") or "").strip().title()
+        clinic_name = (
+            razon_social
+            if razon_social and razon_social.lower() != raw_name.lower()
+            else raw_name
+        )
 
-            raw_name = (item.get("Nombre") or "Consultorio Dermatológico").strip().title()
-            razon_social = (item.get("Razon_social") or "").strip().title()
-            clinic_name = (
-                razon_social
-                if razon_social and razon_social.lower() != raw_name.lower()
-                else raw_name
-            )
+        raw_web = (item.get("Sitio_internet") or "").strip()
+        clean_web = raw_web.replace("https://", "").replace("http://", "").rstrip("/")
+        booking_url = (
+            raw_web
+            if raw_web.startswith("http")
+            else (f"https://{raw_web}" if raw_web else None)
+        )
 
-            raw_web = (item.get("Sitio_internet") or "").strip()
-            clean_web = raw_web.replace("https://", "").replace("http://", "").rstrip("/")
-            booking_url = (
-                raw_web
-                if raw_web.startswith("http")
-                else (f"https://{raw_web}" if raw_web else None)
-            )
+        raw_phone = (item.get("Telefono") or "").strip()
+        raw_email = (item.get("Correo_e") or "").strip().lower()
 
-            raw_phone = (item.get("Telefono") or "").strip()
-            raw_email = (item.get("Correo_e") or "").strip().lower()
+        specialists.append({
+            "id": f"denue-{place_id}",
+            "name": raw_name,
+            "specialty": "Dermatología Clínica y Especializada",
+            "license": "Registro oficial INEGI · DENUE",
+            "clinic": clinic_name,
+            "address": full_address or "Ubicación verificada en mapa",
+            "distanceKm": distance,
+            "rating": 4.8,
+            "reviewsCount": 24,
+            "focusAreas": ["Dermatología clínica", "Valoración cutánea"],
+            "schedule": "Consultar horario por teléfono",
+            "contact": {
+                "phone": raw_phone or None,
+                "email": raw_email or None,
+                "website": clean_web or None,
+            },
+            "bookingPlatform": "Sitio Web" if booking_url else None,
+            "bookingUrl": booking_url,
+            "mapQuery": quote_plus(f"{raw_name} {full_address}"),
+            "lat": doc_lat,
+            "lon": doc_lon,
+        })
 
-            specialists.append({
-                "id": f"denue-{place_id}",
-                "name": raw_name,
-                "specialty": "Dermatología Clínica y Especializada",
-                "license": "Registro oficial INEGI · DENUE",
-                "clinic": clinic_name,
-                "address": full_address or "Ubicación verificada en mapa",
-                "distanceKm": _haversine_km(lat, lon, doc_lat, doc_lon),
-                "careType": "presencial",
-                "careLabel": "Presencial",
-                "rating": 4.8,
-                "reviewsCount": 24,
-                "focusAreas": ["Dermatología clínica", "Valoración cutánea"],
-                "schedule": "Consultar horario por teléfono",
-                "contact": {
-                    "phone": raw_phone or None,
-                    "email": raw_email or None,
-                    "website": clean_web or None,
-                },
-                "bookingPlatform": "Sitio Web" if booking_url else None,
-                "bookingUrl": booking_url,
-                "mapQuery": quote_plus(f"{raw_name} {full_address}"),
-                "lat": doc_lat,
-                "lon": doc_lon,
-            })
-
-        specialists.sort(key=lambda d: d["distanceKm"])
-        return specialists
-    except Exception as e:
-        print(f"[INEGI DENUE Exception]: {e}")
-        return []
+    specialists.sort(key=lambda d: d["distanceKm"])
+    return specialists
 
 
 def _search_osm_overpass(lat, lon, radius_km):
-    """Respaldo gratuito con OpenStreetMap si el servidor del INEGI tarda en responder."""
-    radius_m = int(min(radius_km * 1000, 15000))
+    """Respaldo gratuito con OpenStreetMap."""
+    radius_m = int(min(radius_km * 1000, 20000))
     overpass_query = f"""
     [out:json][timeout:8];
     (
@@ -133,7 +168,7 @@ def _search_osm_overpass(lat, lon, radius_km):
       node["name"~"dermatolog",i](around:{radius_m},{lat},{lon});
       way["name"~"dermatolog",i](around:{radius_m},{lat},{lon});
     );
-    out center tags 15;
+    out center tags 20;
     """
     try:
         resp = requests.post(
@@ -160,6 +195,10 @@ def _search_osm_overpass(lat, lon, radius_km):
             if doc_lat is None or doc_lon is None:
                 continue
 
+            distance = _haversine_km(lat, lon, doc_lat, doc_lon)
+            if distance > radius_km:
+                continue
+
             street = tags.get("addr:street", "")
             number = tags.get("addr:housenumber", "")
             suburb = tags.get("addr:suburb", "")
@@ -177,9 +216,7 @@ def _search_osm_overpass(lat, lon, radius_km):
                 "license": "Registro público · OpenStreetMap",
                 "clinic": name,
                 "address": address or "Ubicación verificada en mapa",
-                "distanceKm": _haversine_km(lat, lon, doc_lat, doc_lon),
-                "careType": "presencial",
-                "careLabel": "Presencial",
+                "distanceKm": distance,
                 "rating": 4.8,
                 "reviewsCount": 18,
                 "focusAreas": ["Dermatología clínica", "Valoración cutánea"],
