@@ -104,7 +104,7 @@ def save_app_setting(key, data):
     AppSetting.__table__.create(db.engine, checkfirst=True)
     row = AppSetting.query.get(key)
     payload = json.dumps(data)
-    if row:
+    if row: 
         row.value = payload
     else:
         db.session.add(AppSetting(key=key, value=payload))
