@@ -1,0 +1,119 @@
+.skinova-module {
+  --module-surface: #fffefa;
+  --module-muted: #52635e;
+  --module-radius: 22px;
+  --module-shadow: 0 5px 20px #163b350b;
+  --module-control: #eaf0e9;
+  max-width: 1160px;
+  margin-inline: auto;
+  padding-block: clamp(8px, 2vw, 24px) 32px;
+  min-width: 0;
+}
+
+.skinova-module-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: clamp(20px, 4vw, 32px);
+  border: 1px solid #dfe8de;
+  border-radius: calc(var(--module-radius) + 2px);
+  padding: clamp(18px, 4vw, 36px);
+  background: linear-gradient(135deg, var(--module-surface), #edf4ed);
+}
+
+.skinova-module-header > div { min-width: 0; }
+.skinova-module-header h1 {
+  margin: 0;
+  color: var(--color-bosque-profundo);
+  font-family: var(--font-title);
+  font-size: clamp(30px, 5vw, 46px);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -.025em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.skinova-module-header p {
+  max-width: 65ch;
+  margin: 8px 0 0;
+  color: var(--module-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.skinova-module-primary {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--color-bosque-profundo);
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: var(--color-bosque-profundo);
+  color: white;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 160ms ease-out, background-color 160ms ease-out;
+}
+
+.skinova-module-primary:active { transform: scale(.97); }
+
+.skinova-module :is(.skinova-module-primary, .skinova-module-segments button):focus-visible {
+  outline: 2px solid var(--color-bosque-medio);
+  outline-offset: 2px;
+}
+
+.skinova-module-segments {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 16px;
+  padding: 4px;
+  border: 1px solid #dce6dc;
+  border-radius: 16px;
+  background: var(--module-control);
+}
+
+.skinova-module-segments button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 7px 10px;
+  background: transparent;
+  color: var(--module-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+
+.skinova-module-segments button svg { flex-shrink: 0; }
+.skinova-module-segments button:active { background: #dce8df; }
+.skinova-module-segments button[aria-pressed="true"] {
+  border-color: #d7e2d8;
+  background: var(--module-surface);
+  color: var(--color-bosque-profundo);
+  box-shadow: 0 2px 6px #163b351a;
+}
+
+@media (hover: hover) {
+  .skinova-module-primary:hover { background: var(--color-bosque-medio); }
+  .skinova-module-segments button[aria-pressed="false"]:hover { background: #dfe9e0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skinova-module-primary, .skinova-module-segments button { transition: none; }
+  .skinova-module-primary:active { transform: none; }
+}
