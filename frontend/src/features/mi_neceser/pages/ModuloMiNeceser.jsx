@@ -27,27 +27,27 @@ const SEARCH_MODES = [
   { value: "purpose", label: "Finalidad", placeholder: "Ej. hidratante, cuidado de barba o cabello" },
 ];
 
-const CARE_SECTIONS = [
-  {
-    title: "Cuidado de la barba",
-    image: beardImage,
-    term: "barba",
-    options: [["Aceites", "aceite barba"], ["Bálsamos", "bálsamo barba"], ["Champús", "champú barba"], ["Tónicos", "tónico barba"]],
-  },
-  {
-    title: "Cuidado de los pies",
-    image: feetImage,
-    term: "pies",
-    options: [["Cremas", "crema pies"], ["Bálsamos", "bálsamo pies"], ["Exfoliantes", "exfoliante pies"]],
-  },
-  {
-    title: "Cuidado del cabello y cuero cabelludo",
-    image: hairImage,
-    term: "cabello",
-    options: [["Champús", "champú cabello"], ["Acondicionadores", "acondicionador cabello"],
-      ["Mascarillas", "mascarilla cabello"], ["Cuero cabelludo", "cuero cabelludo"]],
-  },
-];
+// const CARE_SECTIONS = [
+//   {
+//     title: "Cuidado de la barba",
+//     image: beardImage,
+//     term: "barba",
+//     options: [["Aceites", "aceite barba"], ["Bálsamos", "bálsamo barba"], ["Champús", "champú barba"], ["Tónicos", "tónico barba"]],
+//   },
+//   {
+//     title: "Cuidado de los pies",
+//     image: feetImage,
+//     term: "pies",
+//     options: [["Cremas", "crema pies"], ["Bálsamos", "bálsamo pies"], ["Exfoliantes", "exfoliante pies"]],
+//   },
+//   {
+//     title: "Cuidado del cabello y cuero cabelludo",
+//     image: hairImage,
+//     term: "cabello",
+//     options: [["Champús", "champú cabello"], ["Acondicionadores", "acondicionador cabello"],
+//     ["Mascarillas", "mascarilla cabello"], ["Cuero cabelludo", "cuero cabelludo"]],
+//   },
+// ];
 
 export default function ModuloMiNeceser() {
   const { fetchConAuth } = useApi();
@@ -365,7 +365,7 @@ export default function ModuloMiNeceser() {
           {mode === "ingredient" && <p className="neceser-search-hint">Puedes escribir nombres habituales en español o el nombre INCI del ingrediente.</p>}
           {mode === "purpose" && <p className="neceser-search-hint">La finalidad se busca en las categorías registradas del catálogo.</p>}
         </form>
-        {CARE_SECTIONS.map(({ title, term, image, options }) => (
+        {/* {CARE_SECTIONS.map(({ title, term, image, options }) => (
           <section className="neceser-care-discovery" data-care={term} key={term} aria-labelledby={`neceser-care-${term}`}>
             <img className="neceser-care-image" src={image} width="480" height="480" loading="lazy" decoding="async" alt="" />
             <h3 id={`neceser-care-${term}`}>{title}</h3>
@@ -379,7 +379,7 @@ export default function ModuloMiNeceser() {
               ))}
             </div>
           </section>
-        ))}
+        ))} */}
         {catalogError && <p className="neceser-error" role="alert">{catalogError}</p>}
         {searchedQuery && (
           <>
@@ -403,12 +403,12 @@ export default function ModuloMiNeceser() {
         )}
       </section>
 
-      <section className="neceser-catalog-section" aria-labelledby="neceser-stores-title">
+      {/* <section className="neceser-catalog-section" aria-labelledby="neceser-stores-title">
         <div className="neceser-section-heading">
           <h2 id="neceser-stores-title">Buscar dónde comprar</h2>
         </div>
         <StoreSearch />
-      </section>
+      </section> */}
 
       <section className="neceser-products-section" aria-labelledby="products-title">
         <div className="neceser-section-heading">
