@@ -250,6 +250,7 @@
   .skinova-nav.expanded {
     height: 70vh;
     padding-top: 16px;
+    overscroll-behavior: contain;
   }
 
   .skinova-nav.expanded .nav-content {
@@ -257,6 +258,8 @@
     padding: 16px;
     overflow-y: auto;
     gap: 24px;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .skinova-nav.expanded .nav-list {
@@ -335,6 +338,8 @@
     background-color: rgba(29, 40, 37, 0.4);
     z-index: 90;
     backdrop-filter: blur(2px);
+    touch-action: none;
+    overscroll-behavior: none;
   }
 }
 

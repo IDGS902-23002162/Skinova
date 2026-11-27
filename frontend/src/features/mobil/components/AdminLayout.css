@@ -1,0 +1,22 @@
+/* AdminLayout.css */
+.admin-layout-root {
+  display: flex;
+  min-height: 100vh;
+  background: #F6F3EC;
+}
+
+.admin-layout-main {
+  flex: 1;
+  min-width: 0;
+  margin-left: 256px; /* mismo ancho que admin-nav-sidebar */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+  .admin-layout-main {
+    margin-left: 0;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); /* espacio para bottom bar + safe area */
+  }
+}
+

@@ -6,6 +6,9 @@ export default function LogoutTransition() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    sessionStorage.removeItem("skinova_onboarding_verified");
+    sessionStorage.removeItem("skinova_admin_login_logged");
+    localStorage.removeItem("skinova_subscription");
     const timer = setTimeout(() => {
       navigate("/sign-in");
     }, 700);

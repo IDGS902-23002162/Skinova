@@ -45,3 +45,7 @@ htmlcov/
 .idea/
 .vscode/
 *.swp
+
+# InsightFace models
+.insightface/
+models/

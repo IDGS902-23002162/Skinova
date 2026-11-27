@@ -59,7 +59,7 @@ export function useLogin() {
       const currentSignIn = clerk.client.signIn;
 
       if (currentSignIn.status === "complete" || currentSignIn.status === null) {
-        setIsTransitioning(true); // Activa el loader a pantalla completa
+        setIsTransitioning(true);
 
         let sessionId = currentSignIn.createdSessionId;
         if (!sessionId && clerk.client.activeSessions && clerk.client.activeSessions.length > 0) {
@@ -75,7 +75,9 @@ export function useLogin() {
           console.warn("No se encontró sessionId para activar la sesión en login.");
         }
 
-        // Damos 1.6s para apreciar la animación completa
+        // Siempre navegamos a "/".
+        // El componente Home en App.jsx detecta publicMetadata.role === "admin"
+        // mediante useUser() (ya cargado reactivamente) y redirige a /admin.
         setTimeout(() => {
           navigate("/");
         }, 1600);

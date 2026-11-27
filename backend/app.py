@@ -10,5 +10,4 @@ if __name__ == '__main__':
     with app.app_context():
         upgrade(directory=str(Path(__file__).resolve().parent / 'migrations'))
     
-    # Run the development server on port 5000
     app.run(debug=True, port=8002)

@@ -17,7 +17,6 @@
   text-align: left;
 }
 
-/* Botón de Google similar al de la imagen */
 .custom-auth-social-btn {
   display: flex;
   align-items: center;
@@ -25,9 +24,7 @@
   width: 100%;
   height: 52px;
   background-color: var(--color-crema);
-  /* O blanco según el tema */
   border: 1px solid rgba(22, 59, 53, 0.1);
-  /* Borde sutil del color bosque */
   border-radius: 12px;
   font-family: var(--font-text);
   font-size: 0.95rem;
@@ -40,7 +37,6 @@
 
 .custom-auth-social-btn:hover {
   background-color: #f0ede5;
-  /* Un crema un poco más oscuro */
   border-color: rgba(22, 59, 53, 0.2);
 }
 
@@ -82,7 +78,6 @@
   color: var(--color-carbon);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   box-sizing: border-box;
-  /* IMPORTANTE: Asegura que el padding no rompa el ancho 100% */
 }
 
 .custom-auth-input-group input:focus {
@@ -105,7 +100,6 @@
   width: 100%;
   height: 52px;
   background-color: var(--color-carbon);
-  /* Botón oscuro elegante como en la referencia */
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -119,7 +113,6 @@
 
 .custom-auth-submit-btn:hover {
   background-color: var(--color-bosque-profundo);
-  /* Bosque profundo en el hover */
 }
 
 .custom-auth-submit-btn:active {
@@ -147,4 +140,46 @@
 
 .custom-auth-footer-text a:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .custom-auth-form-container {
+    max-width: 100%;
+  }
+
+  .custom-auth-title {
+    font-size: 1.75rem;
+    margin-bottom: 14px;
+  }
+
+  .custom-auth-social-btn {
+    height: 46px;
+    margin-bottom: 14px;
+    font-size: 0.9rem;
+  }
+
+  .custom-auth-form {
+    gap: 12px;
+  }
+
+  .custom-auth-input-group label {
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+  }
+
+  .custom-auth-input-group input {
+    height: 46px;
+    font-size: 0.95rem;
+  }
+
+  .custom-auth-submit-btn {
+    height: 48px;
+    margin-top: 4px;
+  }
+
+  .custom-auth-footer-text {
+    margin-top: 14px;
+    margin-bottom: 0;
+    font-size: 0.85rem;
+  }
 }
