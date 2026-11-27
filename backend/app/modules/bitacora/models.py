@@ -36,7 +36,7 @@ class ProgressPhoto(db.Model):
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     progress_entry_id = db.Column(db.String(36), db.ForeignKey('progress_entries.id'), nullable=False)
-    storage_key = db.Column(MEDIUMTEXT, nullable=False)
+    storage_key = db.Column(db.Text().with_variant(MEDIUMTEXT(), 'mysql', 'mariadb'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):

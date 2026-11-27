@@ -210,27 +210,7 @@ export default function CreaRegistroProgreso({ routines = [], onSave, isSaving: 
                 </div>
               </fieldset>
 
-              <div className="sk-field">
-                <label htmlFor="sk-routine" className="sk-label">
-                  Rutina asociada (opcional)
-                </label>
-                <select
-                  id="sk-routine"
-                  className="sk-input"
-                  value={routineId}
-                  onChange={(e) => {
-                    touch();
-                    setRoutineId(e.target.value);
-                  }}
-                >
-                  <option value="">Sin rutina asociada</option>
-                  {routines.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
             </section>
 
             <section className="sk-card" aria-labelledby="sk-observa">

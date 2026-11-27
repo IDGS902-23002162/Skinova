@@ -120,6 +120,19 @@ function AdminGuard({ children }) {
   return <AdminLayout>{children}</AdminLayout>;
 }
 
+function ProtectedModule({ children }) {
+  const { isSignedIn, isLoaded } = useAuth();
+
+  if (!isLoaded) return <FullScreenLoader isVisible={true} text="Cargando..." />;
+  if (!isSignedIn) return <Navigate to="/sign-in" replace />;
+
+  return (
+    <OnboardingGate>
+      <MainLayout>{children}</MainLayout>
+    </OnboardingGate>
+  );
+}
+
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
@@ -203,9 +216,9 @@ export default function App() {
       <Route path="/rutinas" element={<RoutineCreatorPage />} />
       <Route path="/ambiente" element={<EnvironmentalMonitorPage />} />
       <Route path="/directorio" element={guardModule("directorio", "Directorio de dermatólogos", <DirectorioDerma />)} />
-      <Route path="/comunidad" element={guardModule("comunidad", "Comunidad / Foro", <ModuloComunidadForo />)} />
-      <Route path="/habitos" element={<ModuloHabitosDesafios />} />
-      <Route path="/neceser" element={<ModuloMiNeceser />} />
+      <Route path="/comunidad" element={guardModule("comunidad", "Comunidad / Foro", <ProtectedModule><ModuloComunidadForo /></ProtectedModule>)} />
+      <Route path="/habitos" element={<ProtectedModule><ModuloHabitosDesafios /></ProtectedModule>} />
+      <Route path="/neceser" element={<ProtectedModule><ModuloMiNeceser /></ProtectedModule>} />
       <Route path="/consulta" element={guardModule("consulta_ia", "Consulta IA", <ConsultaIaView />)} />
       <Route path="/progreso" element={<ModuloBitacoraProgreso />} />
       <Route path="/notificaciones" element={<ModuloNotificaciones />} />
@@ -232,4 +245,4 @@ export default function App() {
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
-} 
+}

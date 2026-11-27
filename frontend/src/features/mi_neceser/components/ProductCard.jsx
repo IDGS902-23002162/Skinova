@@ -1,57 +1,29 @@
-import {
-  Droplets,
-  FlaskConical,
-  Package,
-  ShieldCheck,
-  Sun,
-} from "lucide-react";
+import { useState } from "react";
+import { ArrowUpRight, Package } from "lucide-react";
+import { displayImageUrl } from "../catalogImage";
 
-const categoryIcons = {
-  Limpiador: Droplets,
-  Suero: FlaskConical,
-  Hidratante: Package,
-  "Protector solar": Sun,
-  Tratamiento: ShieldCheck,
-  Otro: Package,
-};
-
-const routineLabels = {
-  morning: "Mañana",
-  evening: "Noche",
-  both: "Mañana y noche",
-};
-
-export default function ProductCard({ product }) {
-  const Icon = categoryIcons[product.category] ?? Package;
-
+export default function ProductCard({ product, onSelect }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const [useOriginal, setUseOriginal] = useState(false);
   return (
-    <article className="neceser-product-card">
-      <div className="neceser-product-card-top">
-        <span className="neceser-product-icon">
-          <Icon size={22} aria-hidden="true" />
-        </span>
-      </div>
-
-      <div className="neceser-product-copy">
-        <span className="neceser-category">{product.category}</span>
-        <h3>{product.name}</h3>
-        {product.brand && <p className="neceser-product-brand">{product.brand}</p>}
-      </div>
-
-      <div className="neceser-product-meta">
-        <span className="neceser-routine-badge">{routineLabels[product.routine]}</span>
-        {product.expirationDate && (
-          <span className="neceser-expiration">
-            Caduca{" "}
-            {new Date(`${product.expirationDate}T00:00:00`).toLocaleDateString(
-              "es-MX",
-              { day: "numeric", month: "short", year: "numeric" },
-            )}
-          </span>
+    <button type="button" className="neceser-product-card" onClick={() => onSelect(product)}
+      title={product.name}
+      aria-label={`Ver detalles de ${product.name}${product.brand ? `, ${product.brand}` : ""}`}>
+      <span className="neceser-product-photo">
+        <span className="neceser-product-photo-label">{product.id ? "En mi neceser" : "Catálogo"}</span>
+        {product.image_url && !imageFailed ? (
+          <img src={displayImageUrl(product, useOriginal)} alt="" loading="lazy" referrerPolicy="no-referrer"
+            onError={() => { if (!useOriginal && product.display_image_url) setUseOriginal(true); else setImageFailed(true); }} />
+        ) : (
+          <span className="neceser-product-no-photo"><Package size={32} aria-hidden="true" /> Foto no disponible</span>
         )}
-      </div>
-
-      {product.notes && <p className="neceser-product-notes">{product.notes}</p>}
-    </article>
+      </span>
+      <span className="neceser-product-caption">
+        <span className="neceser-product-brand">{product.brand || "Marca no indicada"}</span>
+        <strong>{product.name}</strong>
+        {product.quantity && <span className="neceser-product-quantity">{product.quantity}</span>}
+        <span className="neceser-product-link">Ver ficha <ArrowUpRight size={16} aria-hidden="true" /></span>
+      </span>
+    </button>
   );
 }

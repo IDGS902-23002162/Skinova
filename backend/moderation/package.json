@@ -1,0 +1,8 @@
+{
+  "name": "skinova-image-moderation",
+  "private": true,
+  "dependencies": {
+    "@tensorflow/tfjs": "4.22.0",
+    "nsfwjs": "4.2.1"
+  }
+}
