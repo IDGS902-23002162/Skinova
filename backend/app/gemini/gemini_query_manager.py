@@ -45,6 +45,19 @@ PRE INSTRUCCION: Si detectas una foto que no es un rostro estrictamente humano r
    - 'suggested_goals': lista de objetivos recomendados elegidos de entre: ['hydration', 'oil_control', 'acne', 'spots', 'texture', 'pores', 'redness', 'sensitivity', 'maintenance']
 """
 
+CHAT_SYSTEM_INSTRUCTION = """
+Eres el asistente dermatológico y cosmetológico de "Skinova".
+Respondes dudas de seguimiento del usuario sobre un producto de skincare ya analizado, su compatibilidad con su perfil de piel, alergias/restricciones y los productos de su neceser.
+
+Reglas:
+1. Responde en español, de forma clara, empática, práctica y concisa, adaptando el tono al 'assistant_tone' del usuario.
+2. Basa tus respuestas en el perfil del usuario, sus restricciones, su neceser actual, el análisis previo del producto y el historial de mensajes.
+3. Si el usuario pregunta cómo usarlo, frecuencia, orden en rutina o combinaciones con su neceser, da indicaciones concretas y seguras.
+4. Si detectas riesgo de irritación grave, alergia o síntoma médico persistente, recomienda consultar a un dermatólogo.
+5. No inventes ingredientes que no estén en el análisis ni en el neceser; si falta información, dilo con honestidad.
+"""
+
+
 def analyze_product_with_gemini(
     payload: Dict[str, Any],
     image_base64: Optional[str] = None,
@@ -139,3 +152,44 @@ def analyze_skin_with_gemini(
         raise last_error
     raise RuntimeError("No fue posible generar el análisis con ningún modelo disponible.")
 
+
+def chat_product_with_gemini(
+    payload: Dict[str, Any],
+    product_analysis: Optional[Dict[str, Any]] = None,
+    chat_history: Optional[list] = None,
+    user_message: str = "",
+) -> str:
+    """Envía una pregunta de seguimiento del chat de producto a Gemini y retorna texto libre."""
+    api_key = os.environ.get("GEMINI_API_KEY")
+    client = genai.Client(api_key=api_key) if api_key else genai.Client()
+
+    history_lines = []
+    for msg in (chat_history or [])[-12:]:
+        role = "Usuario" if msg.get("role") == "user" else "Skinova"
+        content = (msg.get("content") or "").strip()
+        if content:
+            history_lines.append(f"{role}: {content}")
+
+    prompt_parts = [
+        f"Contexto del usuario y su neceser:\n```json\n{json.dumps(payload, ensure_ascii=False, indent=2)}\n```",
+    ]
+    if product_analysis:
+        clean_analysis = {k: v for k, v in product_analysis.items() if k != "chat_messages"}
+        prompt_parts.append(
+            f"Análisis previo del producto:\n```json\n{json.dumps(clean_analysis, ensure_ascii=False, indent=2)}\n```"
+        )
+    if history_lines:
+        prompt_parts.append("Historial reciente del chat:\n" + "\n".join(history_lines))
+    prompt_parts.append(f"Pregunta actual del usuario:\n{user_message.strip()}")
+
+    model_name = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
+    response = client.models.generate_content(
+        model=model_name,
+        contents=["\n\n".join(prompt_parts)],
+        config=types.GenerateContentConfig(
+            system_instruction=CHAT_SYSTEM_INSTRUCTION,
+            temperature=0.4,
+        ),
+    )
+
+    return (response.text or "").strip()

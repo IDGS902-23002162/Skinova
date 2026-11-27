@@ -82,6 +82,32 @@ export const createIaService = (fetchConAuth) => ({
     }
 
     return result;
+  },
+
+  /**
+   * Envía un mensaje de seguimiento sobre un análisis de producto y retorna la respuesta real de la IA.
+   * Conecta con backend: POST /api/products/chat
+   */
+  sendChatMessage: async ({ historyId, message, productAnalysis, messages }) => {
+    const response = await fetchConAuth("/products/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        history_id: historyId || null,
+        message,
+        product_analysis: productAnalysis || null,
+        messages: Array.isArray(messages)
+          ? messages.map(({ role, content }) => ({ role, content })).filter((m) => m.content)
+          : []
+      })
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || result.error || `Error en el chat (${response.status})`);
+    }
+
+    return result.data;
   }
 });
 

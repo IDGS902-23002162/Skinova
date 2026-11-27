@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { useClerk } from "@clerk/react";
 import {
   Home,
   User,
+  LogOut,
   CalendarDays,
   LineChart,
   Stethoscope,
   Briefcase,
-  Users,
   MessageCircle,
   Leaf,
   CloudSun,
@@ -18,6 +19,8 @@ import {
 } from "lucide-react";
 import "./Navigation.css";
 import logoImage from "../../assets/nuevo-logo-letra.png";
+import ProfilePage from "../../features/perfil_salud/pages/ProfilePage";
+import { ProfileProvider } from "../../features/perfil_salud/hooks/useProfileData";
 
 const mainModules = [
   { id: "inicio", path: "/", label: "Inicio", icon: Home },
@@ -38,8 +41,10 @@ const secondaryModules = [
 
 export default function Navigation() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [touchStartY, setTouchStartY] = useState(null);
   const location = useLocation();
+  const { signOut } = useClerk();
 
   // Desactivar la restauración automática del scroll del navegador al navegar
   useEffect(() => {
@@ -164,6 +169,35 @@ export default function Navigation() {
               })}
             </ul>
           </div>
+
+          <div className={`nav-section secondary-section nav-account-section ${isExpanded ? "show-mobile" : ""}`}>
+            <h3 className="section-title">CUENTA</h3>
+            <ul className="nav-list">
+              <li>
+                <button
+                  type="button"
+                  className="nav-item nav-item-btn"
+                  onClick={() => {
+                    setIsExpanded(false);
+                    setIsProfileOpen(true);
+                  }}
+                >
+                  <User className="nav-icon" size={22} />
+                  <span className="nav-label">Perfil</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="nav-item nav-item-btn nav-item--logout"
+                  onClick={() => signOut({ redirectUrl: "/sign-in" })}
+                >
+                  <LogOut className="nav-icon" size={22} />
+                  <span className="nav-label">Cerrar sesión</span>
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
 
         {/* Mobile close button (only visible when expanded) */}
@@ -180,6 +214,14 @@ export default function Navigation() {
           onClick={() => setIsExpanded(false)}
           onTouchMove={(e) => e.preventDefault()}
         />
+      )}
+      {isProfileOpen && (
+        <ProfileProvider>
+          <ProfilePage
+            isOpen={isProfileOpen}
+            onClose={() => setIsProfileOpen(false)}
+          />
+        </ProfileProvider>
       )}
     </>
   );

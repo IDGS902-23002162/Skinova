@@ -1,12 +1,14 @@
 import json
 import logging
-from typing import Dict, Any, Optional
+from datetime import datetime, timezone
+from typing import Dict, Any, Optional, List
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.extensions import db
 from app.modules.ai_history.models import AiHistory
 from app.gemini.gemini_payload import build_gemini_payload
-from app.gemini.gemini_query_manager import analyze_product_with_gemini
+from app.gemini.gemini_query_manager import analyze_product_with_gemini, chat_product_with_gemini
 
 logger = logging.getLogger(__name__)
 
@@ -95,4 +97,62 @@ def process_product_analysis(
     return {
         "history_id": history_record.id if history_record else None,
         "analysis": parsed_analysis
+    }
+
+
+def process_product_chat(
+    user_id: str,
+    message: str,
+    history_id: Optional[str] = None,
+    product_analysis: Optional[Dict[str, Any]] = None,
+    chat_history: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    clean_message = (message or "").strip()
+    if not clean_message:
+        raise ValueError("El mensaje no puede estar vacío.")
+
+    entry = None
+    if history_id:
+        entry = AiHistory.query.filter_by(id=str(history_id), user_id=user_id).first()
+
+    analysis_context = (entry.result if entry and isinstance(entry.result, dict) else None) or product_analysis or {}
+    prior_messages = (
+        analysis_context.get("chat_messages")
+        if isinstance(analysis_context, dict) and isinstance(analysis_context.get("chat_messages"), list)
+        else (chat_history or [])
+    )
+
+    subject = (
+        (entry.subject if entry else None)
+        or (analysis_context.get("subject") if isinstance(analysis_context, dict) else None)
+        or "Consulta de producto"
+    )
+    payload = build_gemini_payload(db.session, user_id, subject)
+
+    reply_text = chat_product_with_gemini(
+        payload=payload,
+        product_analysis=analysis_context if isinstance(analysis_context, dict) else None,
+        chat_history=prior_messages,
+        user_message=clean_message,
+    )
+    if not reply_text:
+        reply_text = "No pude generar una respuesta en este momento. Intenta reformular tu pregunta."
+
+    now_time = datetime.now(timezone.utc).strftime("%H:%M")
+
+    # ponytail: persist chat turns inside AiHistory.result JSON to avoid a DB migration; add a chat_messages table if queries/pagination are needed later.
+    if entry is not None:
+        result_data = dict(entry.result) if isinstance(entry.result, dict) else {}
+        stored_msgs = list(result_data.get("chat_messages") or [])
+        stored_msgs.append({"role": "user", "content": clean_message, "time": now_time})
+        stored_msgs.append({"role": "assistant", "content": reply_text, "time": now_time})
+        result_data["chat_messages"] = stored_msgs
+        entry.result = result_data
+        flag_modified(entry, "result")
+        db.session.commit()
+
+    return {
+        "history_id": entry.id if entry else history_id,
+        "reply": reply_text,
+        "time": now_time,
     }

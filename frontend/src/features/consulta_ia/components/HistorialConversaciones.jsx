@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ListaHistorial from "./ListaHistorial";
-import "../../../shared/styles/ai_history_style.css";
+import "../styles/consulta_history_style.css";
 
 function HistorialConversaciones({
   onSelectConversation,
@@ -34,13 +34,14 @@ function HistorialConversaciones({
         className="trigger"
         onClick={() => setAbierto(!abierto)}
         aria-expanded={abierto}
+        aria-label="Historial de consultas y nueva conversación"
       >
         <span className="trigger-icon" aria-hidden="true">💬</span>
 
         <span className="trigger-text">
-          <span className="trigger-label">Conversación</span>
+          <span className="trigger-label">Historial · Nueva</span>
           <span className="trigger-title">
-            {chatActivo?.title || "Nueva consulta"}
+            {chatActivo?.title || "Consultas"}
           </span>
         </span>
 

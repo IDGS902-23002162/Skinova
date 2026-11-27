@@ -43,6 +43,63 @@ const FALLBACK_WEATHER = {
   ]
 };
 
+function EnvMonitorSkeleton() {
+  const shimmer = {
+    background: 'linear-gradient(90deg, rgba(231,223,210,0.45) 25%, rgba(231,223,210,0.85) 50%, rgba(231,223,210,0.45) 75%)',
+    backgroundSize: '200% 100%',
+    animation: 'env-shimmer 1.6s ease-in-out infinite',
+    borderRadius: '10px',
+  };
+  return (
+    <div aria-busy="true" aria-label="Cargando monitoreo ambiental" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <style>{`@keyframes env-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+      <div className="metrics-grid">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="metric-card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ ...shimmer, height: 14, width: 90 }} />
+              <div style={{ ...shimmer, width: 36, height: 36, borderRadius: 10 }} />
+            </div>
+            <div style={{ ...shimmer, height: 34, width: '55%' }} />
+            <div style={{ ...shimmer, height: 13, width: '75%' }} />
+          </div>
+        ))}
+      </div>
+
+      <div className="ai-env-panel">
+        <div className="ai-recommendations-card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ ...shimmer, height: 24, width: 220, borderRadius: 12 }} />
+          <div style={{ ...shimmer, height: 22, width: '70%' }} />
+          <div style={{ ...shimmer, height: 48, width: '100%' }} />
+          <div style={{ ...shimmer, height: 44, width: '100%', borderRadius: 12 }} />
+          <div style={{ ...shimmer, height: 44, width: '100%', borderRadius: 12 }} />
+        </div>
+        <div className="routine-context-card" style={{ minHeight: 220 }}>
+          <div style={{ ...shimmer, height: 22, width: '70%' }} />
+          <div style={{ ...shimmer, height: 54, width: '100%' }} />
+          <div style={{ ...shimmer, height: 44, width: '100%', borderRadius: 12 }} />
+          <div style={{ ...shimmer, height: 44, width: '100%', borderRadius: 12 }} />
+        </div>
+      </div>
+
+      <div className="location-bar-card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0, flex: '1 1 220px' }}>
+          <div style={{ ...shimmer, width: 48, height: 48, borderRadius: 14, flexShrink: 0 }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0, flex: 1 }}>
+            <div style={{ ...shimmer, height: 12, width: '100%', maxWidth: 140 }} />
+            <div style={{ ...shimmer, height: 22, width: '100%', maxWidth: 200 }} />
+            <div style={{ ...shimmer, height: 14, width: '100%', maxWidth: 160 }} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, width: '100%', flex: '1 1 260px' }}>
+          <div style={{ ...shimmer, height: 44, flex: '1 1 130px', borderRadius: 12 }} />
+          <div style={{ ...shimmer, height: 44, flex: '2 1 180px', borderRadius: 12 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EnvironmentalMonitorPage() {
   const navigate = useNavigate();
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -68,6 +125,7 @@ function EnvironmentalMonitorPage() {
 
   // RF-AMB-11 y RF-AMB-12: Actualización y resiliencia
   const [lastUpdated, setLastUpdated] = useState("Sincronizado");
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [apiOffline, setApiOffline] = useState(false);
 
@@ -132,6 +190,7 @@ function EnvironmentalMonitorPage() {
         setSearchError("No se pudo conectar con el servidor ambiental.");
       } finally {
         setIsRefreshing(false);
+        setIsInitialLoading(false);
       }
     },
     [apiOffline, getToken, isSignedIn]
@@ -280,27 +339,6 @@ function EnvironmentalMonitorPage() {
               en las necesidades de tu piel hoy.
             </p>
           </div>
-
-          <div className="env-header-actions">
-            <button
-              className="btn-refresh"
-              onClick={() =>
-                fetchEnvironment({
-                  city: locationConsent ? null : selectedCity,
-                  lat: coords.lat,
-                  lon: coords.lon,
-                  isGps: locationConsent,
-                })
-              }
-              disabled={apiOffline || isRefreshing}
-              title="Actualizar condiciones ambientales"
-            >
-              <RefreshCw size={16} className={isRefreshing ? "spin-icon" : ""} />
-              <span>{isRefreshing ? "Actualizando..." : lastUpdated}</span>
-            </button>
-
-            
-          </div>
         </header>
 
         {/* RF-AMB-12: AVISO DE RESILIENCIA OFFLINE */}
@@ -318,91 +356,11 @@ function EnvironmentalMonitorPage() {
           </div>
         )}
 
-        {/* RF-AMB-01 y RF-AMB-02: UBICACIÓN GPS + BUSCADOR PREDICTIVO DE CIUDAD */}
-        <section className="location-bar-card">
-          <div className="location-current">
-            <div className="location-icon-box">
-              <MapPin size={22} />
-            </div>
-            <div>
-              <span className="location-label">
-                {locationConsent
-                  ? "Ubicación automática (GPS con consentimiento)"
-                  : "Ubicación seleccionada"}
-              </span>
-              <h2>{selectedCity}</h2>
-              <span className="condition-subtitle">
-                Condición actual: <strong>{envData.condition}</strong>
-              </span>
-            </div>
-          </div>
-
-          <div className="location-controls">
-            <button
-              type="button"
-              className={`btn-gps ${locationConsent ? "active" : ""}`}
-              onClick={handleRequestLocation}
-            >
-              <Navigation size={16} />
-              <span>{locationConsent ? "GPS Activo" : "Usar mi ubicación"}</span>
-            </button>
-
-            {/* Buscador predictivo de ciudades (sin lista desplegable fija) */}
-            <div className="predictive-city-wrapper" ref={searchBoxRef}>
-              <form onSubmit={handleSearchSubmit} className="custom-city-form">
-                <div className="predictive-input-box">
-                  <Search size={16} className="predictive-search-icon" />
-                  <input
-                    type="text"
-                    placeholder="Buscar ciudad (ej. Guadalajara, Tampico)..."
-                    value={searchQuery}
-                    onFocus={() => {
-                      if (citySuggestions.length > 0) setShowSuggestions(true);
-                    }}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    aria-label="Buscar ciudad de forma predictiva"
-                    autoComplete="off"
-                  />
-                </div>
-                <button type="submit">Buscar</button>
-              </form>
-
-              {showSuggestions && (
-                <ul className="city-suggestions-dropdown" role="listbox">
-                  {isSearchingCities ? (
-                    <li className="suggestion-status">Buscando ciudades...</li>
-                  ) : citySuggestions.length === 0 ? (
-                    <li className="suggestion-status">
-                      Sin coincidencias para "{searchQuery}"
-                    </li>
-                  ) : (
-                    citySuggestions.map((item, index) => (
-                      <li key={`${item.label}-${index}`}>
-                        <button
-                          type="button"
-                          className="suggestion-item-btn"
-                          onClick={() => handleSelectSuggestedCity(item)}
-                        >
-                          <MapPin size={14} />
-                          <span>{item.label}</span>
-                        </button>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {searchError && (
-          <div className="env-offline-banner" role="alert">
-            <AlertTriangle size={18} />
-            <span>{searchError}</span>
-          </div>
-        )}
-
-        {/* RF-AMB-09: ALERTA POR ÍNDICE UV ELEVADO */}
+        {isInitialLoading ? (
+          <EnvMonitorSkeleton />
+        ) : (
+          <>
+            {/* RF-AMB-09: ALERTA POR ÍNDICE UV ELEVADO */}
         {isHighUV && (
           <section className="uv-alert-banner" role="alert">
             <div className="uv-alert-icon">
@@ -539,6 +497,109 @@ function EnvironmentalMonitorPage() {
             </button>
           </aside>
         </section>
+
+        {/* RF-AMB-01 y RF-AMB-02: UBICACIÓN GPS + BUSCADOR PREDICTIVO DE CIUDAD */}
+        <section className="location-bar-card">
+          <div className="location-current">
+            <div className="location-icon-box">
+              <MapPin size={22} />
+            </div>
+            <div>
+              <span className="location-label">
+                {locationConsent
+                  ? "Ubicación automática (GPS con consentimiento)"
+                  : "Ubicación seleccionada"}
+              </span>
+              <h2>{selectedCity}</h2>
+              <span className="condition-subtitle">
+                Condición actual: <strong>{envData.condition}</strong>
+                <span className="env-updated-meta"> · {isRefreshing ? "Actualizando…" : lastUpdated}</span>
+                <button
+                  type="button"
+                  className="btn-refresh-subtle"
+                  onClick={() =>
+                    fetchEnvironment({
+                      city: locationConsent ? null : selectedCity,
+                      lat: coords.lat,
+                      lon: coords.lon,
+                      isGps: locationConsent,
+                    })
+                  }
+                  disabled={apiOffline || isRefreshing}
+                  aria-label="Actualizar condiciones ambientales"
+                  title="Actualizar ahora"
+                >
+                  <RefreshCw size={13} className={isRefreshing ? "spin-icon" : ""} />
+                </button>
+              </span>
+            </div>
+          </div>
+
+          <div className="location-controls">
+            <button
+              type="button"
+              className={`btn-gps ${locationConsent ? "active" : ""}`}
+              onClick={handleRequestLocation}
+            >
+              <Navigation size={16} />
+              <span>{locationConsent ? "GPS Activo" : "Usar mi ubicación"}</span>
+            </button>
+
+            <div className="predictive-city-wrapper" ref={searchBoxRef}>
+              <form onSubmit={handleSearchSubmit} className="custom-city-form">
+                <div className="predictive-input-box">
+                  <Search size={16} className="predictive-search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Buscar ciudad (ej. Guadalajara, Tampico)..."
+                    value={searchQuery}
+                    onFocus={() => {
+                      if (citySuggestions.length > 0) setShowSuggestions(true);
+                    }}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Buscar ciudad de forma predictiva"
+                    autoComplete="off"
+                  />
+                </div>
+                <button type="submit">Buscar</button>
+              </form>
+
+              {showSuggestions && (
+                <ul className="city-suggestions-dropdown" role="listbox">
+                  {isSearchingCities ? (
+                    <li className="suggestion-status">Buscando ciudades...</li>
+                  ) : citySuggestions.length === 0 ? (
+                    <li className="suggestion-status">
+                      Sin coincidencias para "{searchQuery}"
+                    </li>
+                  ) : (
+                    citySuggestions.map((item, index) => (
+                      <li key={`${item.label}-${index}`}>
+                        <button
+                          type="button"
+                          className="suggestion-item-btn"
+                          onClick={() => handleSelectSuggestedCity(item)}
+                        >
+                          <MapPin size={14} />
+                          <span>{item.label}</span>
+                        </button>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {searchError && (
+          <div className="env-offline-banner" role="alert">
+            <AlertTriangle size={18} />
+            <span>{searchError}</span>
+          </div>
+        )}
+          </>
+        )}
       </div>
     </MainLayout>
   );

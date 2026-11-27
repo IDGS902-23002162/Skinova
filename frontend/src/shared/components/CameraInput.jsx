@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import FullScreenCameraOverlay from './FullScreenCameraOverlay';
 import "../styles/ai_chat_style.css";
 
 export function AiChat({
@@ -9,6 +10,7 @@ export function AiChat({
   onSubmit,
   onClearAll,
   labelProduct = 'Nombre del producto o ingrediente',
+  placeholderProduct = 'Ej. Crema hidratante con ceramidas CeraVe...',
   labelCamera = 'Fotografía del producto (Opcional)',
   isLoading = false,
   submitLabel = 'Analizar Producto',
@@ -19,9 +21,6 @@ export function AiChat({
   const [cameraState, setCameraState] = useState(capturedImage ? 'photo' : 'idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const streamRef = useRef(null);
   const fileInputRef = useRef(null);
 
   // Sincronizar si cambia desde afuera
@@ -43,53 +42,20 @@ export function AiChat({
     }
   };
 
-  const startCamera = async () => {
+  const startCamera = () => {
     setErrorMessage('');
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setErrorMessage('Tu navegador no permite acceder a la cámara.');
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setCameraState('camera');
-    } catch (err) {
-      console.error('Error al acceder a la cámara:', err);
-      setErrorMessage('No pudimos acceder a tu cámara. Puedes subir una foto desde tus archivos o revisar los permisos del navegador.');
-    }
+    setCameraState('camera');
   };
 
   const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
     setCameraState(capturedImage ? 'photo' : 'idle');
   };
 
-  const capturePhoto = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (video && canvas) {
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      const context = canvas.getContext('2d');
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      if (onImageCaptured) {
-        onImageCaptured(dataUrl);
-      }
-      stopCamera();
-      setCameraState('photo');
+  const handleOverlayCapture = (dataUrl) => {
+    if (onImageCaptured) {
+      onImageCaptured(dataUrl);
     }
+    setCameraState('photo');
   };
 
   const handleFileUpload = (e) => {
@@ -152,14 +118,6 @@ export function AiChat({
     }
   };
 
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
-
   const displayError = error || errorMessage;
 
   return (
@@ -176,7 +134,7 @@ export function AiChat({
             name="product"
             type="text"
             autoComplete="off"
-            placeholder="Ej. Crema hidratante con ceramidas CeraVe..."
+            placeholder={placeholderProduct}
             value={internalText}
             onChange={handleTextChange}
             onKeyDown={handleKeyDown}
@@ -224,24 +182,11 @@ export function AiChat({
               />
             </div>
 
-            <div className="pa-view pa-view--camera">
-              <video
-                ref={videoRef}
-                className="pa-media"
-                autoPlay
-                playsInline
-                muted
-                aria-label="Vista previa de la cámara"
-              />
-              <div className="pa-overlay">
-                <button type="button" className="pa-btn pa-btn--primary" onClick={capturePhoto}>
-                  Capturar foto
-                </button>
-                <button type="button" className="pa-btn pa-btn--ghost" onClick={stopCamera}>
-                  Cancelar
-                </button>
-              </div>
-            </div>
+            <FullScreenCameraOverlay
+              isOpen={cameraState === 'camera'}
+              onCapture={handleOverlayCapture}
+              onClose={stopCamera}
+            />
 
             <div className="pa-view pa-view--photo">
               {capturedImage && (
@@ -257,8 +202,6 @@ export function AiChat({
               </button>
             </div>
           </div>
-
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
         </fieldset>
 
         {/* Botones de Acción */}

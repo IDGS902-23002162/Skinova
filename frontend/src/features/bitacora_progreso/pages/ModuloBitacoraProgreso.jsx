@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import MainLayout from '../../../shared/components/MainLayout';
 import CompararFotos from '../components/comparar_fotos';
 import CrearRegistro from '../components/crear_registro';
@@ -11,7 +12,6 @@ const EMPTY = [];
 
 const VIEWS = [
   { id: 'linea', label: 'Línea de tiempo', icon: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01' },
-  { id: 'crear', label: 'Nuevo registro', icon: 'M12 5v14M5 12h14' },
   { id: 'comparar', label: 'Comparar fotos', icon: 'M4 5h7v14H4zM13 5h7v14h-7z' },
 ];
 
@@ -53,8 +53,18 @@ export default function ModuloBitacoraProgreso({
   const onDeletePhoto = propOnDeletePhoto || hook.deletePhoto;
 
   const [view, setView] = useState('linea');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const detailRef = useRef(null);
+
+  useEffect(() => {
+    if (!isCreateOpen) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setIsCreateOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isCreateOpen]);
 
   // Auto-seleccionar el primer registro si no hay uno seleccionado
   useEffect(() => {
@@ -84,6 +94,7 @@ export default function ModuloBitacoraProgreso({
   const handleSave = async (payload) => {
     try {
       const created = await onSave(payload);
+      setIsCreateOpen(false);
       setView('linea');
       if (created?.id) {
         setSelectedId(created.id);
@@ -134,7 +145,7 @@ export default function ModuloBitacoraProgreso({
               <button
                 type="button"
                 className="pb-reminder-banner__btn"
-                onClick={() => setView('crear')}
+                onClick={() => setIsCreateOpen(true)}
               >
                 Tomar foto ahora
               </button>
@@ -167,14 +178,6 @@ export default function ModuloBitacoraProgreso({
 
         <main className="pb-main">
           <div key={view} className="pb-view">
-            {view === 'crear' && (
-              <CrearRegistro
-                routines={routines}
-                onSave={handleSave}
-                isSaving={hook.saving}
-              />
-            )}
-
             {view === 'comparar' && (
               <CompararFotos photos={photos} onDelete={onDeletePhoto} />
             )}
@@ -196,7 +199,30 @@ export default function ModuloBitacoraProgreso({
                   className={selectedEntry ? 'pb-detail' : 'pb-detail pb-detail--empty'}
                   aria-label="Detalle del registro"
                 >
-                  {selectedEntry ? (
+                  {hook.loading && entries.length === 0 ? (
+                    <div className="reg-card" aria-busy="true" aria-label="Cargando detalle del registro" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <style>{`@keyframes pb-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+                      {[
+                        { h: 14, w: '35%' },
+                        { h: 28, w: '60%' },
+                        { h: 180, w: '100%' },
+                        { h: 16, w: '85%' },
+                        { h: 16, w: '70%' },
+                      ].map((b, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            height: b.h,
+                            width: b.w,
+                            borderRadius: 12,
+                            background: 'linear-gradient(90deg, rgba(231,223,210,0.45) 25%, rgba(231,223,210,0.85) 50%, rgba(231,223,210,0.45) 75%)',
+                            backgroundSize: '200% 100%',
+                            animation: 'pb-shimmer 1.6s ease-in-out infinite',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : selectedEntry ? (
                     <div>
                       <RegistroBitacora
                         entry={selectedEntry}
@@ -223,6 +249,51 @@ export default function ModuloBitacoraProgreso({
             )}
           </div>
         </main>
+
+        <button
+          type="button"
+          className="pb-fab"
+          onClick={() => setIsCreateOpen(true)}
+          aria-label="Nuevo registro de progreso"
+        >
+          <Icon d="M12 5v14M5 12h14" size={20} />
+          <span className="pb-fab__label">Nuevo registro</span>
+        </button>
+
+        {isCreateOpen &&
+          createPortal(
+            <div
+              className="pb-modal-backdrop"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Nuevo registro de progreso"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setIsCreateOpen(false);
+              }}
+            >
+              <div className="pb-modal">
+                <div className="pb-modal__bar">
+                  <span className="pb-modal__title">Nuevo registro</span>
+                  <button
+                    type="button"
+                    className="pb-modal__close"
+                    onClick={() => setIsCreateOpen(false)}
+                    aria-label="Cerrar modal"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="pb-modal__body">
+                  <CrearRegistro
+                    routines={routines}
+                    onSave={handleSave}
+                    isSaving={hook.saving}
+                  />
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
       </div>
     </MainLayout>
   );

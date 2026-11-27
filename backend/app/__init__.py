@@ -10,6 +10,7 @@ from app.auth import require_auth
 
 AI_ENDPOINT_PATHS = {
     '/api/products/analyze',
+    '/api/products/chat',
     '/api/perfil-salud/evaluations/analyze',
     '/api/perfil-salud/analyze',
     '/api/face-id/verify',

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { useAuth, useUser, UserButton, AuthenticateWithRedirectCallback } from "@clerk/react";
+import { useAuth, useUser, AuthenticateWithRedirectCallback } from "@clerk/react";
 import SignInPage from "../features/autenticacion/pages/SignInPage";
 import SignUpPage from "../features/autenticacion/pages/SignUpPage";
 import NotFoundPage from "../shared/pages/NotFoundPage";
@@ -9,7 +9,6 @@ import MaintenanceModal from "../shared/components/MaintenanceModal";
 import { useAppConfig } from "../shared/hooks/useAppConfig";
 import LogoutTransition from "../features/autenticacion/components/LogoutTransition";
 import MainLayout from "../shared/components/MainLayout";
-import { Heart } from "lucide-react";
 import { useApi } from "../shared/hooks/useApi";
 import OnboardingGate from "../features/perfil_salud/components/onboarding/OnboardingGate";
 import ConsultaIaView from "../features/consulta_ia/pages/consulta_ia";
@@ -20,7 +19,6 @@ import GestionUsuarios from "../features/mobil/gestion_usuarios/GestionUsuarios"
 import Rendimiento from "../features/mobil/rendimiento/Rendimiento";
 import Bitacora from "../features/mobil/bitacora/Bitacora";
 import Administracion from "../features/mobil/administracion/Administracion";
-import ProfilePage from "../features/perfil_salud/pages/ProfilePage";
 import SubscriptionsPage from "../features/suscripciones/pages/SubscriptionsPage";
 import RoutineCreatorPage from "../features/creador_rutinas/components/RoutineCreatorPage";
 import EnvironmentalMonitorPage from "../features/monitoreo_ambiental/components/EnvironmentalMonitorPage";
@@ -125,7 +123,6 @@ function AdminGuard({ children }) {
 function Home() {
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   if (!isLoaded) return <FullScreenLoader isVisible={true} text="Cargando..." />;
   if (!isSignedIn) return <Navigate to="/sign-in" replace />;
@@ -143,38 +140,7 @@ function Home() {
               <h1 style={{ color: "var(--bosque-profundo, #163B35)", fontFamily: "DM Serif Display, serif" }}>
                 Dashboard
               </h1>
-              <UserButton
-                appearance={{
-                  variables: {
-                    colorPrimary: "#2D6658",
-                    colorText: "#1D2825",
-                    colorBackground: "#F6F3EC",
-                    colorDanger: "#C98268",
-                    borderRadius: "12px",
-                  },
-                  elements: {
-                    card: {
-                      boxShadow: "0 4px 20px rgba(29,40,37,0.08)",
-                    },
-                  },
-                }}
-              >
-                <UserButton.MenuItems>
-                  <UserButton.Action
-                    label="Mi Perfil Skinova"
-                    labelIcon={<Heart size={16} />}
-                    onClick={() => setIsProfileModalOpen(true)}
-                  />
-                  <UserButton.Action label="manageAccount" />
-                  <UserButton.Action label="signOut" />
-                </UserButton.MenuItems>
-              </UserButton>
             </header>
-
-            <ProfilePage
-              isOpen={isProfileModalOpen}
-              onClose={() => setIsProfileModalOpen(false)}
-            />
 
             <div
               style={{

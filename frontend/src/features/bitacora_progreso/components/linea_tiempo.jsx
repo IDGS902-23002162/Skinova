@@ -82,9 +82,33 @@ export default function LineaTiempo({
   };
 
   if (loading && sorted.length === 0) {
+    const shimmer = {
+      background: 'linear-gradient(90deg, rgba(231,223,210,0.45) 25%, rgba(231,223,210,0.85) 50%, rgba(231,223,210,0.45) 75%)',
+      backgroundSize: '200% 100%',
+      animation: 'pb-shimmer 1.6s ease-in-out infinite',
+      borderRadius: '10px',
+    };
     return (
-      <section className="lt lt--loading" aria-label="Cargando línea de tiempo">
-        <p className="pb-loading-text">Cargando tus registros...</p>
+      <section className={compact ? 'lt lt--compact' : 'lt'} aria-busy="true" aria-label="Cargando línea de tiempo">
+        <style>{`@keyframes pb-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+        <ol className="lt-list">
+          {[1, 2, 3, 4].map((i) => (
+            <li key={i} className="lt-item">
+              <span className="lt-node" aria-hidden="true">
+                <span className="lt-node__dot" />
+              </span>
+              <div className="lt-card">
+                <div className="lt-summary">
+                  <div style={{ ...shimmer, width: 56, height: 56, borderRadius: 12, flexShrink: 0 }} />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ ...shimmer, height: 16, width: '65%' }} />
+                    <div style={{ ...shimmer, height: 13, width: '42%' }} />
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
       </section>
     );
   }

@@ -3,7 +3,7 @@ from app.auth import require_auth
 from app.extensions import db
 from app.modules.busqueda_ia.utils import get_current_user_data
 from app.modules.ai_history.models import AiHistory
-from app.services.gemini_service import process_product_analysis
+from app.services.gemini_service import process_product_analysis, process_product_chat
 
 # Declaración del Blueprint
 ai_analysis_bp = Blueprint('ai_analysis', __name__, url_prefix='/api/products')
@@ -55,6 +55,52 @@ def analyze_product_endpoint():
 
     except PermissionError as pe:
         return jsonify({"error": "No autorizado", "message": str(pe)}), 401
+    except ValueError as ve:
+        return jsonify({"error": "Datos inválidos", "message": str(ve)}), 400
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "error": "Error interno del servidor",
+            "message": str(e)
+        }), 500
+
+
+@ai_analysis_bp.route('/chat', methods=['POST'])
+@require_auth
+def chat_product_endpoint():
+    """
+    Endpoint para responder mensajes de seguimiento en el chat de consulta_ia.
+    """
+    data = request.get_json() or {}
+    message = (data.get("message") or "").strip()
+
+    if not message:
+        return jsonify({
+            "error": "Petición inválida",
+            "message": "Debes enviar un mensaje ('message')."
+        }), 400
+
+    try:
+        user_data = get_current_user_data()
+        user_id = user_data.get("id") or user_data.get("user_id")
+
+        if not user_id:
+            return jsonify({"error": "No se pudo identificar el ID del usuario"}), 400
+
+        result = process_product_chat(
+            user_id=user_id,
+            message=message,
+            history_id=data.get("history_id"),
+            product_analysis=data.get("product_analysis"),
+            chat_history=data.get("messages"),
+        )
+
+        return jsonify({
+            "success": True,
+            "data": result
+        }), 200
+
     except ValueError as ve:
         return jsonify({"error": "Datos inválidos", "message": str(ve)}), 400
     except Exception as e:
