@@ -52,6 +52,40 @@ class ForumTests(unittest.TestCase):
         self.assertEqual(response.status_code, 201, response.json)
         return response.json
 
+    def test_moderation_permission_controls_user_list_and_appointments(self):
+        admin = User.query.filter_by(clerk_user_id='member-1').one()
+        member = User.query.filter_by(clerk_user_id='member-2').one()
+        suspended = User(clerk_user_id='suspended', role='suspended')
+        other_member = User(clerk_user_id='member-3')
+        admin.role = 'admin'
+        db.session.add_all([suspended, other_member])
+        db.session.commit()
+        admin_id, member_id, suspended_id = admin.id, member.id, suspended.id
+        other_id = other_member.id
+        base = '/api/comunidad/foro/moderacion/usuarios'
+
+        def send(method, path, identity):
+            self.auth.payload = {'sub': identity}
+            with self.app.app_context():
+                return self.client.open(path, method=method)
+
+        endpoint = f'{base}/{member_id}/moderador'
+        self.assertEqual(send('GET', base, 'member-2').status_code, 403)
+        self.assertEqual(send('PUT', endpoint, 'member-2').status_code, 403)
+        matches = send('GET', f'{base}?q={member_id[:8]}', 'member-1').json
+        self.assertEqual(matches['items'], [{'id': member_id, 'name': 'Miembro de la comunidad', 'role': 'user'}])
+        self.assertFalse(matches['has_more'])
+        self.assertEqual(send('PUT', f'{base}/{admin_id}/moderador', 'member-1').status_code, 409)
+        self.assertEqual(send('PUT', f'{base}/{suspended_id}/moderador', 'member-1').status_code, 409)
+        for _ in range(2):
+            self.assertEqual(send('PUT', endpoint, 'member-1').json, {'id': member_id, 'role': 'moderator'})
+        account = send('GET', '/api/comunidad/foro/me', 'member-2').json
+        self.assertTrue(account['is_moderator'])
+        self.assertTrue(account['can_assign_moderators'])
+        self.assertEqual(send('GET', base, 'member-2').status_code, 200)
+        self.assertEqual(send('PUT', f'{base}/{other_id}/moderador', 'member-2').json,
+                         {'id': other_id, 'role': 'moderator'})
+
     def test_create_and_filter_posts_and_favorites(self):
         post = self.post()
         self.assertTrue(post['is_mine'])

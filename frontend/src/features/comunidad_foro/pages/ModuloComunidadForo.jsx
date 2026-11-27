@@ -1,14 +1,14 @@
+import ModuleHeader from "../../../shared/components/ModuleHeader";
 import { useEffect, useRef, useState } from "react";
+import Collapse from "@mui/material/Collapse";
 import Grow from "@mui/material/Grow";
-import { Heart, ImagePlus, MessageCircle, SearchX, UsersRound, X } from "lucide-react";
+import { ChevronDown, Heart, ImagePlus, Menu, MessageCircle, Plus, Search, SearchX, X } from "lucide-react";
 import "./ComunidadForo.css";
 import useTarjetComment from "../hooks/useTarjetComment";
 import FilterBar from "../../../shared/components/Filtro_Buscador";
 import { useMotionDuration } from "../../../shared/hooks/useMotionDuration";
 import CommentsList from "../components/CommentsList";
-import FloatButton from "../components/FloatButton";
-import ForumActivity from "../components/ForumActivity";
-import ModeratorBulletins from "../components/ModeratorBulletins";
+import ForumSideMenu from "../components/ForumSideMenu";
 
 const categories = [
   "Rutinas",
@@ -27,12 +27,14 @@ export default function ModuloComunidadForo() {
   const [notice, setNotice] = useState("");
   const [tipoActivo, setTipoActivo] = useState("Todos");
   const [buscarPor, setBuscarPor] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedPost, setSelectedPost] = useState(null);
   const [feedVersion, setFeedVersion] = useState(0);
   const [postView, setPostView] = useState("following");
   const [pendingFollow, setPendingFollow] = useState("");
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const { comments, total, hasMore, loading, loadingMore, loadMoreError, error, loadMore, refresh,
@@ -161,31 +163,39 @@ export default function ModuloComunidadForo() {
 
   return (
     <>
-      <div className="comunidad-page">
-        <header className="comunidad-header">
-          <div>
-            <h1>Comunidad Skinova</h1>
-            <p className="comunidad-intro">
-              Cuéntanos qué te funciona, pregunta lo que te da curiosidad y toma ideas para tu rutina.
-            </p>
+      <div className="skinova-module comunidad-page">
+        <ModuleHeader title="Comunidad Skinova"
+          description="Comparte tu experiencia, haz preguntas y encuentra ideas para tu rutina.">
+          <div className="comunidad-header-actions">
+            <button type="button" className="comunidad-drawer-open" aria-haspopup="dialog"
+              aria-label="Abrir menú de Comunidad" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}>
+              <Menu size={22} aria-hidden="true" />
+            </button>
+            <button type="button" className="skinova-module-primary" aria-haspopup="dialog"
+              onClick={() => {
+                setSubmitError("");
+                setImageError("");
+                setImage(null);
+                setNotice("");
+                setIsComposerOpen(true);
+              }}>
+              <Plus size={19} aria-hidden="true" /> Crear publicación
+            </button>
           </div>
-          <div className="comunidad-members">
-            <UsersRound size={19} aria-hidden="true" />
-            <span>Nos cuidamos en comunidad</span>
-          </div>
-        </header>
+        </ModuleHeader>
 
+        <p className="comunidad-notice" role="status">{notice}</p>
         <div className="comunidad-layout">
-          <main className="comunidad-feed">
+          <div className="comunidad-feed">
             <section className="comunidad-feed-heading">
               <div>
-                <h2>¿Qué se está compartiendo?</h2>
+                <h2>Publicaciones</h2>
               </div>
             </section>
 
-            <nav className="comunidad-post-views" aria-label="Ver publicaciones">
+            <nav className="skinova-module-segments comunidad-post-views" aria-label="Ver publicaciones">
               {[
-                { value: "following", label: "Inicio", description: "Publicaciones de las personas que sigues" },
+                { value: "following", label: "Siguiendo", description: "Publicaciones de las personas que sigues" },
                 { value: "all", label: "Toda la comunidad" },
                 { value: "mine", label: "Compartidos por mí" },
                 { value: "favorites", label: "Favoritos" },
@@ -193,7 +203,6 @@ export default function ModuloComunidadForo() {
                 <button
                   type="button"
                   key={view.value}
-                  className={postView === view.value ? "active" : ""}
                   onClick={() => setPostView(view.value)}
                   aria-pressed={postView === view.value}
                   title={view.description}
@@ -203,15 +212,26 @@ export default function ModuloComunidadForo() {
               ))}
             </nav>
 
-            <FilterBar
-              tipos={["Todos", ...categories]}
-              tipoActivo={tipoActivo}
-              buscarPor={buscarPor}
-              onSeleccionar={setTipoActivo}
-              onBuscar={setBuscarPor}
-            />
+            <div className="comunidad-filter-toolbar">
+              <button type="button" className="comunidad-filter-toggle" aria-expanded={filtersOpen}
+                aria-controls="comunidad-search-filters"
+                onClick={() => setFiltersOpen((current) => !current)}>
+                <Search size={17} aria-hidden="true" />
+                {filtersOpen ? "Ocultar búsqueda y filtros" : "Buscar y filtrar"}
+                <ChevronDown size={16} aria-hidden="true" />
+              </button>
+            </div>
+            <Collapse in={filtersOpen} timeout={motionDuration} id="comunidad-search-filters"
+              inert={!filtersOpen}>
+              <FilterBar
+                tipos={["Todos", ...categories]}
+                tipoActivo={tipoActivo}
+                buscarPor={buscarPor}
+                onSeleccionar={setTipoActivo}
+                onBuscar={setBuscarPor}
+              />
+            </Collapse>
 
-            <p className="comunidad-notice" role="status">{notice}</p>
             {loading && (
               <div className="comunidad-feed-state" role="status">
                 <MessageCircle size={24} aria-hidden="true" />
@@ -263,15 +283,9 @@ export default function ModuloComunidadForo() {
                 )}
               </>
             )}
-          </main>
+          </div>
 
           <aside className="comunidad-sidebar" aria-label="Información de la comunidad">
-            <ForumActivity onOpenPost={openPost} onModerated={() => {
-              setSelectedPost(null);
-              setFeedVersion((value) => value + 1);
-              refresh();
-            }} />
-            <ModeratorBulletins />
             <section className="comunidad-guidelines">
               <span className="comunidad-guidelines-icon">
                 <Heart size={20} aria-hidden="true" />
@@ -290,17 +304,13 @@ export default function ModuloComunidadForo() {
             </section>
           </aside>
         </div>
+        {menuOpen && <ForumSideMenu onClose={() => setMenuOpen(false)} onOpenPost={openPost}
+          onModerated={() => {
+            setSelectedPost(null);
+            setFeedVersion((value) => value + 1);
+            refresh();
+          }} />}
       </div>
-
-      <FloatButton
-        onClick={() => {
-          setSubmitError("");
-          setImageError("");
-          setImage(null);
-          setNotice("");
-          setIsComposerOpen(true);
-        }}
-      />
 
       {isComposerOpen && (
         <Grow in timeout={motionDuration}>
