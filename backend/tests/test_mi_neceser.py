@@ -34,11 +34,10 @@ class MiNeceserTests(unittest.TestCase):
         with patch.object(DevelopmentConfig, 'SQLALCHEMY_DATABASE_URI', 'sqlite:///:memory:'):
             self.app = create_app()
         self.app.config['TESTING'] = True
-        self.context = self.app.app_context()
-        self.context.push()
-        db.create_all()
-        db.session.add_all([User(clerk_user_id='member-1'), User(clerk_user_id='member-2')])
-        db.session.commit()
+        with self.app.app_context():
+            db.create_all()
+            db.session.add_all([User(clerk_user_id='member-1'), User(clerk_user_id='member-2')])
+            db.session.commit()
         self.auth = MagicMock(is_signed_in=True, payload={'sub': 'member-1'})
         self.clerk = patch('app.auth.Clerk')
         self.clerk.start().return_value.authenticate_request.return_value = self.auth
@@ -47,9 +46,8 @@ class MiNeceserTests(unittest.TestCase):
         self.client = self.app.test_client()
 
     def tearDown(self):
-        db.session.remove()
-        db.drop_all()
-        self.context.pop()
+        with self.app.app_context():
+            db.drop_all()
         self.clerk.stop()
         self.env.stop()
         self.temp.cleanup()
@@ -147,7 +145,11 @@ class MiNeceserTests(unittest.TestCase):
         ):
             saved = upload()
             self.assertEqual(saved.status_code, 201, saved.json)
+            self.assertIs(saved.json['catalog_created'], True)
             self.assertTrue(saved.json['image_url'].startswith('data:image/webp;base64,'))
+            options = self.client.get('/api/mi-neceser/productos/opciones').json['items']
+            self.assertEqual([(item['id'], item['image_url']) for item in options],
+                             [(saved.json['id'], saved.json['image_url'])])
             self.assertEqual(saved.json['name'], details['name_es'])
             self.assertEqual(saved.json['ingredients_es'], details['ingredients_es'])
             self.assertEqual(saved.json['routine'], 'evening')
@@ -206,7 +208,8 @@ class MiNeceserTests(unittest.TestCase):
             self.assertEqual(label_upload().status_code, 404)
             self.assertEqual(self.client.get('/api/mi-neceser/productos').json['items'], [])
             self.assertEqual(self.client.delete(product_url).status_code, 404)
-            for query in ('q=ceravé+crema', 'q=glicerina&mode=ingredient', 'q=piel&mode=purpose'):
+            for query in ('q=ceravé+crema', 'q=glicerina&mode=ingredient', 'q=piel&mode=purpose',
+                          'q=cerave+glicerina+piel&mode=all'):
                 items = self.client.get('/api/mi-neceser/catalogo?' + query).json['items']
                 self.assertEqual([item['catalog_id'] for item in items], [catalog_id])
                 self.assertNotIn('user_id', items[0])
@@ -236,10 +239,14 @@ class MiNeceserTests(unittest.TestCase):
                 'front': (BytesIO(different.getvalue()), 'another.png'),
             })
             self.assertEqual(found.json['items'][0]['catalog_id'], catalog_id)
-            self.assertEqual(self.client.post(catalog, json={'catalog_id': catalog_id}).status_code, 201)
+            linked = upload()
+            self.assertEqual(linked.status_code, 201, linked.json)
+            self.assertIs(linked.json['catalog_created'], False)
+            self.assertEqual(linked.json['catalog_id'], catalog_id)
             self.assertEqual(upload().status_code, 409)
-            self.assertEqual(UserProduct.query.count(), 2)
-            self.assertEqual(CatalogProduct.query.count(), 1)
+            with self.app.app_context():
+                self.assertEqual(UserProduct.query.count(), 2)
+                self.assertEqual(CatalogProduct.query.count(), 1)
             self.auth.payload = {'sub': 'member-1'}
             replace_url = product_url + '/foto'
             for same, better, barcode, status in (
@@ -322,8 +329,9 @@ class MiNeceserTests(unittest.TestCase):
                 blocked = self.client.post(url, data=files('yes'))
                 self.assertEqual(blocked.status_code, 422)
                 self.assertIn('Solo debe aparecer el producto', blocked.json['error'])
-            self.assertEqual(CatalogProduct.query.count(), 0)
-            self.assertEqual(UserProduct.query.count(), 0)
+            with self.app.app_context():
+                self.assertEqual(CatalogProduct.query.count(), 0)
+                self.assertEqual(UserProduct.query.count(), 0)
 
 
 

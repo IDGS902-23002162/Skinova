@@ -63,10 +63,9 @@ const ROUTINE_LABELS = {
   both: "Mañana y noche",
 };
 
-export default function ProductDetails({ product, catalog, added, busy, onClose, onAdd, onRemove, onChangeRoutine, onSaveLabel, onReplacePhoto }) {
+export default function ProductDetails({ product, catalog, status, added, busy, onClose, onAdd, onRemove, onChangeRoutine, onSaveLabel, onReplacePhoto }) {
   const motionDuration = useMotionDuration();
   const dialogRef = useRef(null);
-  const [routine, setRoutine] = useState(product.routine || "both");
   const [savingRoutine, setSavingRoutine] = useState(false);
   const [routineError, setRoutineError] = useState("");
   const [addError, setAddError] = useState("");
@@ -90,7 +89,7 @@ export default function ProductDetails({ product, catalog, added, busy, onClose,
   async function saveProduct() {
     setAddError("");
     try {
-      await onAdd(product, routine);
+      await onAdd(product);
     } catch (err) {
       setAddError(err.message);
     }
@@ -124,6 +123,7 @@ export default function ProductDetails({ product, catalog, added, busy, onClose,
             <div>
               <p className="neceser-detail-brand">{product.brand || "Producto de cuidado personal"}</p>
               <h2 id="neceser-detail-title">{product.name}</h2>
+              {status && <p className="neceser-detail-status" role="status">{status}</p>}
               {product.category && <p>{product.category}</p>}
               <div className="neceser-detail-facts">
                 {ROUTINE_LABELS[product.routine] && (
@@ -205,23 +205,10 @@ export default function ProductDetails({ product, catalog, added, busy, onClose,
           )}
           <section className="neceser-detail-section">
             <h3>Dónde comprarlo</h3>
-            {Boolean(product.purchase_links?.length) && (
-              <div className="neceser-buy-links">
-                {product.purchase_links.map((link) => (
-                  <a key={link.name} href={link.href} target="_blank" rel="noopener noreferrer">Ver producto en {link.name} <ExternalLink size={13} /></a>
-                ))}
-              </div>
-            )}
-            <StoreSearch initialQuery={[product.brand, product.name, product.quantity].filter(Boolean).join(" ")} />
+            <StoreSearch product={product} />
           </section>
           {catalog ? (
             <div className="neceser-detail-actions">
-              <label htmlFor="neceser-detail-routine">Rutina</label>
-              <select id="neceser-detail-routine" value={routine} onChange={(event) => setRoutine(event.target.value)} disabled={busy || added}>
-                <option value="both">Mañana y noche</option>
-                <option value="morning">Mañana</option>
-                <option value="evening">Noche</option>
-              </select>
               {addError && <p role="alert" className="neceser-error">{addError}</p>}
               <button type="button" onClick={saveProduct} disabled={busy || added}>
                 <Plus size={16} /> {added ? "En tu neceser" : busy ? "Agregando..." : "Agregar a mi neceser"}
