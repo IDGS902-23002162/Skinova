@@ -127,12 +127,7 @@ class TestWorkflowUsuarioSinGemini(unittest.TestCase):
             from app.modules.users.models import User
             user = User.query.filter_by(clerk_user_id=cls.clerk_test_id).first()
             if not user:
-                user = User(
-                    clerk_user_id=cls.clerk_test_id,
-                    email="e2e_fast@skinovaapp.uk",
-                    first_name="Usuario",
-                    last_name="Workflow"
-                )
+                user = User(clerk_user_id=cls.clerk_test_id)
                 db.session.add(user)
                 db.session.commit()
 
@@ -224,12 +219,7 @@ class TestWorkflowUsuarioConGemini(unittest.TestCase):
             from app.modules.users.models import User
             user = User.query.filter_by(clerk_user_id=cls.clerk_test_id).first()
             if not user:
-                user = User(
-                    clerk_user_id=cls.clerk_test_id,
-                    email="e2e_gemini@skinovaapp.uk",
-                    first_name="Usuario",
-                    last_name="Gemini"
-                )
+                user = User(clerk_user_id=cls.clerk_test_id)
                 db.session.add(user)
                 db.session.commit()
 
