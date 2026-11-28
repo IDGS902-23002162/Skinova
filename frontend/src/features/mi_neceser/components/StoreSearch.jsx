@@ -1,5 +1,4 @@
-import { useId, useState } from "react";
-import { ExternalLink, Search } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 
 function storeLinks(query) {
   const mercadolibreTerm = query.normalize("NFD").replace(/\p{M}/gu, "")
@@ -9,41 +8,20 @@ function storeLinks(query) {
     { name: "Mercado Libre", href: `https://listado.mercadolibre.com.mx/${mercadolibreTerm || encodeURIComponent(query)}` },
     { name: "Farmacias Guadalajara", href: `https://www.farmaciasguadalajara.com/buscar/?${params}` },
     { name: "Farmacias del Ahorro", href: `https://www.fahorro.com/catalogsearch/result/?${params}` },
+    { name: "Amazon México", href: `https://www.amazon.com.mx/s?${new URLSearchParams({ k: query })}` },
   ];
 }
 
-export default function StoreSearch({ initialQuery = "" }) {
-  const inputId = useId();
-  const [query, setQuery] = useState(initialQuery);
-  const [searched, setSearched] = useState(initialQuery);
-
+export default function StoreSearch({ product }) {
+  const query = [product.brand, product.name, product.quantity].filter(Boolean).join(" ");
+  const directLinks = new Map((product.purchase_links || []).map((link) => [link.name, link.href]));
   return (
-    <>
-      <form className="neceser-search neceser-store-search" onSubmit={(event) => {
-        event.preventDefault();
-        setSearched(query.trim());
-      }}>
-        <label htmlFor={inputId}>Nombre del producto o marca</label>
-        <div>
-          <Search size={19} aria-hidden="true" />
-          <input id={inputId} type="search" value={query} maxLength={350} required
-            placeholder="Ej. CeraVe crema hidratante"
-            onChange={(event) => { setQuery(event.target.value); setSearched(""); }} />
-          <button type="submit" disabled={!query.trim()}>Buscar en tiendas</button>
-        </div>
-      </form>
-      {searched && (
-        <div className="neceser-store-results" aria-live="polite">
-          <p>Abre una tienda para ver sus resultados, precios y disponibilidad.</p>
-          <div className="neceser-buy-links">
-            {storeLinks(searched).map(({ name, href }) => (
-              <a key={name} href={href} target="_blank" rel="noopener noreferrer">
-                {name} <ExternalLink size={13} aria-hidden="true" />
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
-    </>
+    <div className="neceser-buy-links">
+      {storeLinks(query).map(({ name, href }) => (
+        <a key={name} href={directLinks.get(name) || href} target="_blank" rel="noopener noreferrer">
+          {name} <ExternalLink size={13} aria-hidden="true" />
+        </a>
+      ))}
+    </div>
   );
 }

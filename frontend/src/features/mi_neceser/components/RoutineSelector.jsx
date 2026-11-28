@@ -1,38 +1,15 @@
 import "./RoutineSelector.css";
 
-export default function RoutineSelector({
-  value,
-  onChange,
-  onSelectAll,
-  isAllSelected,
-}) {
-  const isNight = value === "evening";
-
+export default function RoutineSelector({ value, onChange, onSelectAll, isAllSelected }) {
   return (
-    <div className="routine-selector">
-      <button
-        className={`routine-selector-all${isAllSelected ? " is-active" : ""}`}
-        type="button"
-        aria-pressed={isAllSelected}
-        onClick={onSelectAll}
-      >
-        Todas
+    <div className="skinova-module-segments routine-selector" role="group" aria-label="Filtrar por rutina">
+      <button type="button" aria-pressed={isAllSelected} onClick={onSelectAll}>Todas</button>
+      <button type="button" aria-pressed={!isAllSelected && value === "morning"} onClick={() => onChange("morning")}>
+        Mañana
       </button>
-
-      <div className="routine-selector-toggle">
-        <span className={!isNight ? "is-current" : ""}>Mañana</span>
-        <button
-          className="routine-selector-switch"
-          type="button"
-          role="switch"
-          aria-checked={isNight}
-          aria-label="Cambiar rutina entre mañana y noche"
-          onClick={() => onChange(isNight ? "morning" : "evening")}
-        >
-          <span className="routine-selector-thumb" />
-        </button>
-        <span className={isNight ? "is-current" : ""}>Noche</span>
-      </div>
+      <button type="button" aria-pressed={!isAllSelected && value === "evening"} onClick={() => onChange("evening")}>
+        Noche
+      </button>
     </div>
   );
 }

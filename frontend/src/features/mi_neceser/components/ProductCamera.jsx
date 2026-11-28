@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
 
 function cameraErrorMessage(error) {
   switch (error.name) {
@@ -16,7 +17,7 @@ function cameraErrorMessage(error) {
   }
 }
 
-export default function ProductCamera({ label, onCapture, onClose }) {
+export default function ProductCamera({ label, onCapture, onClose, description, children, busy = false, uploadError }) {
   const dialogRef = useRef(null);
   const videoRef = useRef(null);
   const [ready, setReady] = useState(false);
@@ -30,6 +31,7 @@ export default function ProductCamera({ label, onCapture, onClose }) {
   }, []);
 
   useEffect(() => {
+    if (busy) return;
     const video = videoRef.current;
     let stream;
     let closed = false;
@@ -62,7 +64,7 @@ export default function ProductCamera({ label, onCapture, onClose }) {
         }
         video.srcObject = stream;
         await video.play();
-      } catch {
+      } catch (error) {
         stream?.getTracks().forEach((track) => track.stop());
         if (!closed) setError(cameraErrorMessage(error));
       }
@@ -75,7 +77,7 @@ export default function ProductCamera({ label, onCapture, onClose }) {
       stream?.getTracks().forEach((track) => track.stop());
       video.srcObject = null;
     };
-  }, [attempt]);
+  }, [attempt, busy]);
 
   function retryCamera() {
     setError("");
@@ -84,6 +86,7 @@ export default function ProductCamera({ label, onCapture, onClose }) {
   }
 
   function takePhoto() {
+    if (busy) return;
     const video = videoRef.current;
     if (!video.videoWidth || !video.videoHeight) return;
     const canvas = document.createElement("canvas");
@@ -100,16 +103,25 @@ export default function ProductCamera({ label, onCapture, onClose }) {
 
   return (
     <dialog ref={dialogRef} className="neceser-detail-dialog neceser-camera"
-      aria-labelledby="neceser-camera-title" onCancel={(event) => { event.preventDefault(); onClose(); }}>
+      aria-labelledby="neceser-camera-title" aria-describedby={description ? "neceser-camera-description" : undefined}
+      onCancel={(event) => { event.preventDefault(); if (!busy) onClose(); }}>
       <div className="neceser-detail-content">
+        <button type="button" className="neceser-detail-close" aria-label="Cerrar cámara"
+          onClick={onClose} disabled={busy}>
+          <X size={22} aria-hidden="true" />
+        </button>
         <h2 id="neceser-camera-title">{label}</h2>
-        <video ref={videoRef} muted playsInline onPlaying={() => setReady(true)} hidden={Boolean(error)} />
-        {error && <p role="alert" className="neceser-error">{error}</p>}
-        {!ready && !error && <p role="status">Abriendo la cámara…</p>}
+        {description && <p id="neceser-camera-description">{description}</p>}
+        <video ref={videoRef} muted playsInline onPlaying={() => setReady(true)}
+          onEmptied={() => setReady(false)} hidden={busy || Boolean(error)} />
+        {busy && <p className="neceser-detail-status" role="status">Buscando y agregando el producto…</p>}
+        {!busy && error && <p role="alert" className="neceser-error">{error}</p>}
+        {!busy && !ready && !error && <p role="status">Abriendo la cámara…</p>}
+        {uploadError && <p role="alert" className="neceser-error">{uploadError}</p>}
         <div className="neceser-detail-actions">
-          {error ? <button type="button" onClick={retryCamera}>Volver a intentar</button> :
-            <button type="button" onClick={takePhoto} disabled={!ready}>Tomar foto</button>}
-          <button type="button" onClick={onClose}>Cerrar cámara</button>
+          {error ? <button type="button" onClick={retryCamera} disabled={busy}>Volver a intentar</button> :
+            <button type="button" onClick={takePhoto} disabled={busy || !ready}>Tomar foto</button>}
+          {children}
         </div>
       </div>
     </dialog>
