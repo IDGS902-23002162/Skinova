@@ -1,12 +1,16 @@
 import { useState } from "react";
-import { CornerDownRight, MessageCircle } from "lucide-react";
+import Collapse from "@mui/material/Collapse";
+import { ChevronDown, CornerDownRight, MessageCircle } from "lucide-react";
 import { useApi } from "../../../shared/hooks/useApi";
+import { useMotionDuration } from "../../../shared/hooks/useMotionDuration";
 import ForumReportControl from "./ForumReportControl";
 import ForumImage from "./ForumImage";
+import ForumSentAt from "./ForumSentAt";
 import ReplyImagePicker from "./ReplyImagePicker";
 
-export default function ForumCommentThread({ comment, postId, onReplyCreated, onReportContent }) {
+export default function ForumCommentThread({ comment, postId, onReplyCreated, onReportContent, depth = 0 }) {
   const { fetchConAuth } = useApi();
+  const motionDuration = useMotionDuration();
   const [currentComment, setCurrentComment] = useState(comment);
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
@@ -14,6 +18,7 @@ export default function ForumCommentThread({ comment, postId, onReplyCreated, on
   const [childrenOpen, setChildrenOpen] = useState(false);
   const [childrenLoaded, setChildrenLoaded] = useState(false);
   const [childrenLoading, setChildrenLoading] = useState(false);
+  const [childrenError, setChildrenError] = useState("");
   const [children, setChildren] = useState([]);
   const [submittedChildren, setSubmittedChildren] = useState([]);
   const [offset, setOffset] = useState(0);
@@ -28,11 +33,13 @@ export default function ForumCommentThread({ comment, postId, onReplyCreated, on
     (submitted) => !children.some((child) => child.id === submitted.id),
   );
   const childCount = Math.max(comment.replies_count || 0, children.length) + extraChildren.length;
+  const author = currentComment.author || "Miembro de la comunidad";
+  const initials = author.trim().split(/\s+/).slice(0, 2).map((word) => Array.from(word)[0]).join("").toLocaleUpperCase("es-MX");
 
   async function loadChildren(nextOffset = 0) {
     if (childrenLoading) return;
     setChildrenLoading(true);
-    setError("");
+    setChildrenError("");
     try {
       const response = await fetchConAuth(
         `/comunidad/foro/posts/${encodeURIComponent(postId)}/comments?parent_id=${encodeURIComponent(comment.id)}&limit=5&offset=${nextOffset}`,
@@ -47,7 +54,7 @@ export default function ForumCommentThread({ comment, postId, onReplyCreated, on
       setHasMore(data.pagination.has_more);
       setChildrenLoaded(true);
     } catch (requestError) {
-      setError(requestError.message);
+      setChildrenError(requestError.message);
     } finally {
       setChildrenLoading(false);
     }
@@ -83,6 +90,7 @@ export default function ForumCommentThread({ comment, postId, onReplyCreated, on
       }
       setSubmittedChildren((items) => [...items, data]);
       setChildrenOpen(true);
+      if (!childrenLoaded && comment.replies_count) loadChildren();
       onReplyCreated(postId);
     } catch (requestError) {
       setError(requestError.message);
@@ -132,9 +140,15 @@ export default function ForumCommentThread({ comment, postId, onReplyCreated, on
   }
 
   return (
-    <article className="comunidad-comment">
+    <article className="comunidad-comment" data-nested={depth > 0}>
       <div className="comunidad-comment-body">
-        <strong>{currentComment.author || "Miembro de la comunidad"}</strong>
+        <header className="comunidad-comment-header">
+          <span className="comunidad-comment-avatar" aria-hidden="true">{initials}</span>
+          <div>
+            <strong title={author}>{author}</strong>
+            <ForumSentAt value={currentComment.created_at} />
+          </div>
+        </header>
         <p>{currentComment.content}</p>
         {currentComment.status === "active" && currentComment.image_url && (
           <ForumImage path={currentComment.image_url} alt="Imagen adjunta a la respuesta" />
@@ -147,10 +161,11 @@ export default function ForumCommentThread({ comment, postId, onReplyCreated, on
             </button>
           )}
           {childCount > 0 && (
-            <button type="button" className="comunidad-comment-action" onClick={toggleChildren}
+            <button type="button" className="comunidad-comment-action comunidad-thread-toggle" onClick={toggleChildren}
               aria-expanded={childrenOpen} aria-controls={`comment-children-${comment.id}`}>
               <MessageCircle size={15} aria-hidden="true" />
               {childrenOpen ? "Ocultar respuestas" : `Ver respuestas (${childCount})`}
+              <ChevronDown size={14} className="comunidad-thread-chevron" aria-hidden="true" />
             </button>
           )}
           {currentComment.is_mine && currentComment.status === "active" && (
@@ -178,7 +193,7 @@ export default function ForumCommentThread({ comment, postId, onReplyCreated, on
         </form>
       )}
 
-      {replyOpen && (
+      <Collapse in={replyOpen} timeout={motionDuration} inert={!replyOpen} mountOnEnter unmountOnExit>
         <form id={`comment-form-${comment.id}`} className="comunidad-comment-form" onSubmit={submitReply}>
           <label htmlFor={`comment-reply-${comment.id}`}>Responder a {comment.author || "este comentario"}</label>
           <textarea id={`comment-reply-${comment.id}`} value={content}
@@ -191,26 +206,29 @@ export default function ForumCommentThread({ comment, postId, onReplyCreated, on
             </button>
           </div>
         </form>
-      )}
+      </Collapse>
       {error && <p className="comunidad-form-error" role="alert">{error}</p>}
       {reviewNotice && <p role="status">{reviewNotice}</p>}
-      {childrenOpen && (
-        <div id={`comment-children-${comment.id}`} className="comunidad-thread-children">
-          {[...children, ...extraChildren].map((child) => (
-            <ForumCommentThread key={child.id} comment={child} postId={postId}
-              onReplyCreated={onReplyCreated} onReportContent={onReportContent} />
-          ))}
-          {childrenLoading && <p role="status">Cargando respuestas...</p>}
-          {hasMore && (
-            <button type="button" className="comunidad-comment-action" onClick={() => loadChildren(offset)}
-              disabled={childrenLoading}>Cargar más respuestas</button>
-          )}
-          {error && !childrenLoaded && (
-            <button type="button" className="comunidad-comment-action" onClick={() => loadChildren()}
-              disabled={childrenLoading}>Reintentar cargar respuestas</button>
+      <Collapse id={`comment-children-${comment.id}`} in={childrenOpen} timeout={motionDuration} inert={!childrenOpen} mountOnEnter>
+        <div className="comunidad-thread-children" data-flat={depth >= 2}>
+          <ol className="comunidad-thread-list" aria-label={`Respuestas a ${author}`}>
+            {[...children, ...extraChildren].map((child) => (
+              <li key={child.id}>
+                <ForumCommentThread comment={child} postId={postId} depth={depth + 1}
+                  onReplyCreated={onReplyCreated} onReportContent={onReportContent} />
+              </li>
+            ))}
+          </ol>
+          {childrenLoading && <p role="status">Cargando respuestas…</p>}
+          {childrenError && <p className="comunidad-form-error" role="alert">{childrenError}</p>}
+          {(hasMore || childrenError) && (
+            <button type="button" className="comunidad-comment-action comunidad-thread-toggle"
+              onClick={() => loadChildren(childrenLoaded ? offset : 0)} disabled={childrenLoading}>
+              {childrenError ? "Reintentar cargar respuestas" : "Cargar más respuestas"}
+            </button>
           )}
         </div>
-      )}
+      </Collapse>
     </article>
   );
 }

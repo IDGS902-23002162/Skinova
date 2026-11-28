@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Collapse from "@mui/material/Collapse";
 import Fade from "@mui/material/Fade";
-import { Bookmark, Heart, MessageCircle, UserCheck, UserPlus } from "lucide-react";
+import { Bookmark, ChevronDown, Heart, MessageCircle, UserCheck, UserPlus } from "lucide-react";
 import { useApi } from "../../../shared/hooks/useApi";
 import { useMotionDuration } from "../../../shared/hooks/useMotionDuration";
 import ForumImage from "./ForumImage";
@@ -210,10 +210,11 @@ function CommentsTarjet({ comment, onToggleFavorite, onToggleLike, onToggleFollo
             <Bookmark size={17} aria-hidden="true" fill={comment.isFavorite ? "currentColor" : "none"} />
             {comment.isFavorite ? "Quitar de favoritos" : "Guardar en favoritos"}
           </button>
-          <button type="button" className="comunidad-post-action" onClick={toggleReplies}
+          <button type="button" className="comunidad-post-action comunidad-thread-toggle" onClick={toggleReplies}
             aria-expanded={repliesOpen} aria-controls={`replies-${comment.id}`}>
             <MessageCircle size={17} aria-hidden="true" />
             {repliesOpen ? "Ocultar respuestas" : `Respuestas (${comment.commentsCount})`}
+            <ChevronDown size={14} className="comunidad-thread-chevron" aria-hidden="true" />
           </button>
           {comment.isMine && (
             <>
@@ -228,14 +229,19 @@ function CommentsTarjet({ comment, onToggleFavorite, onToggleLike, onToggleFollo
         {actionError && <p className="comunidad-form-error" role="alert">{actionError}</p>}
         <Collapse in={repliesOpen} timeout={motionDuration} mountOnEnter unmountOnExit>
           <section id={`replies-${comment.id}`} className="comunidad-replies" aria-label="Respuestas" inert={!repliesOpen}>
-            {replies.map((reply) => (
-              <ForumCommentThread key={reply.id} comment={reply} postId={comment.id}
-                onReplyCreated={onReplyCreated} onReportContent={onReportContent} />
-            ))}
-            {submittedReplies.filter((reply) => !replies.some((item) => item.id === reply.id)).map((reply) => (
-              <ForumCommentThread key={reply.id} comment={reply} postId={comment.id}
-                onReplyCreated={onReplyCreated} onReportContent={onReportContent} />
-            ))}
+            <header className="comunidad-replies-heading">
+              <MessageCircle size={18} aria-hidden="true" />
+              <h4>Conversación</h4>
+            </header>
+            <ol className="comunidad-thread-list">
+              {[...replies, ...submittedReplies.filter((reply) => !replies.some((item) => item.id === reply.id))]
+                .map((reply) => (
+                  <li key={reply.id}>
+                    <ForumCommentThread comment={reply} postId={comment.id}
+                      onReplyCreated={onReplyCreated} onReportContent={onReportContent} />
+                  </li>
+                ))}
+            </ol>
             {repliesLoading && <p role="status">Cargando respuestas...</p>}
             {repliesLoaded && replies.length === 0 && submittedReplies.length === 0 && !repliesLoading && <p className="comunidad-reply-empty">Aún no hay respuestas.</p>}
             {replyError && <p className="comunidad-form-error" role="alert">{replyError}</p>}
@@ -244,7 +250,7 @@ function CommentsTarjet({ comment, onToggleFavorite, onToggleLike, onToggleFollo
               disabled={repliesLoading || isSubmittingReply} onClick={() => loadReplies(repliesLoaded ? offset : 0)}>
               {replyError ? "Reintentar cargar respuestas" : "Cargar más respuestas"}
             </button>}
-            <form onSubmit={submitReply}>
+            <form className="comunidad-thread-compose" onSubmit={submitReply}>
               <label htmlFor={`reply-${comment.id}`}>Responder a la publicación</label>
               <textarea id={`reply-${comment.id}`} value={replyContent} onChange={(event) => setReplyContent(event.target.value)}
                 maxLength={3000} required disabled={isSubmittingReply} />

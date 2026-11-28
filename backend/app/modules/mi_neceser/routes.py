@@ -135,7 +135,8 @@ def search_catalog():
     terms = _normalize(query).split()
     mode = request.args.get('mode', 'product')
     page = request.args.get('page', 1, type=int)
-    if not terms or not 2 <= len(query) <= 80 or mode not in SEARCH_FIELDS or not 1 <= page <= 100:
+    if (not terms or not 2 <= len(query) <= 80 or (mode != 'all' and mode not in SEARCH_FIELDS)
+            or not 1 <= page <= 100):
         return jsonify({'error': 'Búsqueda inválida'}), 400
 
     start = (page - 1) * PAGE_SIZE
@@ -143,9 +144,10 @@ def search_catalog():
     matches = 0
     shared = db.session.query(CatalogProduct.id, CatalogProduct.details).order_by(CatalogProduct.id).yield_per(100)
     rows = chain(((product_id, details, False) for product_id, details in shared), _legacy_search_rows(user.id))
+    search_fields = tuple(dict.fromkeys(chain.from_iterable(SEARCH_FIELDS.values()))) if mode == 'all' else SEARCH_FIELDS[mode]
     for product_id, details, personal in rows:
-        fields = [details.get(field) for field in SEARCH_FIELDS[mode]]
-        if mode in ('product', 'purpose'):
+        fields = [details.get(field) for field in search_fields]
+        if mode in ('all', 'product', 'purpose'):
             fields.append(SCOPE_NAMES.get(details.get('scope')))
         text = _normalize(' '.join(value for value in fields if value))
         if all(any(alias in text for alias in SEARCH_ALIASES.get(term, (term,))) for term in terms):
@@ -263,7 +265,7 @@ def _uploaded_photos():
     return photos, preview, sha256(preview).hexdigest(), back_preview
 
 
-def _link_product(user_id, shared, routine):
+def _link_product(user_id, shared, routine, *, catalog_created=None):
     details = shared.details
     existing = _find_saved_product(user_id, details['name'], details['brand'], shared.barcode,
                                    details.get('quantity'), details.get('name_es'))
@@ -279,7 +281,10 @@ def _link_product(user_id, shared, routine):
     product.quantity_state = product.quantity_state or 'new'
     db.session.add(product)
     db.session.commit()
-    return jsonify(_serialize_product(product)), 201
+    result = _serialize_product(product)
+    if catalog_created is not None:
+        result['catalog_created'] = catalog_created
+    return jsonify(result), 201
 
 
 @mi_neceser_bp.post('/catalogo/foto')
@@ -325,7 +330,7 @@ def add_photo_product():
         identity = analyze_photos(photos, identify_only=True)
         shared = _catalog_match(identity, photo_hash)
         if shared:
-            return _link_product(user_id, shared, routine)
+            return _link_product(user_id, shared, routine, catalog_created=False)
         db.session.rollback()
         details = analyze_photos(photos)
     except ValueError as exc:
@@ -335,6 +340,7 @@ def add_photo_product():
         return jsonify({'error': str(exc)}), 503
 
     shared = _catalog_match(details, photo_hash)
+    catalog_created = False
     if not shared:
         barcode = details.get('barcode')
         shared = CatalogProduct(identity=_catalog_identity(details), barcode=barcode.zfill(14) if barcode else None,
@@ -345,12 +351,13 @@ def add_photo_product():
             with db.session.begin_nested():
                 db.session.add(shared)
                 db.session.flush()
+            catalog_created = True
         except IntegrityError:
             db.session.rollback()
             shared = _catalog_match({**details, 'barcode': barcode}, photo_hash)
             if not shared:
                 raise
-    return _link_product(user_id, shared, routine)
+    return _link_product(user_id, shared, routine, catalog_created=catalog_created)
 
 
 @mi_neceser_bp.post('/productos/catalogo')
@@ -509,6 +516,32 @@ def list_products():
 
     products = UserProduct.query.filter_by(user_id=user.id, active=True).order_by(UserProduct.created_at.desc()).all()
     return jsonify({'items': [_serialize_product(product) for product in products]}), 200
+
+
+@mi_neceser_bp.get('/productos/opciones')
+@require_auth
+def list_product_options():
+    user = _get_user()
+    if not user:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
+
+    rows = db.session.query(
+        UserProduct.id, UserProduct.name, UserProduct.name_es, UserProduct.brand,
+        UserProduct.quantity, UserProduct.photo, CatalogProduct.details, CatalogProduct.photo.label('catalog_photo'),
+    ).outerjoin(CatalogProduct, UserProduct.shared_product_id == CatalogProduct.id).filter(
+        UserProduct.user_id == user.id, UserProduct.active.is_(True),
+    ).all()
+    items = []
+    for row in rows:
+        details = row.details or {}
+        items.append({
+            'id': row.id,
+            'name': details.get('name_es') or details.get('name') or row.name_es or row.name,
+            'brand': details.get('brand') or row.brand,
+            'quantity': details.get('quantity') or row.quantity,
+            'image_url': _photo_url(row.catalog_photo or row.photo),
+        })
+    return jsonify({'items': sorted(items, key=lambda product: (product['name'].casefold(), product['id']))})
 
 
 @mi_neceser_bp.route('/productos/<product_id>', methods=['PUT'])

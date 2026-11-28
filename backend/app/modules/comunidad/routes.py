@@ -206,6 +206,7 @@ def _forum_post_to_dict(post, current_user_id, *, followed_ids=None):
 
 def _forum_comment_to_dict(comment, current_user_id=None):
     data = comment.to_dict()
+    data['created_at'] = _forum_sent_at(comment.created_at)
     data['is_mine'] = comment.user_id == current_user_id
     if comment.status != 'active':
         data['author'] = 'Moderación' if comment.status == 'hidden' else 'Miembro de la comunidad'
@@ -942,7 +943,59 @@ def forum_me():
     user = _get_user()
     if not user:
         return jsonify({'error': 'User not found'}), 404
-    return jsonify({'is_moderator': user.role in ('admin', 'moderator')}), 200
+    can_moderate = user.role in ('admin', 'moderator')
+    return jsonify({
+        'is_moderator': can_moderate,
+        'can_assign_moderators': can_moderate,
+    }), 200
+
+
+@comunidad_bp.get('/foro/moderacion/usuarios')
+@require_auth
+def forum_moderation_users():
+    actor = _get_user()
+    if not actor or actor.role not in ('admin', 'moderator'):
+        return jsonify({'error': 'Se requieren permisos de moderación.'}), 403
+
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('q', '').strip()
+    if not 1 <= page <= 10000 or len(search) > 100:
+        return jsonify({'error': 'Búsqueda inválida.'}), 400
+
+    name = func.coalesce(func.nullif(UserProfile.preferred_name, ''), 'Miembro de la comunidad')
+    users = db.session.query(User.id, User.role, name.label('name')).outerjoin(
+        UserProfile, UserProfile.user_id == User.id
+    )
+    if search:
+        term = search.lower()
+        users = users.filter(or_(func.lower(name).contains(term, autoescape=True),
+                                 User.id.startswith(term, autoescape=True)))
+    size = 20
+    rows = users.order_by(func.lower(name), User.id).offset((page - 1) * size).limit(size + 1).all()
+    return jsonify({
+        'items': [dict(id=row.id, name=row.name, role=row.role) for row in rows[:size]],
+        'has_more': len(rows) > size,
+    })
+
+
+@comunidad_bp.put('/foro/moderacion/usuarios/<user_id>/moderador')
+@require_auth
+def appoint_forum_moderator(user_id):
+    actor = _get_user()
+    if not actor or actor.role not in ('admin', 'moderator'):
+        return jsonify({'error': 'Se requieren permisos de moderación.'}), 403
+
+    target = db.session.get(User, user_id)
+    if not target:
+        return jsonify({'error': 'Usuario no encontrado.'}), 404
+    if target.role == 'moderator':
+        return jsonify({'id': target.id, 'role': target.role})
+    updated = User.query.filter_by(id=user_id, role='user').update({'role': 'moderator'})
+    if not updated:
+        db.session.rollback()
+        return jsonify({'error': 'Esta cuenta no se puede nombrar moderadora.'}), 409
+    db.session.commit()
+    return jsonify({'id': user_id, 'role': 'moderator'})
 
 
 @comunidad_bp.route('/foro/reports', methods=['POST', 'GET'])

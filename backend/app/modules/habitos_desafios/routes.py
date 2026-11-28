@@ -1,22 +1,21 @@
-from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request, g
 from sqlalchemy import or_, update
-from sqlalchemy.orm import selectinload
 
 from app.auth import require_auth
 from app.extensions import db
+from app.modules.habitos_desafios.cycles import (
+    LOCAL_TIME, completion_timestamp, cycle_plan, cycle_progress,
+    initialize_cycle, set_tracking_stopped, update_cycle,
+)
 from app.modules.habitos_desafios.models import Challenge, ChallengeDay, Habit, HabitEntry
+from app.modules.mi_neceser.models import UserProduct
 from app.modules.users.models import User
 
 habitos_desafios_bp = Blueprint('habitos_desafios', __name__, url_prefix='/api/habitos-desafios')
 CARE_FOCUS = ('general', 'face', 'hair', 'beard', 'feet')
 CHALLENGE_UNITS = ('días', 'sesiones', 'rutinas', 'lavados', 'aplicaciones')
-try:
-    LOCAL_TIME = ZoneInfo('America/Mexico_City')
-except ZoneInfoNotFoundError:
-    LOCAL_TIME = timezone(timedelta(hours=-6))
 
 
 def _get_user():
@@ -30,40 +29,51 @@ def _today():
     return datetime.now(LOCAL_TIME).date()
 
 
-def _habit_progress(habits, today):
-    entries = {}
-    start = today - timedelta(days=today.weekday())
-    if habits:
-        rows = HabitEntry.query.filter(HabitEntry.habit_id.in_([habit.id for habit in habits]),
-                                       HabitEntry.day.between(start, today)).all()
-        for row in rows:
-            daily, weekly = entries.get(row.habit_id, (0, 0))
-            entries[row.habit_id] = (row.value if row.day == today else daily, weekly + row.value)
-    progress = []
-    for habit in habits:
-        daily, weekly = entries.get(habit.id, (0, 0))
-        progress.append({
-            **habit.to_dict(),
-            'today_value': daily,
-            'period_value': weekly if habit.frequency == 'weekly' else daily,
-        })
-    return progress
-
-
-def _challenge_progress(challenge, today):
-    days = {entry.day for entry in challenge.days}
-    return {**challenge.to_dict(), 'days_done': len(days) or (
-        challenge.duration_days if challenge.status == 'completed' else 0
-    ), 'done_today': today in days}
-
-
-def _update_challenge_completion(challenge):
-    if len(challenge.days) >= challenge.duration_days:
-        challenge.status = 'completed'
-        challenge.completed_at = challenge.completed_at or datetime.now(timezone.utc)
+def _progress_entries(items, is_habit):
+    entries = {item.id: {} for item in items}
+    if not entries:
+        return entries
+    if is_habit:
+        rows = db.session.query(HabitEntry.habit_id, HabitEntry.day, HabitEntry.value).filter(
+            HabitEntry.habit_id.in_(entries),
+        )
+        for item_id, day, value in rows:
+            entries[item_id][day] = value
     else:
-        challenge.status = 'active'
-        challenge.completed_at = None
+        rows = db.session.query(ChallengeDay.challenge_id, ChallengeDay.day).filter(
+            ChallengeDay.challenge_id.in_(entries),
+        )
+        for item_id, day in rows:
+            entries[item_id][day] = 1
+    return entries
+
+
+def _serialize_progress(item, state):
+    result = {**item.to_dict(), **{field: state[field] for field in ('period', 'history', 'failed_count')}}
+    period = state['period']
+    value = period['value'] if period else 0
+    if isinstance(item, Habit):
+        result.update(today_value=state['today_value'], period_value=value)
+    else:
+        if item.status in (None, 'active', 'completed'):
+            result['status'] = period['status'] if period else 'active'
+        result.update(days_done=value, done_today=state['today_value'] > 0,
+                      completed_at=completion_timestamp(period))
+    return result
+
+
+def _progress(items, today, is_habit):
+    entries = _progress_entries(items, is_habit)
+    return [_serialize_progress(item, cycle_progress(item, today, entries[item.id])) for item in items]
+
+
+def _current_state(item, today):
+    entries = _progress_entries([item], isinstance(item, Habit))[item.id]
+    return cycle_progress(item, today, entries), entries
+
+
+def _check_period(data, period):
+    return period and ('period_start' not in data or data['period_start'] == period['start'])
 
 
 def _lock_account(user):
@@ -73,7 +83,23 @@ def _lock_account(user):
     return user_id
 
 
-def _habit_fields(data):
+def _neceser_fields(data, user_id):
+    if 'product_ids' not in data:
+        return {}
+    ids = data['product_ids']
+    if not isinstance(ids, list) or any(not isinstance(value, str) or len(value) != 36 for value in ids):
+        raise ValueError('Selecciona productos válidos de tu neceser.')
+    ids = list(dict.fromkeys(ids))
+    if ids:
+        rows = db.session.query(UserProduct.id).filter_by(user_id=user_id, active=True).filter(
+            UserProduct.id.in_(ids),
+        ).all()
+        if len(rows) != len(ids):
+            raise ValueError('Uno de los productos seleccionados ya no está en tu neceser.')
+    return {'product_ids': ids}
+
+
+def _habit_fields(data, user_id):
     if not isinstance(data, dict):
         raise ValueError('Datos del hábito inválidos.')
     fields = {field: data[field] for field in (
@@ -99,7 +125,7 @@ def _habit_fields(data):
         raise ValueError('La descripción debe tener hasta 500 caracteres.')
     if 'focus' in fields and fields['focus'] not in CARE_FOCUS:
         raise ValueError('Elige un enfoque válido.')
-    return fields
+    return {**fields, **_neceser_fields(data, user_id)}
 
 
 @habitos_desafios_bp.route('/habitos', methods=['GET'])
@@ -110,7 +136,7 @@ def list_habits():
         return jsonify({'error': 'User not found'}), 404
 
     habits = Habit.query.filter_by(user_id=user.id, active=True).order_by(Habit.created_at.desc()).all()
-    return jsonify({'items': _habit_progress(habits, _today())}), 200
+    return jsonify({'items': _progress(habits, _today(), True)}), 200
 
 
 @habitos_desafios_bp.route('/habitos', methods=['POST'])
@@ -121,15 +147,17 @@ def create_habit():
         return jsonify({'error': 'User not found'}), 404
 
     try:
-        fields = _habit_fields(request.get_json(silent=True))
+        fields = _habit_fields(request.get_json(silent=True), user.id)
         if 'title' not in fields:
             raise ValueError('Escribe un nombre de hasta 150 caracteres.')
     except ValueError as exc:
         return jsonify({'error': str(exc)}), 400
     habit = Habit(user_id=user.id, **fields)
+    today = _today()
+    initialize_cycle(habit, today)
     db.session.add(habit)
     db.session.commit()
-    return jsonify(_habit_progress([habit], _today())[0]), 201
+    return jsonify(_progress([habit], today, True)[0]), 201
 
 
 @habitos_desafios_bp.put('/habitos/<habit_id>/progreso')
@@ -147,16 +175,26 @@ def record_habit(habit_id):
     if not habit:
         return jsonify({'error': 'Hábito no encontrado'}), 404
     today = _today()
+    state, entries = _current_state(habit, today)
+    period = state['period']
+    if not _check_period(data, period):
+        return jsonify({'error': 'Ya comenzó otro periodo. Actualiza tu progreso e inténtalo de nuevo.'}), 409
+    today_raw = entries.get(today, 0)
+    remaining = max(0, period['target'] - (state['raw_total'] - today_raw))
+    if value > remaining:
+        return jsonify({'error': 'El progreso no puede superar la meta del periodo.'}), 422
     entry = db.session.get(HabitEntry, (habit_id, today))
     if value:
         if entry:
             entry.value = value
         else:
             db.session.add(HabitEntry(habit_id=habit_id, day=today, value=value))
+        entries[today] = value
     elif entry:
         db.session.delete(entry)
+        entries.pop(today, None)
     db.session.commit()
-    return jsonify(_habit_progress([habit], today)[0])
+    return jsonify(_serialize_progress(habit, cycle_progress(habit, today, entries)))
 
 
 @habitos_desafios_bp.route('/habitos/<habit_id>', methods=['PUT'])
@@ -166,19 +204,27 @@ def update_habit(habit_id):
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    habit = Habit.query.filter_by(id=habit_id, user_id=user.id).first()
+    user_id = _lock_account(user)
+    habit = Habit.query.filter_by(id=habit_id, user_id=user_id).with_for_update().first()
     if not habit:
         return jsonify({'error': 'Habit not found'}), 404
 
     try:
-        fields = _habit_fields(request.get_json(silent=True))
+        fields = _habit_fields(request.get_json(silent=True), user_id)
     except ValueError as exc:
         return jsonify({'error': str(exc)}), 400
+    today = _today()
+    if fields.get('active') is True and not habit.active:
+        set_tracking_stopped(habit, today, False)
+    state, _ = _current_state(habit, today)
+    plan = cycle_plan(habit)
     for field, value in fields.items():
         setattr(habit, field, value)
-
+    update_cycle(habit, plan, state['period'], today)
+    if 'active' in fields and not habit.active:
+        set_tracking_stopped(habit, today, True)
     db.session.commit()
-    return jsonify(_habit_progress([habit], _today())[0]), 200
+    return jsonify(_progress([habit], today, True)[0]), 200
 
 
 @habitos_desafios_bp.route('/habitos/<habit_id>', methods=['DELETE'])
@@ -188,10 +234,12 @@ def delete_habit(habit_id):
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    habit = Habit.query.filter_by(id=habit_id, user_id=user.id).first()
+    user_id = _lock_account(user)
+    habit = Habit.query.filter_by(id=habit_id, user_id=user_id).with_for_update().first()
     if not habit:
         return jsonify({'error': 'Habit not found'}), 404
 
+    set_tracking_stopped(habit, _today(), True)
     habit.active = False
     db.session.commit()
     return jsonify({'message': 'Habit deleted successfully'}), 200
@@ -204,11 +252,11 @@ def list_challenges():
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    challenges = Challenge.query.options(selectinload(Challenge.days)).filter_by(user_id=user.id).filter(
+    challenges = Challenge.query.filter_by(user_id=user.id).filter(
         or_(Challenge.status != 'archived', Challenge.status.is_(None)),
     ).order_by(Challenge.created_at.desc()).all()
     today = _today()
-    return jsonify({'items': [_challenge_progress(challenge, today) for challenge in challenges]}), 200
+    return jsonify({'items': _progress(challenges, today, False)}), 200
 
 
 @habitos_desafios_bp.route('/retos', methods=['POST'])
@@ -229,6 +277,10 @@ def create_challenge():
         return jsonify({'error': 'La meta del desafío debe estar entre 1 y 365.'}), 400
     if unit not in CHALLENGE_UNITS or focus not in CARE_FOCUS:
         return jsonify({'error': 'Elige una unidad y un enfoque válidos.'}), 400
+    try:
+        product_fields = _neceser_fields(data, user.id)
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
 
     challenge = Challenge(
         user_id=user.id,
@@ -242,10 +294,15 @@ def create_challenge():
         focus=focus,
         started_at=data.get('started_at') or datetime.now(timezone.utc),
         completed_at=data.get('completed_at'),
+        **product_fields,
     )
+    today = _today()
+    initialize_cycle(challenge, today)
+    if challenge.status == 'archived':
+        set_tracking_stopped(challenge, today, True)
     db.session.add(challenge)
     db.session.commit()
-    return jsonify(_challenge_progress(challenge, _today())), 201
+    return jsonify(_progress([challenge], today, False)[0]), 201
 
 
 @habitos_desafios_bp.put('/retos/<challenge_id>/progreso')
@@ -263,16 +320,23 @@ def record_challenge(challenge_id):
     if not challenge:
         return jsonify({'error': 'Desafío no encontrado'}), 404
     today = _today()
-    entry = db.session.get(ChallengeDay, (challenge_id, today))
-    if challenge.status != 'active' and not (challenge.status == 'completed' and entry):
+    if challenge.status not in (None, 'active', 'completed'):
         return jsonify({'error': 'Este desafío ya no admite registros.'}), 409
+    state, entries = _current_state(challenge, today)
+    period = state['period']
+    if not _check_period(data, period):
+        return jsonify({'error': 'Ya comenzó otro periodo. Actualiza tu progreso e inténtalo de nuevo.'}), 409
+    entry = db.session.get(ChallengeDay, (challenge_id, today))
     if done and not entry:
-        challenge.days.append(ChallengeDay(day=today))
+        if state['raw_total'] >= period['target']:
+            return jsonify({'error': 'El progreso no puede superar la meta del periodo.'}), 422
+        db.session.add(ChallengeDay(challenge_id=challenge_id, day=today))
+        entries[today] = 1
     elif not done and entry:
-        challenge.days.remove(entry)
-    _update_challenge_completion(challenge)
+        db.session.delete(entry)
+        entries.pop(today, None)
     db.session.commit()
-    return jsonify(_challenge_progress(challenge, today))
+    return jsonify(_serialize_progress(challenge, cycle_progress(challenge, today, entries)))
 
 
 @habitos_desafios_bp.route('/retos/<challenge_id>', methods=['PUT'])
@@ -305,16 +369,23 @@ def update_challenge(challenge_id):
     challenge = Challenge.query.filter_by(id=challenge_id, user_id=user_id).with_for_update().first()
     if not challenge or challenge.status == 'archived':
         return jsonify({'error': 'Desafío no encontrado'}), 404
+    try:
+        product_fields = _neceser_fields(data, user_id)
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 400
+    today = _today()
+    state, _ = _current_state(challenge, today)
+    plan = cycle_plan(challenge)
+    if 'product_ids' in product_fields:
+        challenge.product_ids = product_fields['product_ids']
     for field in ['title', 'description', 'difficulty', 'reward', 'status', 'duration_days', 'started_at', 'completed_at', 'unit', 'focus']:
         if field in data:
             setattr(challenge, field, data[field])
-    if 'duration_days' in data and 'status' not in data and (
-        challenge.status == 'active' or (challenge.status == 'completed' and challenge.days)
-    ):
-        _update_challenge_completion(challenge)
-
+    update_cycle(challenge, plan, state['period'], today)
+    if challenge.status == 'archived':
+        set_tracking_stopped(challenge, today, True)
     db.session.commit()
-    return jsonify(_challenge_progress(challenge, _today())), 200
+    return jsonify(_progress([challenge], today, False)[0]), 200
 
 
 @habitos_desafios_bp.route('/retos/<challenge_id>', methods=['DELETE'])
@@ -324,10 +395,28 @@ def delete_challenge(challenge_id):
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    challenge = Challenge.query.filter_by(id=challenge_id, user_id=user.id).first()
+    user_id = _lock_account(user)
+    challenge = Challenge.query.filter_by(id=challenge_id, user_id=user_id).with_for_update().first()
     if not challenge:
         return jsonify({'error': 'Challenge not found'}), 404
 
+    set_tracking_stopped(challenge, _today(), True)
     challenge.status = 'archived'
     db.session.commit()
     return jsonify({'message': 'Challenge deleted successfully'}), 200
+
+
+@habitos_desafios_bp.get('/historial/retirados')
+@require_auth
+def archived_progress():
+    user = _get_user()
+    if not user:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
+    kind = request.args.get('tipo')
+    if kind == 'habitos':
+        items = Habit.query.filter_by(user_id=user.id, active=False).order_by(Habit.updated_at.desc()).all()
+    elif kind == 'retos':
+        items = Challenge.query.filter_by(user_id=user.id, status='archived').order_by(Challenge.updated_at.desc()).all()
+    else:
+        return jsonify({'error': 'Tipo de historial inválido.'}), 400
+    return jsonify({'items': _progress(items, _today(), kind == 'habitos')})

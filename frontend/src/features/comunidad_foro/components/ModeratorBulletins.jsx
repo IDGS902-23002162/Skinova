@@ -16,11 +16,10 @@ async function readJson(response, fallback) {
   return data;
 }
 
-export default function ModeratorBulletins() {
+export default function ModeratorBulletins({ isModerator }) {
   const { fetchConAuth } = useApi();
   const motionDuration = useMotionDuration();
   const [bulletins, setBulletins] = useState([]);
-  const [isModerator, setIsModerator] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -71,19 +70,14 @@ export default function ModeratorBulletins() {
   }
 
   const load = useCallback(async (signal) => {
-    const [bulletinData, account] = await Promise.all([
-      readJson(await fetchConAuth("/comunidad/foro/bulletins", { signal }), "No se pudieron cargar los avisos."),
-      readJson(await fetchConAuth("/comunidad/foro/me", { signal }), "No se pudo verificar tu cuenta."),
-    ]);
-    return { bulletins: bulletinData.items, isModerator: account.is_moderator };
+    return readJson(await fetchConAuth("/comunidad/foro/bulletins", { signal }), "No se pudieron cargar los avisos.");
   }, [fetchConAuth]);
 
   useEffect(() => {
     const controller = new AbortController();
     load(controller.signal).then((data) => {
       if (controller.signal.aborted) return;
-      setBulletins(data.bulletins);
-      setIsModerator(data.isModerator);
+      setBulletins(data.items);
     }).catch((requestError) => {
       if (!controller.signal.aborted) setError(requestError.message);
     }).finally(() => {
@@ -191,7 +185,6 @@ export default function ModeratorBulletins() {
       <div className="comunidad-bulletins-heading">
         <span className="comunidad-bulletins-icon"><Megaphone size={19} aria-hidden="true" /></span>
         <div>
-          <p>DESDE MODERACIÓN</p>
           <h2 id="comunidad-bulletins-title">Avisos de la comunidad</h2>
         </div>
       </div>
