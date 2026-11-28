@@ -34,7 +34,7 @@ export function useApi() {
         headers: {
           ...opciones.headers,
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          ...(!(opciones.body instanceof FormData) && { "Content-Type": "application/json" }),
         },
       });
     },

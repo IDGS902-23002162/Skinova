@@ -22,85 +22,40 @@ import { directorioService } from "../services/directorioService";
 import "leaflet/dist/leaflet.css";
 import "./DirectorioDerma.css";
 
-// Datos de respaldo en caso de que no haya conexión con el servidor
-const DERMATOLOGISTS_DATA = [
-  {
-    id: "der-1",
-    name: "Dra. Valeria Montes de Oca",
-    specialty: "Dermatología Clínica y Cosmética",
-    license: "Céd. Prof. 8492014 · Certificada por el CMCD",
-    clinic: "Centro Dermatológico del Bajío",
-    address: "Av. Cerro Gordo 290, Cons. 402, Campestre, León, Gto.",
-    distanceKm: 2.4,
-    rating: 4.9,
-    reviewsCount: 128,
-    focusAreas: ["Acné severo", "Rosácea", "Dermatitis atópica", "Manchas"],
-    schedule: "Lun a Vie · 09:00 - 19:00",
-    contact: { phone: "+52 477 718 4520", email: "contacto@dravaleriamontes.mx", website: null },
-    bookingPlatform: "Doctoralia",
-    bookingUrl: "https://www.doctoralia.com.mx/",
-    mapQuery: "Av.+Cerro+Gordo+290+Leon+Guanajuato",
-    lat: 21.1253,
-    lon: -101.6713
-  },
-  {
-    id: "der-2",
-    name: "Dr. Sebastian Herrera",
-    specialty: "Dermato-Oncología y Cirugía Dermatológica",
-    license: "Céd. Prof. 7310942 · Especialista en Lesiones Pigmentadas",
-    clinic: "Hospital Ángeles León · Torre de Especialidades",
-    address: "Av. Cerro Gordo 311, Cons. 615, Lomas del Campestre, León, Gto.",
-    distanceKm: 3.8,
-    rating: 5.0,
-    reviewsCount: 94,
-    focusAreas: ["Revisión de lunares", "Melasma", "Cicatrices", "Fotodaño"],
-    schedule: "Lun a Sáb · 10:00 - 18:00",
-    contact: { phone: "+52 477 788 5600", email: "citas@drsebastianherrera.com", website: null },
-    bookingPlatform: "Doctoralia",
-    bookingUrl: "https://www.doctoralia.com.mx/",
-    mapQuery: "Hospital+Angeles+Leon+Guanajuato",
-    lat: 21.1270,
-    lon: -101.6680
-  },
-  {
-    id: "der-3",
-    name: "Dra. Camila Solis",
-    specialty: "Tricología y Barrera Cutánea Sensible",
-    license: "Céd. Prof. 9120455 · Miembro de la SMD",
-    clinic: "Clínica DermaVita Jardines",
-    address: "Blvd. Paseo de los Insurgentes 1804, Jardines del Moral, León, Gto.",
-    distanceKm: 6.5,
-    rating: 4.8,
-    reviewsCount: 76,
-    focusAreas: ["Piel reactiva", "Alergias cutáneas", "Acné hormonal"],
-    schedule: "Mar a Sáb · 09:30 - 17:30",
-    contact: { phone: "+52 477 390 1122", email: "agenda@dermavita.mx", website: null },
-    bookingPlatform: null,
-    bookingUrl: null,
-    mapQuery: "Paseo+de+los+Insurgentes+1804+Leon+Guanajuato",
-    lat: 21.1178,
-    lon: -101.6830
-  },
-  {
-    id: "der-4",
-    name: "Dr. Mateo Elizondo",
-    specialty: "Dermatología Clínica y Seguimiento Dermoestético",
-    license: "Céd. Prof. 8834120 · Especialista Certificado",
-    clinic: "Consultorio Médico Puerta Bajío",
-    address: "Blvd. Aeropuerto 104, Torre Médica Sur, León, Gto.",
-    distanceKm: 14.2,
-    rating: 4.7,
-    reviewsCount: 61,
-    focusAreas: ["Ajuste de retinoides", "Sensibilidad", "Control de sebo"],
-    schedule: "Lun a Vie · 08:00 - 20:00",
-    contact: { phone: "+52 477 601 9980", email: "consulta@drmateoelizondo.mx", website: null },
-    bookingPlatform: null,
-    bookingUrl: null,
-    mapQuery: "Blvd+Aeropuerto+104+Leon+Guanajuato",
-    lat: 21.0920,
-    lon: -101.6520
-  }
-];
+// Shimmer skeleton para los cards de dermatólogos mientras carga
+function DermSkeleton() {
+  const shimmer = {
+    background: 'linear-gradient(90deg, rgba(231,223,210,0.45) 25%, rgba(231,223,210,0.85) 50%, rgba(231,223,210,0.45) 75%)',
+    backgroundSize: '200% 100%',
+    animation: 'derm-shimmer 1.6s ease-in-out infinite',
+    borderRadius: '10px',
+  };
+  return (
+    <div className="derm-list" aria-busy="true" aria-label="Cargando especialistas">
+      <style>{`@keyframes derm-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="derm-card" style={{ gap: 20, alignItems: 'flex-start' }}>
+          <div style={{ ...shimmer, width: 56, height: 56, flexShrink: 0, borderRadius: 16 }} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ ...shimmer, height: 14, width: '40%' }} />
+            <div style={{ ...shimmer, height: 20, width: '65%' }} />
+            <div style={{ ...shimmer, height: 13, width: '50%' }} />
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {[80, 100, 90].map((w, j) => (
+                <div key={j} style={{ ...shimmer, height: 24, width: w }} />
+              ))}
+            </div>
+            <div style={{ ...shimmer, height: 60, width: '100%', borderRadius: 12 }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 180 }}>
+            <div style={{ ...shimmer, height: 44, width: '100%', borderRadius: 12 }} />
+            <div style={{ ...shimmer, height: 44, width: '100%', borderRadius: 12 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function getDoctorCoords(doc) {
   if (!doc) return null;
@@ -276,9 +231,9 @@ function DirectorioDerma() {
   const [maxDistance, setMaxDistance] = useState(20);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
 
-  // Lista de dermatólogos obtenida del Backend
-  const [backendDoctors, setBackendDoctors] = useState(DERMATOLOGISTS_DATA);
-  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
+  // Lista de dermatólogos obtenida del Backend (sin mock data)
+  const [backendDoctors, setBackendDoctors] = useState([]);
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(true);
 
   // RF-DER-03 y RF-DER-04: Alternar vista en Lista o Mapa
   const [viewMode, setViewMode] = useState("list");
@@ -302,12 +257,14 @@ function DirectorioDerma() {
         onlyFavorites,
       });
 
-      if (res && Array.isArray(res.specialists) && res.specialists.length > 0) {
-        setBackendDoctors(res.specialists);
-        setSelectedDoctorId((prev) => prev || res.specialists[0].id);
-      }
+      const list = Array.isArray(res?.specialists) ? res.specialists : [];
+      setBackendDoctors(list);
+      setSelectedDoctorId((prev) =>
+        list.some((d) => String(d.id) === String(prev)) ? prev : (list[0]?.id ?? null)
+      );
     } catch (err) {
-      console.warn("Error cargando dermatólogos desde el backend, usando catálogo local:", err);
+      console.warn("Error cargando dermatólogos desde el backend:", err);
+      setBackendDoctors([]);
     } finally {
       setIsLoadingDoctors(false);
     }
@@ -554,8 +511,11 @@ function DirectorioDerma() {
           </div>
         </div>
 
-        {/* ESTADO SIN RESULTADOS */}
-        {filteredDoctors.length === 0 && (
+        {/* SKELETON mientras carga */}
+        {isLoadingDoctors && <DermSkeleton />}
+
+        {/* ESTADO SIN RESULTADOS (solo si no está cargando) */}
+        {!isLoadingDoctors && filteredDoctors.length === 0 && (
           <div className="empty-results-card">
             <p>
               No se encontraron especialistas con los filtros actuales. Intenta
@@ -565,7 +525,7 @@ function DirectorioDerma() {
         )}
 
         {/* VISTA EN LISTA */}
-        {viewMode === "list" && filteredDoctors.length > 0 && (
+        {!isLoadingDoctors && viewMode === "list" && filteredDoctors.length > 0 && (
           <section className="derm-list" aria-label="Lista de especialistas">
             {filteredDoctors.map((doc) => {
               const isFav = favorites.includes(doc.id);
@@ -682,7 +642,7 @@ function DirectorioDerma() {
         )}
 
         {/* VISTA EN MAPA */}
-        {viewMode === "map" && filteredDoctors.length > 0 && (
+        {!isLoadingDoctors && viewMode === "map" && filteredDoctors.length > 0 && (
           <section className="derm-map-layout" aria-label="Mapa de especialistas">
             <LeafletMap
               doctors={filteredDoctors}

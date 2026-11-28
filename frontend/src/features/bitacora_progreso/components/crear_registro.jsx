@@ -136,14 +136,14 @@ export default function CreaRegistroProgreso({ routines = [], onSave, isSaving: 
       },
       habit_log: hasHabits
         ? {
-            log_date: habits.log_date,
-            water_ml: toInt(habits.water_ml),
-            sleep_hours: toFloat(habits.sleep_hours),
-            stress_level: toInt(habits.stress_level),
-            activity_minutes: toInt(habits.activity_minutes),
-            menstrual_cycle_info: habits.menstrual_cycle_info.trim() || null,
-            notes: habits.notes.trim() || null,
-          }
+          log_date: habits.log_date,
+          water_ml: toInt(habits.water_ml),
+          sleep_hours: toFloat(habits.sleep_hours),
+          stress_level: toInt(habits.stress_level),
+          activity_minutes: toInt(habits.activity_minutes),
+          menstrual_cycle_info: habits.menstrual_cycle_info.trim() || null,
+          notes: habits.notes.trim() || null,
+        }
         : null,
     };
 
@@ -180,7 +180,7 @@ export default function CreaRegistroProgreso({ routines = [], onSave, isSaving: 
           <div className="sk-main">
             <section className="sk-card" aria-labelledby="sk-entiende">
               <h2 id="sk-entiende" className="sk-card__title">
-                ¿Cómo la sientes hoy?
+                ¿Cómo te sientes hoy?
               </h2>
 
               <fieldset className="sk-fieldset">
@@ -210,27 +210,7 @@ export default function CreaRegistroProgreso({ routines = [], onSave, isSaving: 
                 </div>
               </fieldset>
 
-              <div className="sk-field">
-                <label htmlFor="sk-routine" className="sk-label">
-                  Rutina asociada (opcional)
-                </label>
-                <select
-                  id="sk-routine"
-                  className="sk-input"
-                  value={routineId}
-                  onChange={(e) => {
-                    touch();
-                    setRoutineId(e.target.value);
-                  }}
-                >
-                  <option value="">Sin rutina asociada</option>
-                  {routines.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+
             </section>
 
             <section className="sk-card" aria-labelledby="sk-observa">
@@ -249,6 +229,7 @@ export default function CreaRegistroProgreso({ routines = [], onSave, isSaving: 
                   onSubmit={handleSubmit}
                   onClearAll={handleClear}
                   labelProduct="Comentarios sobre tu piel"
+                  placeholderProduct="Ej. Hoy siento la piel más hidratada, sin rojeces en mejillas..."
                   labelCamera="Fotografía de tu piel (opcional)"
                   showActions={false}
                 />

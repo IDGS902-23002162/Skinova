@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import FullScreenCameraOverlay from './FullScreenCameraOverlay';
 import "../styles/ai_chat_style.css";
 
 export function AiChat({
@@ -9,6 +10,7 @@ export function AiChat({
   onSubmit,
   onClearAll,
   labelProduct = 'Nombre del producto o ingrediente',
+  placeholderProduct = 'Ej. Crema hidratante con ceramidas CeraVe...',
   labelCamera = 'Fotografía del producto (Opcional)',
   isLoading = false,
   submitLabel = 'Analizar Producto',
@@ -19,9 +21,6 @@ export function AiChat({
   const [cameraState, setCameraState] = useState(capturedImage ? 'photo' : 'idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const streamRef = useRef(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -48,25 +47,9 @@ export function AiChat({
     }
   };
 
-  const startCamera = async () => {
+  const startCamera = () => {
     setErrorMessage('');
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setErrorMessage('Tu navegador no permite acceder a la cámara.');
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setCameraState('camera');
-    } catch (err) {
-      console.error('Error al acceder a la cámara:', err);
-      setErrorMessage('No pudimos acceder a tu cámara. Puedes subir una foto desde tus archivos o revisar los permisos del navegador.');
-    }
+    setCameraState('camera');
   };
 
   const stopCamera = (nextState) => {
@@ -158,14 +141,6 @@ export function AiChat({
       handleSubmit(e);
     }
   };
-
-  useEffect(() => {
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
 
   const displayError = error || errorMessage;
 
@@ -262,8 +237,6 @@ export function AiChat({
               </button>
             </div>
           </div>
-
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
         </fieldset>
 
         {showActions && (

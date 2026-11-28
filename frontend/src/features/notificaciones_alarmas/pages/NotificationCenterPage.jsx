@@ -43,7 +43,7 @@ export default function NotificationCenterPage({
     <div className="nt-page">
       <header className="nt-page__header">
         <div>
-          <h1 className="nt-title">Notificaciones</h1>
+          <h2 className="nt-subtitle">Notificaciones</h2>
           <p className="nt-lead">Observa lo que ha pasado en tu rutina y qué puedes hacer ahora.</p>
         </div>
         {unreadCount > 0 && (
@@ -80,9 +80,40 @@ export default function NotificationCenterPage({
 
       <div id="nt-tabpanel" role="tabpanel" aria-labelledby={`nt-tab-${activeTab}`}>
         {status === 'loading' && (
-          <p className="nt-state" role="status">
-            Cargando tus notificaciones…
-          </p>
+          <div className="nt-group" aria-busy="true" aria-label="Cargando notificaciones">
+            <style>{`@keyframes nt-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+            <div
+              style={{
+                height: 14,
+                width: 90,
+                borderRadius: 8,
+                marginBottom: 16,
+                background: 'linear-gradient(90deg, rgba(231,223,210,0.45) 25%, rgba(231,223,210,0.85) 50%, rgba(231,223,210,0.45) 75%)',
+                backgroundSize: '200% 100%',
+                animation: 'nt-shimmer 1.6s ease-in-out infinite',
+              }}
+            />
+            <div className="nt-list">
+              {[1, 2, 3, 4].map((i) => {
+                const shimmer = {
+                  background: 'linear-gradient(90deg, rgba(231,223,210,0.45) 25%, rgba(231,223,210,0.85) 50%, rgba(231,223,210,0.45) 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'nt-shimmer 1.6s ease-in-out infinite',
+                  borderRadius: '10px',
+                };
+                return (
+                  <div key={i} className="nt-item" style={{ cursor: 'default' }}>
+                    <div style={{ ...shimmer, width: 40, height: 40, borderRadius: 12 }} />
+                    <div className="nt-item__body" style={{ gap: 8 }}>
+                      <div style={{ ...shimmer, height: 16, width: '55%' }} />
+                      <div style={{ ...shimmer, height: 13, width: '85%' }} />
+                    </div>
+                    <div style={{ ...shimmer, height: 13, width: 52 }} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {status === 'error' && (

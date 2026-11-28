@@ -1,4 +1,7 @@
-:root {
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Manrope:wght@400;500;600;700&display=swap');
+
+.nt-main,
+.nt-bell {
   --nt-forest: #163b35;
   --nt-forest-mid: #2d6658;
   --nt-sage: #a9c4b5;
@@ -6,13 +9,22 @@
   --nt-cream: #f6f3ec;
   --nt-sand: #e7dfd2;
   --nt-charcoal: #1d2825;
-  --nt-muted: rgba(29, 40, 37, 0.72);
+  --nt-muted: rgba(29, 40, 37, 0.76);
   --nt-terracotta: #c98268;
   --nt-surface: #fffcf7;
   --nt-radius: 16px;
   --nt-radius-sm: 12px;
-  --nt-shadow: 0 8px 24px rgba(22, 59, 53, 0.06);
+  --nt-shadow: 0 4px 20px rgba(22, 59, 53, 0.04);
   --nt-ease: 220ms ease;
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.nt-main *,
+.nt-main *::before,
+.nt-main *::after {
+  box-sizing: border-box;
 }
 
 .nt-sr-only {
@@ -25,13 +37,23 @@
 }
 
 .nt-title {
-  margin: 0 0 16px;
+  margin: 0 0 14px;
   font-family: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
   font-weight: 500;
-  font-size: clamp(2.5rem, 6vw, 4rem);
-  line-height: 1;
+  font-size: clamp(1.75rem, 3.2vw, 2.25rem);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--nt-forest);
+}
+
+.nt-subtitle {
+  margin: 0 0 6px;
+  font-family: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  font-size: 1.35rem;
+  line-height: 1.25;
   letter-spacing: -0.01em;
-  color: var(--sk-forest);
+  color: var(--nt-forest);
 }
 
 .nt-page button:focus-visible,
@@ -80,9 +102,9 @@
 /* ---------- Página ---------- */
 .nt-page {
   width: 100%;
-  max-width: 800px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 32px 16px 64px;
+  padding: 24px 24px 64px;
   color: var(--nt-charcoal);
   animation: nt-enter 300ms ease both;
 }
@@ -92,25 +114,18 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 .nt-page__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-.nt-title {
-  margin: 0 0 8px;
-  font-family: 'Fraunces', serif;
-  font-size: clamp(32px, 5vw, 44px);
-  font-weight: 500;
-  line-height: 1.05;
-  color: var(--nt-forest);
-}
 .nt-lead {
   margin: 0;
-  max-width: 48ch;
-  font-size: 16px;
+  max-width: 56ch;
+  font-size: 15px;
+  line-height: 1.55;
   color: var(--nt-muted);
 }
 
@@ -531,9 +546,9 @@
 /* ---------- Selector Historial / Ajustes ---------- */
 .nt-shell {
   width: 100%;
-  max-width: 800px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 32px 16px 0;
+  padding: 32px 24px 0;
 }
 .nt-shell + .nt-page {
   padding-top: 24px;

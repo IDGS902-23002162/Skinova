@@ -1,14 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Manrope:wght@400;500;600;700&display=swap');
+
 .env-monitor-wrapper {
+  width: 100%;
   max-width: 960px;
   margin: 0 auto;
-  padding: 32px;
+  padding: 32px 24px 48px;
   background-color: var(--crema, #F6F3EC);
   min-height: 100vh;
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
   color: var(--carbon, #1D2825);
   display: flex;
   flex-direction: column;
   gap: 24px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.env-monitor-wrapper *,
+.env-monitor-wrapper *::before,
+.env-monitor-wrapper *::after {
+  box-sizing: border-box;
 }
 
 /* CABECERA */
@@ -21,18 +32,21 @@
 }
 
 .env-header h1 {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
   color: var(--bosque-profundo, #163B35);
-  font-size: 2.2rem;
-  font-weight: normal;
+  font-size: clamp(1.75rem, 3.2vw, 2.25rem);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
   margin: 0 0 8px 0;
 }
 
 .env-header p {
   margin: 0;
   font-size: 15px;
-  color: var(--carbon, #1D2825);
-  opacity: 0.85;
+  line-height: 1.55;
+  color: rgba(29, 40, 37, 0.78);
+  max-width: 58ch;
 }
 
 .env-header-actions {
@@ -42,29 +56,28 @@
   flex-wrap: wrap;
 }
 
-.btn-refresh,
-.btn-simulate-offline {
+.btn-refresh {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
-  padding: 8px 16px;
-  border-radius: 12px;
-  font-family: 'Manrope', sans-serif;
+  min-height: 40px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 200ms ease;
-}
-
-.btn-refresh {
   background-color: #FFFFFF;
-  color: var(--bosque-profundo, #163B35);
-  border: 1px solid var(--arena, #E7DFD2);
+  color: var(--bosque-medio, #2D6658);
+  border: 1px solid rgba(29, 40, 37, 0.12);
+  box-shadow: 0 1px 4px rgba(22, 59, 53, 0.05);
+  transition: all 200ms ease;
 }
 
 .btn-refresh:hover:not(:disabled) {
   border-color: var(--bosque-medio, #2D6658);
+  color: var(--bosque-profundo, #163B35);
+  background-color: #FDFCF9;
 }
 
 .btn-simulate-offline {
@@ -81,10 +94,10 @@
 }
 
 .spin-icon {
-  animation: spin 0.8s linear infinite;
+  animation: env-spin 0.8s linear infinite;
 }
 
-@keyframes spin {
+@keyframes env-spin {
   to {
     transform: rotate(360deg);
   }
@@ -151,16 +164,52 @@
 }
 
 .location-current h2 {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
   color: var(--bosque-profundo, #163B35);
-  font-size: 1.6rem;
-  font-weight: normal;
+  font-size: 1.55rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
   margin: 0 0 4px 0;
 }
 
 .condition-subtitle {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
   font-size: 14px;
   color: var(--carbon, #1D2825);
+}
+
+.env-updated-meta {
+  font-size: 12.5px;
+  color: rgba(29, 40, 37, 0.6);
+}
+
+.btn-refresh-subtle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  margin-left: 2px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--bosque-medio, #2D6658);
+  cursor: pointer;
+  transition: background-color 180ms ease;
+}
+
+.btn-refresh-subtle:hover:not(:disabled) {
+  background-color: rgba(169, 196, 181, 0.28);
+}
+
+.btn-refresh-subtle:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .location-controls {
@@ -314,8 +363,10 @@
 }
 
 .metric-value {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
   font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
   color: var(--bosque-profundo, #163B35);
   display: flex;
   align-items: baseline;
@@ -383,10 +434,12 @@
 }
 
 .ai-card-header h3 {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
   color: var(--bosque-profundo, #163B35);
-  font-size: 1.5rem;
-  font-weight: normal;
+  font-size: 1.45rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
   margin: 0 0 12px 0;
 }
 
@@ -435,9 +488,11 @@
 }
 
 .routine-context-card h3 {
-  font-family: 'DM Serif Display', serif;
+  font-family: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
   font-size: 1.4rem;
-  font-weight: normal;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
   margin: 0;
 }
 
@@ -514,18 +569,13 @@
   }
 
   .env-header-actions {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    width: auto;
+    align-self: flex-start;
   }
 
-  .btn-refresh,
-  .btn-simulate-offline {
-    width: 100%;
-    justify-content: center;
-    padding: 8px 10px;
-    font-size: 12px;
+  .btn-refresh {
+    padding: 6px 14px;
+    font-size: 13px;
   }
 
   /* Tarjeta de ubicación apilada */

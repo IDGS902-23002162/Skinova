@@ -124,6 +124,30 @@
   color: var(--bosque-profundo);
 }
 
+.nav-item-btn {
+  background: none;
+  border: 0;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+}
+
+.nav-item--logout:hover {
+  background-color: #F9ECE8;
+  color: #9A5A43;
+}
+
+.nav-item--logout:hover .nav-icon {
+  color: #9A5A43;
+}
+
+.nav-account-section {
+  margin-top: auto;
+  padding-top: 12px;
+  padding-bottom: 16px;
+  border-top: 1px solid var(--arena);
+}
+
 .mobile-drag-indicator {
   display: none;
 }
@@ -224,7 +248,31 @@
     display: none;
   }
 
-  .mobile-drag-indicator {
+  .nav-item-btn {
+  background: none;
+  border: 0;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+}
+
+.nav-item--logout:hover {
+  background-color: #F9ECE8;
+  color: #9A5A43;
+}
+
+.nav-item--logout:hover .nav-icon {
+  color: #9A5A43;
+}
+
+.nav-account-section {
+  margin-top: auto;
+  padding-top: 12px;
+  padding-bottom: 16px;
+  border-top: 1px solid var(--arena);
+}
+
+.mobile-drag-indicator {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -306,7 +354,31 @@
     display: flex;
   }
 
-  .skinova-nav.expanded .mobile-drag-indicator {
+  .skinova-nav.expanded .nav-item-btn {
+  background: none;
+  border: 0;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+}
+
+.nav-item--logout:hover {
+  background-color: #F9ECE8;
+  color: #9A5A43;
+}
+
+.nav-item--logout:hover .nav-icon {
+  color: #9A5A43;
+}
+
+.nav-account-section {
+  margin-top: auto;
+  padding-top: 12px;
+  padding-bottom: 16px;
+  border-top: 1px solid var(--arena);
+}
+
+.mobile-drag-indicator {
     padding-top: 16px;
   }
   

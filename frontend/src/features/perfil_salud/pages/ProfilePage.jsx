@@ -25,6 +25,20 @@ const MotionCard = ({ children, delay = 0 }) => (
   </motion.div>
 );
 
+function ProfileSkeleton() {
+  return (
+    <div className="custom-profile-carousel" aria-busy="true" aria-label="Cargando perfil">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="profile-skeleton-card">
+          <div className="profile-skeleton-line profile-skeleton-line--title" />
+          <div className="profile-skeleton-line profile-skeleton-line--body" />
+          <div className="profile-skeleton-line profile-skeleton-line--short" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function ProfilePage({ isOpen, onClose }) {
   const { user } = useUser();
   const { profile, loading, saveProfile } = useProfileData();
@@ -277,9 +291,11 @@ export default function ProfilePage({ isOpen, onClose }) {
 
                 <div className="desktop-bottom-section custom-profile-content">
                   {loading ? (
-                    <div style={{ textAlign: "center", color: "var(--bosque-profundo, #163B35)", padding: "24px" }}>Cargando...</div>
+                    <ProfileSkeleton />
                   ) : !profile ? (
-                    <div style={{ textAlign: "center", color: "var(--terracota, #C98268)", padding: "24px" }}>Error cargando perfil.</div>
+                    <div style={{ textAlign: "center", color: "var(--terracota, #C98268)", padding: "48px 24px" }}>
+                      Error cargando perfil.
+                    </div>
                   ) : (
                     <>
                       <ProgressDots

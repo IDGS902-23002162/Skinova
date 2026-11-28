@@ -1,0 +1,62 @@
+name: Pruebas Automatizadas Skinova (CI)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  ejecutar-pruebas:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: skinova_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: 1. Descargar código del repositorio
+        uses: actions/checkout@v4
+
+      - name: 2. Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: 3. Instalar dependencias del backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: 4. Crear tablas y ejecutar pruebas automatizadas
+        env:
+          FLASK_APP: app.py
+          FLASK_ENV: testing
+          DATABASE_URL: mysql+pymysql://root:root_password@127.0.0.1:3306/skinova_test
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          INEGI_DENUE_TOKEN: ${{ secrets.INEGI_DENUE_TOKEN }}
+          STRIPE_SECRET_KEY: sk_test_dummy
+          STRIPE_WEBHOOK_SECRET: whsec_dummy
+          GEMINI_API_KEY: dummy_key
+        run: |
+          cd backend
+          python -c "from app import create_app, db; app = create_app('default'); app.app_context().push(); db.create_all()"
+          python test_automatizados.py
+
+      - name: 5. Guardar log de resultados como evidencia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-logs-sla
+          path: backend/logs/skinova_sla.log

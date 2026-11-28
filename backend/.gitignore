@@ -12,6 +12,11 @@ __pycache__/
 
 # Variables de entorno
 .env
+instance/*_schema_backup.sql
+instance/community_uploads/
+moderation/node_modules/
+moderation/models/
+instance/catalog_packshots/
 
 # Archivos de distribución y compilación
 build/

@@ -377,7 +377,7 @@ def get_admin_users():
                     prof = UserProfile(
                         user_id=new_u.id,
                         preferred_name=f"{getattr(cu, 'first_name', '') or ''} {getattr(cu, 'last_name', '') or ''}".strip() or None,
-                        onboarding_completed=True
+                        onboarding_completed=False
                     )
                     db.session.add(prof)
                     existing_clerk_ids[cid] = new_u
