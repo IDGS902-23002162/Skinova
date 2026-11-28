@@ -43,12 +43,14 @@ jobs:
         env:
           FLASK_APP: app.py
           FLASK_ENV: testing
+          RUN_E2E_SIN_GEMINI: "true"
+          RUN_E2E_GEMINI: "true"
           DATABASE_URL: mysql+pymysql://root:root_password@127.0.0.1:3306/skinova_test
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           INEGI_DENUE_TOKEN: ${{ secrets.INEGI_DENUE_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           STRIPE_SECRET_KEY: sk_test_dummy
           STRIPE_WEBHOOK_SECRET: whsec_dummy
-          GEMINI_API_KEY: dummy_key
         run: |
           cd backend
           python -c "from app import create_app, db; app = create_app('default'); app.app_context().push(); db.create_all()"
