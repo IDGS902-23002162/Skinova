@@ -40,6 +40,7 @@ jobs:
           pip install -r backend/requirements.txt
 
       - name: 4. Crear tablas y ejecutar pruebas automatizadas
+        timeout-minutes: 3
         env:
           FLASK_APP: app.py
           FLASK_ENV: testing
@@ -54,7 +55,7 @@ jobs:
         run: |
           cd backend
           python -c "from app import create_app, db; app = create_app('default'); app.app_context().push(); db.create_all()"
-          python test_automatizados.py
+          python -u test_automatizados.py
 
       - name: 5. Guardar log de resultados como evidencia
         if: always()
