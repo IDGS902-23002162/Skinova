@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import func
 from flask import Blueprint, request, jsonify, g
@@ -38,6 +39,102 @@ def fetch_clerk_users_safely(clerk):
             return []
 
 
+def _extract_clerk_primary_email(clerk_user):
+    """Extrae el correo electrónico principal de un objeto usuario de Clerk."""
+    if not clerk_user:
+        return None
+    email_addresses = getattr(clerk_user, 'email_addresses', None) or []
+    if not email_addresses:
+        return None
+
+    primary_id = getattr(clerk_user, 'primary_email_address_id', None)
+    if primary_id:
+        for em in email_addresses:
+            if getattr(em, 'id', None) == primary_id and getattr(em, 'email_address', None):
+                return em.email_address
+
+    first_email = getattr(email_addresses[0], 'email_address', None)
+    return first_email or None
+
+
+def _resolve_actor_email(user_id):
+    """
+    Resuelve siempre el correo electrónico del actor (admin) que ejecuta la acción.
+    Busca primero en Clerk y luego en la tabla local User.
+    """
+    if not user_id or str(user_id).lower() == "sistema":
+        return "sistema"
+
+    uid_str = str(user_id).strip()
+    if "@" in uid_str:
+        return uid_str
+
+    # 1. Buscar usuario local para obtener tanto id interno como clerk_user_id
+    local_user = User.query.filter_by(clerk_user_id=uid_str).first()
+    if not local_user:
+        local_user = User.query.get(uid_str)
+
+    clerk_id = local_user.clerk_user_id if (local_user and local_user.clerk_user_id) else uid_str
+
+    # 2. Consultar en Clerk por clerk_id para obtener su correo real
+    clerk = get_clerk_client()
+    if clerk and clerk_id:
+        try:
+            cu = clerk.users.get(user_id=clerk_id)
+            email = _extract_clerk_primary_email(cu)
+            if email:
+                return email
+        except Exception as e:
+            print(f"No se pudo resolver correo desde Clerk para {clerk_id}: {e}")
+
+    # 3. Respaldo si el modelo local tuviera campo email o fallback legible
+    if local_user:
+        local_email = getattr(local_user, 'email', None)
+        if local_email:
+            return local_email
+        return f"user_{str(local_user.id)[:8]}@skinovaapp.com"
+
+    return uid_str
+
+
+def record_audit_log(
+    event_type: str,
+    action: str,
+    purpose: str,
+    component: str,
+    result: str,
+    actor_id: str = None,
+    target: str = None,
+    ip: str = None,
+):
+    """
+    Registra un evento con trazabilidad completa en SystemLog:
+    - Quién: correo electrónico resuelto del actor
+    - Qué: action + target
+    - Para qué: purpose
+    - Módulo: component
+    - Resultado: result
+    """
+    SystemLog.__table__.create(db.engine, checkfirst=True)
+    raw_actor = actor_id if actor_id is not None else getattr(g, 'user_id', 'sistema')
+    actor_email = _resolve_actor_email(raw_actor)
+
+    payload = {
+        "action": action,
+        "purpose": purpose,
+        "result": result,
+        "target": target,
+        "ip": ip,
+    }
+
+    db.session.add(SystemLog(
+        event_type=event_type,
+        message=json.dumps(payload, ensure_ascii=False),
+        origin=actor_email,
+        component=component,
+    ))
+
+
 def _get_admin_courtesy_user_ids():
     """
     Devuelve los user_id cuya última actualización de suscripción fue asignada
@@ -64,7 +161,6 @@ def _count_pwa_sessions(start_dt=None, end_dt=None):
     Cuenta visitas reales a la PWA (1 visita por usuario por día + entradas anónimas al dashboard),
     evitando que navegar entre múltiples módulos infle el contador de visitas.
     """
-    # 1. Usuarios autenticados: máximo 1 visita por día (sesión diaria)
     auth_query = db.session.query(
         func.count(
             func.distinct(
@@ -73,7 +169,6 @@ def _count_pwa_sessions(start_dt=None, end_dt=None):
         )
     ).filter(PwaVisit.user_id.isnot(None))
 
-    # 2. Visitantes sin user_id: contar solo entradas al dashboard principal
     anon_query = PwaVisit.query.filter(
         PwaVisit.user_id.is_(None),
         PwaVisit.module_name == 'dashboard'
@@ -146,7 +241,7 @@ def get_dashboard_analytics():
                 .count()
             )
 
-        # 3. Visitas reales a la PWA (sesiones diarias, no vistas individuales por módulo)
+        # 3. Visitas reales a la PWA
         total_visits = _count_pwa_sessions()
         visits_month = _count_pwa_sessions(start_dt=thirty_days_ago)
         visits_prev = _count_pwa_sessions(start_dt=sixty_days_ago, end_dt=thirty_days_ago)
@@ -159,7 +254,7 @@ def get_dashboard_analytics():
         else:
             visits_growth_str = "0%"
 
-        # 4. Suscripciones activas vs. Ingresos reales (excluyendo cortesías de admin)
+        # 4. Suscripciones activas vs. Ingresos reales
         plans_cfg = get_app_settings().get('plans', [])
         premium_cfg = next((p for p in plans_cfg if p.get('code') == 'skinova_premium'), None)
         plan_price_mxn = float(premium_cfg.get('price', 149)) if premium_cfg else 149.0
@@ -214,7 +309,7 @@ def get_dashboard_analytics():
         else:
             revenue_growth_str = "0%"
 
-        # 5. Tasa de conversión de visita a suscripción pagada (Opción 2, sin cortesías)
+        # 5. Tasa de conversión
         unique_visitors_month = (
             db.session.query(func.count(func.distinct(PwaVisit.user_id)))
             .filter(
@@ -231,7 +326,7 @@ def get_dashboard_analytics():
         else:
             conversion_rate = 0.0
 
-        # 6. Módulos más utilizados (aquí sí se cuentan todas las vistas por módulo)
+        # 6. Módulos más utilizados
         module_labels = {
             "rutinas": "Creador de Rutinas",
             "consulta_ia": "Consulta con IA",
@@ -264,7 +359,7 @@ def get_dashboard_analytics():
                 "percentage": percentage
             })
 
-        # 7. Histórico de últimos 6 meses (solo suscripciones pagadas, sin cortesías)
+        # 7. Histórico de últimos 6 meses
         month_names_es = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
         revenue_history = []
 
@@ -323,14 +418,12 @@ def track_pwa_visit():
     try:
         data = request.get_json(silent=True) or request.form.to_dict() or {}
 
-        # Aceptar variantes comunes en el payload y ajustar exactamente a String(50) y String(255)
         raw_module = data.get('module_name') or data.get('module') or 'general'
         raw_path = data.get('path') or data.get('pathname') or '/'
 
         module_name = str(raw_module).strip()[:50] or 'general'
         path = str(raw_path).strip()[:255] or '/'
 
-        # Resolver user_id (acepta tanto UUID interno como clerk_user_id)
         raw_user_id = data.get('user_id') or data.get('clerk_user_id')
         resolved_user_id = None
         if raw_user_id:
@@ -421,8 +514,7 @@ def get_admin_users():
                 c_last = getattr(cu, 'last_name', '') or ''
                 c_full = f"{c_first} {c_last}".strip()
                 name = prof.preferred_name if (prof and prof.preferred_name) else (c_full or getattr(cu, 'username', '') or None)
-                email_addresses = getattr(cu, 'email_addresses', None) or []
-                email = email_addresses[0].email_address if len(email_addresses) > 0 else None
+                email = _extract_clerk_primary_email(cu)
                 avatar = getattr(cu, 'image_url', None)
                 banned = getattr(cu, 'banned', False)
 
@@ -589,18 +681,25 @@ def update_user_subscription(user_id):
             sub.status = normalized_status if new_status else "canceled"
             sub.cancel_at_period_end = True
 
+        target_email = _resolve_actor_email(user.clerk_user_id or user.id)
+        end_str = sub.current_period_end.strftime("%d/%m/%Y") if sub.current_period_end else "N/A"
+
         log = UserActivityLog(
             user_id=user.id,
             action="admin_subscription_update",
             details=f"Plan actualizado a {new_plan} con estado {normalized_status}"
         )
         db.session.add(log)
-        db.session.add(SystemLog(
+
+        record_audit_log(
             event_type='info',
-            message=f"Admin actualizó suscripción de {user.id} a {new_plan} ({normalized_status})",
-            origin=g.user_id,
+            action=f"Actualización de suscripción a {new_plan} ({normalized_status})",
+            purpose="Gestión de plan comercial o asignación de cortesía",
             component='GestionUsuarios',
-        ))
+            result=f"Suscripción actualizada (vence: {end_str})",
+            actor_id=g.user_id,
+            target=target_email,
+        )
         db.session.commit()
 
         return jsonify({
@@ -645,6 +744,7 @@ def toggle_user_account_status(user_id):
                 banned_state = not (user.role == 'suspended')
 
         user.role = 'suspended' if banned_state else 'user'
+        target_email = _resolve_actor_email(user.clerk_user_id or user.id)
 
         log = UserActivityLog(
             user_id=user.id,
@@ -652,12 +752,16 @@ def toggle_user_account_status(user_id):
             details=f"Cuenta {'suspendida' if banned_state else 'reactivada'}"
         )
         db.session.add(log)
-        db.session.add(SystemLog(
+
+        record_audit_log(
             event_type='warning' if banned_state else 'info',
-            message=f"Admin {'suspendió' if banned_state else 'reactivó'} la cuenta {user.id}",
-            origin=g.user_id,
+            action=f"{'Suspensión' if banned_state else 'Reactivación'} de cuenta de usuario",
+            purpose="Moderación y control de seguridad de acceso",
             component='GestionUsuarios',
-        ))
+            result=f"Estado actual: {'Suspendido' if banned_state else 'Activo'}",
+            actor_id=g.user_id,
+            target=target_email,
+        )
         db.session.commit()
 
         return jsonify({
@@ -704,7 +808,6 @@ def get_performance_metrics():
             if l.created_at and l.created_at.replace(tzinfo=None) >= start_of_today
         )
 
-        # Agrupar por (method, path)
         grouped = {}
         for l in logs:
             key = (l.method, l.path)
@@ -735,7 +838,6 @@ def get_performance_metrics():
         endpoints.sort(key=lambda x: x["calls"], reverse=True)
         ai_endpoints = [ep for ep in endpoints if ep["isAi"]]
 
-        # Peticiones por hora (últimas 12 horas en hora local del servidor)
         now_local = datetime.now()
         hourly_buckets = {}
         ordered_hours = []
@@ -751,7 +853,6 @@ def get_performance_metrics():
                 continue
             created_naive = l.created_at.replace(tzinfo=None)
             if created_naive >= cutoff_utc:
-                # Convertir UTC naive a local para alinear con el reloj del dashboard
                 local_dt = l.created_at.replace(tzinfo=timezone.utc).astimezone()
                 label = local_dt.strftime("%H:00")
                 if label in hourly_buckets:
@@ -791,18 +892,43 @@ def log_admin_login():
         if role != 'admin':
             return jsonify({"error": "Solo administradores"}), 403
 
-        email = None
-        if getattr(cu, 'email_addresses', None):
-            email = cu.email_addresses[0].email_address
-        origin = email or g.user_id
+        admin_email = _extract_clerk_primary_email(cu) or _resolve_actor_email(g.user_id)
         ip = request.headers.get('X-Forwarded-For', request.remote_addr or 'IP desconocida').split(',')[0].strip()
 
-        db.session.add(SystemLog(
+        record_audit_log(
             event_type='login',
-            message=f"Admin inició sesión desde IP {ip}",
-            origin=origin,
+            action='Inicio de sesión en panel administrativo',
+            purpose='Autenticación y acceso a herramientas de gestión',
             component='AdminGuard',
-        ))
+            result='Acceso concedido (Rol: admin)',
+            actor_id=admin_email,
+            ip=ip,
+        )
+        db.session.commit()
+        return jsonify({"logged": True}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@mobil_bp.route('/audit/admin-logout', methods=['POST'])
+@require_auth
+def log_admin_logout():
+    """Registra cierre de sesión explícito del administrador."""
+    try:
+        data = request.get_json(silent=True) or {}
+        reason = (data.get('reason') or 'Cierre de sesión manual desde panel').strip()
+        ip = request.headers.get('X-Forwarded-For', request.remote_addr or 'IP desconocida').split(',')[0].strip()
+
+        record_audit_log(
+            event_type='logout',
+            action='Cierre de sesión en panel administrativo',
+            purpose=reason,
+            component='AdminGuard',
+            result='Sesión finalizada correctamente',
+            actor_id=g.user_id,
+            ip=ip,
+        )
         db.session.commit()
         return jsonify({"logged": True}), 201
     except Exception as e:
@@ -813,13 +939,15 @@ def log_admin_login():
 @mobil_bp.route('/bitacora', methods=['GET'])
 @require_auth
 def get_admin_bitacora():
-    """Devuelve los eventos internos del servidor para la bitácora de administración."""
+    """Devuelve los eventos internos del servidor con trazabilidad completa."""
     try:
         SystemLog.__table__.create(db.engine, checkfirst=True)
         rows = SystemLog.query.order_by(SystemLog.created_at.desc()).limit(200).all()
 
-        counts = {"error": 0, "login": 0, "warning": 0, "info": 0, "success": 0}
+        counts = {"error": 0, "login": 0, "logout": 0, "warning": 0, "info": 0, "success": 0}
         logs = []
+        email_cache = {}
+
         for r in rows:
             t = r.event_type if r.event_type in counts else "info"
             counts[t] += 1
@@ -829,11 +957,39 @@ def get_admin_bitacora():
                 time_str = local_dt.strftime("%d/%m %H:%M:%S")
             else:
                 time_str = "--:--:--"
+
+            # Garantizar que logs históricos que guardaron user_id también muestren correo
+            raw_origin = r.origin or "sistema"
+            if raw_origin not in email_cache:
+                email_cache[raw_origin] = _resolve_actor_email(raw_origin)
+            actor_email = email_cache[raw_origin]
+
+            action_text = r.message or ""
+            purpose_text = ""
+            result_text = ""
+            target_text = ""
+            ip_text = ""
+
+            if action_text.startswith("{"):
+                try:
+                    parsed = json.loads(action_text)
+                    action_text = parsed.get("action") or action_text
+                    purpose_text = parsed.get("purpose") or ""
+                    result_text = parsed.get("result") or ""
+                    target_text = parsed.get("target") or ""
+                    ip_text = parsed.get("ip") or ""
+                except Exception:
+                    pass
+
             logs.append({
                 "id": r.id,
                 "type": t,
-                "message": r.message,
-                "user": r.origin,
+                "message": action_text,
+                "purpose": purpose_text,
+                "result": result_text,
+                "target": target_text,
+                "ip": ip_text,
+                "user": actor_email,
                 "component": r.component,
                 "time": time_str,
             })
@@ -852,19 +1008,25 @@ def admin_config():
 
     try:
         data = request.get_json() or {}
+        changed_sections = []
         if 'plans' in data and isinstance(data['plans'], list):
             save_app_setting('plans', data['plans'])
+            changed_sections.append('planes')
         if 'features' in data and isinstance(data['features'], dict):
             current = get_app_settings()['features']
             current.update(data['features'])
             save_app_setting('features', current)
+            changed_sections.append('feature flags')
 
-        db.session.add(SystemLog(
+        sections_label = ", ".join(changed_sections) if changed_sections else "parámetros generales"
+        record_audit_log(
             event_type='info',
-            message="Configuración global actualizada desde Administración",
-            origin=g.user_id,
+            action=f"Actualización de configuración global ({sections_label})",
+            purpose="Ajuste de planes, precios o disponibilidad de funcionalidades",
             component='Administracion',
-        ))
+            result="Configuración aplicada en producción",
+            actor_id=g.user_id,
+        )
         db.session.commit()
         return jsonify(get_app_settings()), 200
     except Exception as e:
@@ -909,12 +1071,15 @@ def broadcast_notification():
         if notifs:
             db.session.bulk_save_objects(notifs)
 
-        db.session.add(SystemLog(
+        preview_msg = f"{message[:60]}..." if len(message) > 60 else message
+        record_audit_log(
             event_type='success',
-            message=f"Notificación enviada a {len(target_ids)} usuarios (segmento: {segment})",
-            origin=g.user_id,
+            action=f"Envío masivo de notificación (segmento: {segment})",
+            purpose=f"Comunicación oficial: \"{preview_msg}\"",
             component='Administracion',
-        ))
+            result=f"Entregada a {len(target_ids)} destinatarios",
+            actor_id=g.user_id,
+        )
         db.session.commit()
         return jsonify({"success": True, "sent_count": len(target_ids)}), 201
     except Exception as e:

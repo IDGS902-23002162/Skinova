@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   ShieldAlert,
   LogIn,
+  LogOut,
   AlertTriangle,
   Info,
   CheckCircle,
@@ -14,28 +15,71 @@ import "./Bitacora.css";
 
 // ── Tipos de evento ────────────────────────────────────────────────────────────
 const EVENT_TYPES = {
-  error:   { label: "Error",         icon: AlertTriangle, cls: "evt-error"   },
-  login:   { label: "Inicio sesión", icon: LogIn,         cls: "evt-login"   },
-  warning: { label: "Advertencia",   icon: ShieldAlert,   cls: "evt-warning" },
-  info:    { label: "Info",          icon: Info,          cls: "evt-info"    },
-  success: { label: "Éxito",         icon: CheckCircle,   cls: "evt-success" },
+  error: { label: "Error", icon: AlertTriangle, cls: "evt-error" },
+  login: { label: "Inicio sesión", icon: LogIn, cls: "evt-login" },
+  logout: { label: "Cierre sesión", icon: LogOut, cls: "evt-logout" },
+  warning: { label: "Advertencia", icon: ShieldAlert, cls: "evt-warning" },
+  info: { label: "Info", icon: Info, cls: "evt-info" },
+  success: { label: "Éxito", icon: CheckCircle, cls: "evt-success" },
 };
 
-// ── Fila de log ────────────────────────────────────────────────────────────────
-function LogRow({ type, message, user, component, time }) {
+const INITIAL_COUNTS = {
+  error: 0,
+  login: 0,
+  logout: 0,
+  warning: 0,
+  info: 0,
+  success: 0,
+};
+
+// ── Fila de log con trazabilidad completa ──────────────────────────────────────
+function LogRow({ type, message, purpose, result, target, ip, user, component, time }) {
   const { label, icon: Icon, cls } = EVENT_TYPES[type] ?? EVENT_TYPES.info;
+
   return (
     <div className={`bit-log-row ${cls}`}>
       <span className="bit-log-icon-wrap">
         <Icon size={15} />
       </span>
+
       <div className="bit-log-body">
+        {/* QUÉ */}
         <span className="bit-log-message">{message}</span>
+
+        {/* PARA QUÉ y RESULTADO */}
+        {(purpose || result) && (
+          <div className="bit-log-trace">
+            {purpose && (
+              <span className="bit-trace-item">
+                <strong>Se realizó:</strong> {purpose}
+              </span>
+            )}
+            {result && (
+              <span className="bit-trace-item">
+                <strong>Resultado:</strong> {result}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* QUIÉN · MÓDULO · OBJETIVO/IP */}
         <span className="bit-log-meta">
-          {user && <><strong>{user}</strong> · </>}
-          {component && <span className="bit-log-component">{component}</span>}
+          {user && (
+            <>
+              <strong>Quién:</strong> {user} ·{" "}
+            </>
+          )}
+          {component && (
+            <>
+              <strong>Módulo:</strong>{" "}
+              <span className="bit-log-component">{component}</span>
+            </>
+          )}
+          {target && <> · <strong>Objetivo:</strong> {target}</>}
+          {ip && <> · <strong>IP:</strong> {ip}</>}
         </span>
       </div>
+
       <div className="bit-log-right">
         <span className="bit-log-badge">{label}</span>
         <span className="bit-log-time">{time}</span>
@@ -48,7 +92,7 @@ function LogRow({ type, message, user, component, time }) {
 export default function Bitacora() {
   const { fetchConAuth } = useApi();
   const [logs, setLogs] = useState([]);
-  const [counts, setCounts] = useState({ error: 0, login: 0, warning: 0, info: 0, success: 0 });
+  const [counts, setCounts] = useState(INITIAL_COUNTS);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [originFilter, setOriginFilter] = useState("Todos");
@@ -61,7 +105,7 @@ export default function Bitacora() {
       if (res.ok) {
         const data = await res.json();
         setLogs(data.logs || []);
-        setCounts(data.counts || { error: 0, login: 0, warning: 0, info: 0, success: 0 });
+        setCounts({ ...INITIAL_COUNTS, ...(data.counts || {}) });
       }
     } catch (err) {
       console.error("Error cargando bitácora:", err);
@@ -82,7 +126,7 @@ export default function Bitacora() {
     if (originFilter === "sistema" && l.user !== "sistema") return false;
     if (originFilter === "usuario" && l.user === "sistema") return false;
     if (query) {
-      const hay = `${l.message || ""} ${l.user || ""} ${l.component || ""}`.toLowerCase();
+      const hay = `${l.message || ""} ${l.purpose || ""} ${l.result || ""} ${l.target || ""} ${l.user || ""} ${l.component || ""} ${l.ip || ""}`.toLowerCase();
       if (!hay.includes(query)) return false;
     }
     return true;
@@ -114,13 +158,15 @@ export default function Bitacora() {
           </div>
         </div>
         <h1 className="mobil-title">Bitácora y Seguridad</h1>
-        <p className="mobil-subtitle">Eventos internos del servidor y accesos de administradores</p>
+        <p className="mobil-subtitle">
+          Trazabilidad de eventos del servidor, acciones y accesos de administradores
+        </p>
       </header>
 
       {/* Resumen en grid simétrico */}
       <div className="bit-summary-row">
         {showSkeletons ? (
-          Array.from({ length: 6 }).map((_, i) => (
+          Array.from({ length: 7 }).map((_, i) => (
             <div key={i} className="bit-summary-chip" style={{ pointerEvents: "none" }}>
               <div className="skel" style={{ width: 64, height: 14 }} />
               <div className="skel" style={{ width: 24, height: 18, borderRadius: 999 }} />
@@ -164,7 +210,7 @@ export default function Bitacora() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar en logs (mensaje, origen, módulo)…"
+            placeholder="Buscar (acción, propósito, resultado, usuario, módulo)…"
           />
         </div>
         <button
@@ -193,7 +239,11 @@ export default function Bitacora() {
             <button
               type="button"
               className="bit-reset-btn"
-              onClick={() => { setActiveFilter("Todos"); setOriginFilter("Todos"); setSearch(""); }}
+              onClick={() => {
+                setActiveFilter("Todos");
+                setOriginFilter("Todos");
+                setSearch("");
+              }}
             >
               Limpiar filtros
             </button>
@@ -226,4 +276,3 @@ export default function Bitacora() {
     </div>
   );
 }
-
