@@ -62,7 +62,7 @@ def _resolve_actor_email(user_id):
     Resuelve siempre el correo electrónico del actor (admin) que ejecuta la acción.
     Busca primero en Clerk y luego en la tabla local User.
     """
-    if not user_id or str(user_id).lower() == "sistema":
+    if not user_id or str(user_id).strip().lower() == "sistema":
         return "sistema"
 
     uid_str = str(user_id).strip()
@@ -912,12 +912,30 @@ def log_admin_login():
 
 
 @mobil_bp.route('/audit/admin-logout', methods=['POST'])
-@require_auth
 def log_admin_logout():
-    """Registra cierre de sesión explícito del administrador."""
+    """
+    Registra cierre de sesión explícito del administrador desde UserButton de Clerk.
+    No usa @require_auth porque Clerk revoca el JWT en el instante del signOut;
+    en su lugar verifica en Clerk que el clerk_user_id pertenezca a un usuario con role='admin'.
+    """
     try:
         data = request.get_json(silent=True) or {}
         reason = (data.get('reason') or 'Cierre de sesión manual desde panel').strip()
+        actor_id = getattr(g, 'user_id', None) or data.get('clerk_user_id')
+
+        if not actor_id:
+            return jsonify({"logged": False, "reason": "missing_user_id"}), 400
+
+        clerk = get_clerk_client()
+        if not clerk:
+            return jsonify({"logged": False, "reason": "clerk_not_configured"}), 200
+
+        cu = clerk.users.get(user_id=actor_id)
+        role = (getattr(cu, 'public_metadata', None) or {}).get('role')
+        if role != 'admin':
+            return jsonify({"error": "Solo administradores"}), 403
+
+        admin_email = _extract_clerk_primary_email(cu) or _resolve_actor_email(actor_id)
         ip = request.headers.get('X-Forwarded-For', request.remote_addr or 'IP desconocida').split(',')[0].strip()
 
         record_audit_log(
@@ -926,7 +944,7 @@ def log_admin_logout():
             purpose=reason,
             component='AdminGuard',
             result='Sesión finalizada correctamente',
-            actor_id=g.user_id,
+            actor_id=admin_email,
             ip=ip,
         )
         db.session.commit()
@@ -1008,23 +1026,61 @@ def admin_config():
 
     try:
         data = request.get_json() or {}
+        prev_settings = get_app_settings()
+        diff_details = []
         changed_sections = []
+
+        # 1. Detectar cambios exactos en planes y precios (de qué precio a qué precio)
         if 'plans' in data and isinstance(data['plans'], list):
+            old_plans_map = {
+                p.get('code'): p for p in prev_settings.get('plans', []) if p.get('code')
+            }
+            for new_p in data['plans']:
+                code = new_p.get('code')
+                plan_name = new_p.get('name') or code or 'Plan'
+                old_p = old_plans_map.get(code)
+
+                if old_p:
+                    old_price = old_p.get('price')
+                    new_price = new_p.get('price')
+                    if old_price != new_price:
+                        diff_details.append(f"Precio {plan_name}: ${old_price} → ${new_price} MXN")
+
+                    old_active = old_p.get('active', True)
+                    new_active = new_p.get('active', True)
+                    if old_active != new_active:
+                        diff_details.append(
+                            f"Estado {plan_name}: {'Activo' if old_active else 'Inactivo'} → {'Activo' if new_active else 'Inactivo'}"
+                        )
+                else:
+                    diff_details.append(f"Nuevo plan {plan_name}: ${new_p.get('price')} MXN")
+
             save_app_setting('plans', data['plans'])
             changed_sections.append('planes')
+
+        # 2. Detectar cambios exactos en feature flags
         if 'features' in data and isinstance(data['features'], dict):
-            current = get_app_settings()['features']
-            current.update(data['features'])
-            save_app_setting('features', current)
+            current_features = dict(prev_settings.get('features', {}))
+            for flag_key, new_val in data['features'].items():
+                old_val = current_features.get(flag_key)
+                if old_val != new_val:
+                    old_lbl = "Activado" if old_val else "Desactivado"
+                    new_lbl = "Activado" if new_val else "Desactivado"
+                    diff_details.append(f"Módulo '{flag_key}': {old_lbl} → {new_lbl}")
+
+            current_features.update(data['features'])
+            save_app_setting('features', current_features)
             changed_sections.append('feature flags')
 
         sections_label = ", ".join(changed_sections) if changed_sections else "parámetros generales"
+        result_summary = " | ".join(diff_details) if diff_details else "Guardado sin cambios de valores"
+
         record_audit_log(
             event_type='info',
             action=f"Actualización de configuración global ({sections_label})",
-            purpose="Ajuste de planes, precios o disponibilidad de funcionalidades",
+            purpose="Ajuste de precios de suscripción o disponibilidad de funciones",
             component='Administracion',
-            result="Configuración aplicada en producción",
+            result=result_summary,
             actor_id=g.user_id,
         )
         db.session.commit()
@@ -1051,6 +1107,12 @@ def broadcast_notification():
             if (s.status or '').lower() in ('active', 'activo')
         }
 
+        segment_labels = {
+            'all': 'Todos los usuarios',
+            'premium': 'Solo usuarios Premium',
+            'free': 'Solo usuarios Gratuitos',
+        }
+
         if segment == 'premium':
             target_ids = [u.id for u in users if u.id in active_premium_ids]
         elif segment == 'free':
@@ -1071,11 +1133,11 @@ def broadcast_notification():
         if notifs:
             db.session.bulk_save_objects(notifs)
 
-        preview_msg = f"{message[:60]}..." if len(message) > 60 else message
+        segment_name = segment_labels.get(segment, segment)
         record_audit_log(
             event_type='success',
-            action=f"Envío masivo de notificación (segmento: {segment})",
-            purpose=f"Comunicación oficial: \"{preview_msg}\"",
+            action=f"Envío masivo de notificación ({segment_name})",
+            purpose=f"Mensaje enviado: \"{message}\"",
             component='Administracion',
             result=f"Entregada a {len(target_ids)} destinatarios",
             actor_id=g.user_id,

@@ -51,7 +51,7 @@ function LogRow({ type, message, purpose, result, target, ip, user, component, t
           <div className="bit-log-trace">
             {purpose && (
               <span className="bit-trace-item">
-                <strong>Se realizó:</strong> {purpose}
+                <strong>Para qué:</strong> {purpose}
               </span>
             )}
             {result && (
@@ -123,8 +123,9 @@ export default function Bitacora() {
   const query = search.trim().toLowerCase();
   const filtered = logs.filter((l) => {
     if (activeFilter !== "Todos" && l.type !== activeFilter) return false;
-    if (originFilter === "sistema" && l.user !== "sistema") return false;
-    if (originFilter === "usuario" && l.user === "sistema") return false;
+    const isSystem = (l.user || "").trim().toLowerCase() === "sistema";
+    if (originFilter === "sistema" && !isSystem) return false;
+    if (originFilter === "usuario" && isSystem) return false;
     if (query) {
       const hay = `${l.message || ""} ${l.purpose || ""} ${l.result || ""} ${l.target || ""} ${l.user || ""} ${l.component || ""} ${l.ip || ""}`.toLowerCase();
       if (!hay.includes(query)) return false;
