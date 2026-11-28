@@ -2,6 +2,7 @@ import time
 from datetime import datetime, timezone
 from flask import Flask, g, request
 from flask_cors import CORS
+from sqlalchemy.exc import SQLAlchemyError
 
 from config import config
 from app.extensions import db, migrate
@@ -103,6 +104,25 @@ def create_app(config_name='default'):
     def health_check():
         return {'status': 'ok'}
 
+    module_health_models = {
+        'mi-neceser': mi_neceser_models.UserProduct,
+        'comunidad': comunidad_models.ForumPost,
+        'habitos': habitos_desafios_models.Habit,
+    }
+
+    @app.get('/api/health/<module>')
+    def module_health_check(module):
+        model = module_health_models.get(module)
+        headers = {'Cache-Control': 'no-store'}
+        if model is None:
+            return {'status': 'unknown'}, 404, headers
+        try:
+            db.session.execute(db.select(model).limit(1)).first()
+        except SQLAlchemyError:
+            app.logger.exception('Module health check failed for %s', module)
+            return {'status': 'unavailable'}, 503, headers
+        return {'status': 'ok', 'module': module}, 200, headers
+
     @app.route('/api/config', methods=['GET'])
     def public_app_config():
         return mobil_models.get_app_settings(), 200
@@ -135,7 +155,9 @@ def create_app(config_name='default'):
             or request.path.startswith('/api/perfil-salud/evaluations/analyze')
         ):
             return {'error': 'Consulta IA en mantenimiento', 'feature': 'consulta_ia'}, 503
-        if not features.get('comunidad', True) and request.path.startswith('/api/comunidad'):
+        if not features.get('comunidad', True) and (
+            request.path.startswith('/api/comunidad') or request.path == '/api/health/comunidad'
+        ):
             return {'error': 'Comunidad en mantenimiento', 'feature': 'comunidad'}, 503
         if not features.get('directorio', True) and request.path.startswith('/api/directorio'):
             return {'error': 'Directorio en mantenimiento', 'feature': 'directorio'}, 503
@@ -144,6 +166,7 @@ def create_app(config_name='default'):
     def _track_request_end(response):
         if (
             request.method == 'OPTIONS'
+            or request.endpoint == 'module_health_check'
             or not request.path.startswith('/api/')
             or request.path in ('/api/mobil/performance', '/api/mobil/bitacora')
         ):
