@@ -31,6 +31,9 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
 
+# ==============================================================================
+# SUITE 1: PRUEBAS BASE DE DISPONIBILIDAD Y SEGURIDAD (USADA POR MONITOR_CONTINUO)
+# ==============================================================================
 class TestModulosPrincipalesSkinova(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -65,22 +68,18 @@ class TestModulosPrincipalesSkinova(unittest.TestCase):
         )
         return resp
 
-    # 1. Disponibilidad general del servidor y MySQL
     def test_01_disponibilidad_health(self):
         self._medir_peticion("Nucleo_API", "DISPONIBILIDAD", "GET", "/health", (200,))
 
-    # 2. Seguridad y control de acceso en Usuarios / Perfil Salud
     def test_02_seguridad_auth_usuarios(self):
         self._medir_peticion("Usuarios_Auth", "FUNCIONALIDAD", "GET", "/api/auth/me", (401,))
 
     def test_03_seguridad_perfil_salud(self):
         self._medir_peticion("Perfil_Salud", "FUNCIONALIDAD", "GET", "/api/perfil-salud/profile", (401,))
 
-    # 3. Protección de Creador de Rutinas
     def test_04_disponibilidad_creador_rutinas(self):
         self._medir_peticion("Creador_Rutinas", "DISPONIBILIDAD", "GET", "/api/rutinas", (401,))
 
-    # 4. Disponibilidad y funcionalidad del buscador predictivo de Ambiente (API Open-Meteo)
     def test_05_funcionalidad_monitoreo_ambiental(self):
         resp = self._medir_peticion(
             "Monitoreo_Ambiental",
@@ -92,7 +91,6 @@ class TestModulosPrincipalesSkinova(unittest.TestCase):
         data = resp.get_json()
         self.assertIn("cities", data)
 
-    # 5. Disponibilidad y funcionalidad del Directorio de Dermatólogos (API INEGI DENUE)
     def test_06_funcionalidad_directorio_dermatologos(self):
         resp = self._medir_peticion(
             "Directorio_Derma",
@@ -103,6 +101,196 @@ class TestModulosPrincipalesSkinova(unittest.TestCase):
         )
         data = resp.get_json()
         self.assertIn("specialists", data)
+
+
+# ==============================================================================
+# SUITE 2: WORKFLOW E2E RAPIDO (LOGIN -> VISITA A MÓDULOS -> LOGOUT, SIN GEMINI)
+# ==============================================================================
+@unittest.skipUnless(
+    os.environ.get("RUN_E2E_SIN_GEMINI") == "true" or os.environ.get("FLASK_ENV") == "testing",
+    "Workflow E2E sin Gemini desactivado"
+)
+class TestWorkflowUsuarioSinGemini(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = create_app("default")
+        cls.client = cls.app.test_client()
+        cls.clerk_test_id = "user_e2e_workflow_fast_01"
+        cls.auth_headers = {
+            "X-Test-User-Id": cls.clerk_test_id,
+            "Content-Type": "application/json"
+        }
+
+        # Asegurar que el usuario de prueba exista en MySQL
+        with cls.app.app_context():
+            from app.extensions import db
+            from app.modules.users.models import User
+            user = User.query.filter_by(clerk_user_id=cls.clerk_test_id).first()
+            if not user:
+                user = User(
+                    clerk_user_id=cls.clerk_test_id,
+                    email="e2e_fast@skinovaapp.uk",
+                    first_name="Usuario",
+                    last_name="Workflow"
+                )
+                db.session.add(user)
+                db.session.commit()
+
+        logger.info("=== INICIO DE WORKFLOW E2E RÁPIDO (SIN GEMINI) ===")
+
+    @classmethod
+    def tearDownClass(cls):
+        logger.info("=== FIN DE WORKFLOW E2E RÁPIDO ===\n")
+
+    def _medir_paso(self, paso, metodo, endpoint, expected_codes=(200,), headers=None):
+        inicio = time.perf_counter()
+        hdrs = headers if headers is not None else self.auth_headers
+
+        if metodo == "GET":
+            resp = self.client.get(endpoint, headers=hdrs)
+        else:
+            resp = self.client.post(endpoint, headers=hdrs)
+
+        latencia_ms = round((time.perf_counter() - inicio) * 1000, 2)
+        exito = resp.status_code in expected_codes
+        estado = "PASS" if exito else "FAIL"
+        nivel = logger.info if exito else logger.error
+
+        nivel(
+            f"MODULO=Workflow_Fast | TIPO=FLUJO_USUARIO | PASO={paso} | ENDPOINT={endpoint} | "
+            f"HTTP={resp.status_code} | LATENCIA={latencia_ms}ms | RESULTADO={estado}"
+        )
+        self.assertIn(
+            resp.status_code,
+            expected_codes,
+            f"Fallo en {paso} ({endpoint}): esperaba {expected_codes}, llegó {resp.status_code}"
+        )
+        return resp
+
+    def test_01_recorrido_completo_y_logout(self):
+        # 1. Inicio de sesión y validación de identidad
+        resp_login = self._medir_paso("01_Login_Auth_Me", "GET", "/api/auth/me", (200,))
+        self.assertEqual(resp_login.get_json().get("clerk_user_id"), self.clerk_test_id)
+
+        # 2. Visitas a los módulos principales de la aplicación autenticado
+        # (Se acepta 200 o 404 en recursos que aún no tienen registros creados para el usuario)
+        self._medir_paso("02_Visita_Perfil_Salud", "GET", "/api/perfil-salud/profile", (200, 404))
+        self._medir_paso("03_Visita_Creador_Rutinas", "GET", "/api/rutinas", (200,))
+        self._medir_paso("04_Visita_Mi_Neceser", "GET", "/api/mi-neceser", (200, 404))
+        self._medir_paso("05_Visita_Habitos_Desafios", "GET", "/api/habitos-desafios", (200, 404))
+        self._medir_paso("06_Visita_Bitacora", "GET", "/api/bitacora", (200, 404))
+        self._medir_paso("07_Visita_Comunidad", "GET", "/api/comunidad", (200, 404))
+        self._medir_paso("08_Visita_Notificaciones", "GET", "/api/notificaciones", (200, 404))
+        self._medir_paso("09_Visita_Historial_IA", "GET", "/api/products/history", (200,))
+
+        # 3. Logout: eliminar credenciales de sesión y comprobar revocación de acceso
+        headers_sin_sesion = {"Content-Type": "application/json"}
+        self._medir_paso(
+            "10_Logout_Verificar_Auth_Bloqueado",
+            "GET",
+            "/api/auth/me",
+            (401,),
+            headers=headers_sin_sesion
+        )
+        self._medir_paso(
+            "11_Logout_Verificar_Rutinas_Bloqueado",
+            "GET",
+            "/api/rutinas",
+            (401,),
+            headers=headers_sin_sesion
+        )
+
+
+# ==============================================================================
+# SUITE 3: WORKFLOW E2E CON GEMINI REAL (SOLO PARA PUSH/DEPLOY EN CI, NO MONITOR)
+# ==============================================================================
+@unittest.skipUnless(
+    os.environ.get("RUN_E2E_GEMINI") == "true",
+    "Workflow con Gemini omitido (solo corre cuando RUN_E2E_GEMINI=true)"
+)
+class TestWorkflowUsuarioConGemini(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = create_app("default")
+        cls.client = cls.app.test_client()
+        cls.clerk_test_id = "user_e2e_gemini_ci_01"
+        cls.headers = {
+            "X-Test-User-Id": cls.clerk_test_id,
+            "Content-Type": "application/json"
+        }
+
+        with cls.app.app_context():
+            from app.extensions import db
+            from app.modules.users.models import User
+            user = User.query.filter_by(clerk_user_id=cls.clerk_test_id).first()
+            if not user:
+                user = User(
+                    clerk_user_id=cls.clerk_test_id,
+                    email="e2e_gemini@skinovaapp.uk",
+                    first_name="Usuario",
+                    last_name="Gemini"
+                )
+                db.session.add(user)
+                db.session.commit()
+
+        logger.info("=== INICIO DE WORKFLOW E2E CON GEMINI REAL ===")
+
+    @classmethod
+    def tearDownClass(cls):
+        logger.info("=== FIN DE WORKFLOW E2E CON GEMINI ===\n")
+
+    def _medir_paso(self, paso, metodo, endpoint, expected_codes=(200,), payload=None):
+        inicio = time.perf_counter()
+        if metodo == "GET":
+            resp = self.client.get(endpoint, headers=self.headers)
+        elif metodo == "POST":
+            resp = self.client.post(endpoint, headers=self.headers, json=payload)
+        elif metodo == "DELETE":
+            resp = self.client.delete(endpoint, headers=self.headers)
+
+        latencia_ms = round((time.perf_counter() - inicio) * 1000, 2)
+        exito = resp.status_code in expected_codes
+        estado = "PASS" if exito else "FAIL"
+        nivel = logger.info if exito else logger.error
+
+        nivel(
+            f"MODULO=Workflow_Gemini | TIPO=FLUJO_IA | PASO={paso} | ENDPOINT={endpoint} | "
+            f"HTTP={resp.status_code} | LATENCIA={latencia_ms}ms | RESULTADO={estado}"
+        )
+        self.assertIn(
+            resp.status_code,
+            expected_codes,
+            f"Fallo en {paso} ({endpoint}): esperaba {expected_codes}, llegó {resp.status_code} -> {resp.get_data(as_text=True)}"
+        )
+        return resp
+
+    def test_01_consulta_gemini_y_limpieza(self):
+        # 1. Análisis de producto real con Gemini
+        resp_analyze = self._medir_paso(
+            "01_Gemini_Analyze",
+            "POST",
+            "/api/products/analyze",
+            (200,),
+            payload={"search_query": "CeraVe Foaming Cleanser"}
+        )
+        self.assertTrue(resp_analyze.get_json().get("success"))
+
+        # 2. Chat de seguimiento
+        self._medir_paso(
+            "02_Gemini_Chat",
+            "POST",
+            "/api/products/chat",
+            (200,),
+            payload={"message": "¿Sirve para piel grasa? Responde en una oración."}
+        )
+
+        # 3. Verificar guardado en historial y borrar registro de prueba
+        resp_hist = self._medir_paso("03_Verificar_Historial", "GET", "/api/products/history", (200,))
+        items = resp_hist.get_json().get("data", [])
+        self.assertGreater(len(items), 0)
+
+        history_id = items[0]["id"]
+        self._medir_paso("04_Limpiar_Historial", "DELETE", f"/api/products/history/{history_id}", (200,))
 
 
 if __name__ == "__main__":
