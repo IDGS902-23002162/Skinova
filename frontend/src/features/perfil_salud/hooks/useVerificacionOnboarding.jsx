@@ -1,19 +1,26 @@
 import { useState, useEffect } from "react";
+import { useUser } from "@clerk/react";
 import { useApi } from "../../../shared/hooks/useApi";
 
-const STORAGE_KEY = "skinova_onboarding_verified";
-
 export function useVerificacionOnboarding() {
+  const { user, isLoaded } = useUser();
   const { fetchConAuth } = useApi();
 
-  const [status, setStatus] = useState(() => {
-    return sessionStorage.getItem(STORAGE_KEY) === "true"
-      ? "completed"
-      : "loading";
-  });
+  // Liga la llave al ID del usuario de Clerk para que cambiar de cuenta no herede el caché
+  const storageKey = user?.id ? `skinova_onboarding_verified_${user.id}` : null;
+
+  const [status, setStatus] = useState("loading");
 
   useEffect(() => {
-    if (sessionStorage.getItem(STORAGE_KEY) === "true") {
+    if (!isLoaded) return;
+
+    if (!user || !storageKey) {
+      setStatus("completed");
+      return;
+    }
+
+    if (sessionStorage.getItem(storageKey) === "true") {
+      setStatus("completed");
       return;
     }
 
@@ -24,7 +31,6 @@ export function useVerificacionOnboarding() {
         const res = await fetchConAuth('/me');
         if (res.ok) {
           const data = await res.json();
-          // ponytail: precarga la suscripción en caché local desde el inicio de sesión
           if (data.subscription) {
             localStorage.setItem("skinova_subscription", JSON.stringify(data.subscription));
           } else {
@@ -32,20 +38,19 @@ export function useVerificacionOnboarding() {
           }
 
           if (data.onboarding_completed) {
-            sessionStorage.setItem(STORAGE_KEY, "true");
+            sessionStorage.setItem(storageKey, "true");
             if (isMounted) setStatus("completed");
           } else {
-            sessionStorage.removeItem(STORAGE_KEY);
+            sessionStorage.removeItem(storageKey);
             if (isMounted) setStatus("onboarding");
           }
         } else {
-          sessionStorage.setItem(STORAGE_KEY, "true");
-          if (isMounted) setStatus("completed");
+          // No guardar en sessionStorage si hubo error para permitir reintentar al recargar
+          if (isMounted) setStatus("onboarding");
         }
       } catch (error) {
         console.error("Error comprobando el onboarding", error);
-        sessionStorage.setItem(STORAGE_KEY, "true");
-        if (isMounted) setStatus("completed");
+        if (isMounted) setStatus("onboarding");
       }
     };
 
@@ -54,10 +59,12 @@ export function useVerificacionOnboarding() {
     return () => {
       isMounted = false;
     };
-  }, [fetchConAuth]);
+  }, [isLoaded, user, storageKey, fetchConAuth]);
 
   const markAsCompleted = () => {
-    sessionStorage.setItem(STORAGE_KEY, "true");
+    if (storageKey) {
+      sessionStorage.setItem(storageKey, "true");
+    }
     setStatus("completed");
   };
 
