@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import socket
 import logging
 import unittest
 from dotenv import load_dotenv
@@ -13,6 +14,9 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 from app import create_app
 
+# Identificar si corre en GitHub Actions (CI) o en el Servidor Ubuntu / Local
+ORIGEN_EJECUCION = "GitHub_Actions_CI" if os.environ.get("GITHUB_ACTIONS") == "true" else f"Host_{socket.gethostname()}"
+
 # 1. Configuración del archivo de Log con ruta absoluta
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -23,12 +27,25 @@ logger.setLevel(logging.INFO)
 logger.handlers.clear()
 
 file_handler = logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8")
+# Formato con TimeStamp explícito al inicio de cada registro
 formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)s | %(message)s",
+    "TIMESTAMP=%(asctime)s | %(levelname)s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
+
+
+def registrar_traza(nivel, quien, que, modulo, http_code, latencia_ms, resultado, detalle=""):
+    """
+    Escribe un registro estandarizado de trazabilidad con los 5 pilares requeridos:
+    TimeStamp (via formatter) | Quien | Que | En que modulo | Resultado (+ métricas SLA)
+    """
+    extra = f" | DETALLE={detalle}" if detalle else ""
+    nivel(
+        f"QUIEN={quien} | QUE={que} | MODULO={modulo} | "
+        f"HTTP={http_code} | LATENCIA={latencia_ms}ms | RESULTADO={resultado}{extra}"
+    )
 
 
 # ==============================================================================
@@ -39,11 +56,12 @@ class TestModulosPrincipalesSkinova(unittest.TestCase):
     def setUpClass(cls):
         cls.app = create_app("default")
         cls.client = cls.app.test_client()
-        logger.info("=== INICIO DE EJECUCIÓN DE PRUEBAS AUTOMÁTICAS DE SERVICIO ===")
+        cls.actor = f"Monitor_Anonimo@{ORIGEN_EJECUCION}"
+        logger.info(f"=== INICIO SUITE 1: PRUEBAS DE SERVICIO | QUIEN={cls.actor} ===")
 
     @classmethod
     def tearDownClass(cls):
-        logger.info("=== FIN DE EJECUCIÓN DE PRUEBAS AUTOMÁTICAS ===\n")
+        logger.info("=== FIN SUITE 1: PRUEBAS DE SERVICIO ===\n")
 
     def _medir_peticion(self, modulo, tipo_prueba, metodo, endpoint, expected_codes=(200,)):
         inicio = time.perf_counter()
@@ -56,11 +74,19 @@ class TestModulosPrincipalesSkinova(unittest.TestCase):
         exito = resp.status_code in expected_codes
         estado = "PASS" if exito else "FAIL"
         nivel = logger.info if exito else logger.error
+        detalle = "" if exito else f"Esperado {expected_codes}, recibido {resp.status_code}"
 
-        nivel(
-            f"MODULO={modulo} | TIPO={tipo_prueba} | ENDPOINT={endpoint} | "
-            f"HTTP={resp.status_code} | LATENCIA={latencia_ms}ms | RESULTADO={estado}"
+        registrar_traza(
+            nivel=nivel,
+            quien=self.actor,
+            que=f"[{tipo_prueba}] {metodo} {endpoint}",
+            modulo=modulo,
+            http_code=resp.status_code,
+            latencia_ms=latencia_ms,
+            resultado=estado,
+            detalle=detalle,
         )
+
         self.assertIn(
             resp.status_code,
             expected_codes,
@@ -72,10 +98,10 @@ class TestModulosPrincipalesSkinova(unittest.TestCase):
         self._medir_peticion("Nucleo_API", "DISPONIBILIDAD", "GET", "/health", (200,))
 
     def test_02_seguridad_auth_usuarios(self):
-        self._medir_peticion("Usuarios_Auth", "FUNCIONALIDAD", "GET", "/api/auth/me", (401,))
+        self._medir_peticion("Usuarios_Auth", "SEGURIDAD_ACCESO", "GET", "/api/auth/me", (401,))
 
     def test_03_seguridad_perfil_salud(self):
-        self._medir_peticion("Perfil_Salud", "FUNCIONALIDAD", "GET", "/api/perfil-salud/profile", (401,))
+        self._medir_peticion("Perfil_Salud", "SEGURIDAD_ACCESO", "GET", "/api/perfil-salud/profile", (401,))
 
     def test_04_disponibilidad_creador_rutinas(self):
         self._medir_peticion("Creador_Rutinas", "DISPONIBILIDAD", "GET", "/api/rutinas", (401,))
@@ -121,7 +147,6 @@ class TestWorkflowUsuarioSinGemini(unittest.TestCase):
             "Content-Type": "application/json"
         }
 
-        # Asegurar que el usuario de prueba exista en MySQL
         with cls.app.app_context():
             from app.extensions import db
             from app.modules.users.models import User
@@ -131,15 +156,16 @@ class TestWorkflowUsuarioSinGemini(unittest.TestCase):
                 db.session.add(user)
                 db.session.commit()
 
-        logger.info("=== INICIO DE WORKFLOW E2E RÁPIDO (SIN GEMINI) ===")
+        logger.info(f"=== INICIO SUITE 2: WORKFLOW E2E RÁPIDO | QUIEN={cls.clerk_test_id}@{ORIGEN_EJECUCION} ===")
 
     @classmethod
     def tearDownClass(cls):
-        logger.info("=== FIN DE WORKFLOW E2E RÁPIDO ===\n")
+        logger.info("=== FIN SUITE 2: WORKFLOW E2E RÁPIDO ===\n")
 
-    def _medir_paso(self, paso, metodo, endpoint, expected_codes=(200,), headers=None):
+    def _medir_paso(self, paso, modulo, metodo, endpoint, expected_codes=(200,), headers=None, actor_override=None):
         inicio = time.perf_counter()
         hdrs = headers if headers is not None else self.auth_headers
+        quien_actual = actor_override or f"{self.clerk_test_id}@{ORIGEN_EJECUCION}"
 
         if metodo == "GET":
             resp = self.client.get(endpoint, headers=hdrs)
@@ -150,11 +176,19 @@ class TestWorkflowUsuarioSinGemini(unittest.TestCase):
         exito = resp.status_code in expected_codes
         estado = "PASS" if exito else "FAIL"
         nivel = logger.info if exito else logger.error
+        detalle = "" if exito else f"Esperado {expected_codes}, recibido {resp.status_code}"
 
-        nivel(
-            f"MODULO=Workflow_Fast | TIPO=FLUJO_USUARIO | PASO={paso} | ENDPOINT={endpoint} | "
-            f"HTTP={resp.status_code} | LATENCIA={latencia_ms}ms | RESULTADO={estado}"
+        registrar_traza(
+            nivel=nivel,
+            quien=quien_actual,
+            que=f"[{paso}] {metodo} {endpoint}",
+            modulo=modulo,
+            http_code=resp.status_code,
+            latencia_ms=latencia_ms,
+            resultado=estado,
+            detalle=detalle,
         )
+
         self.assertIn(
             resp.status_code,
             expected_codes,
@@ -164,35 +198,40 @@ class TestWorkflowUsuarioSinGemini(unittest.TestCase):
 
     def test_01_recorrido_completo_y_logout(self):
         # 1. Inicio de sesión y validación de identidad
-        resp_login = self._medir_paso("01_Login_Auth_Me", "GET", "/api/auth/me", (200,))
+        resp_login = self._medir_paso("01_Login_Validar_Sesion", "Usuarios_Auth", "GET", "/api/auth/me", (200,))
         self.assertEqual(resp_login.get_json().get("clerk_user_id"), self.clerk_test_id)
 
-        # 2. Visitas a los módulos principales de la aplicación autenticado
-        # (Se acepta 200 o 404 en recursos que aún no tienen registros creados para el usuario)
-        self._medir_paso("02_Visita_Perfil_Salud", "GET", "/api/perfil-salud/profile", (200, 404))
-        self._medir_paso("03_Visita_Creador_Rutinas", "GET", "/api/rutinas", (200,))
-        self._medir_paso("04_Visita_Mi_Neceser", "GET", "/api/mi-neceser", (200, 404))
-        self._medir_paso("05_Visita_Habitos_Desafios", "GET", "/api/habitos-desafios", (200, 404))
-        self._medir_paso("06_Visita_Bitacora", "GET", "/api/bitacora", (200, 404))
-        self._medir_paso("07_Visita_Comunidad", "GET", "/api/comunidad", (200, 404))
-        self._medir_paso("08_Visita_Notificaciones", "GET", "/api/notificaciones", (200, 404))
-        self._medir_paso("09_Visita_Historial_IA", "GET", "/api/products/history", (200,))
+        # 2. Visitas a los módulos principales autenticado (cada paso indica su módulo exacto)
+        self._medir_paso("02_Consultar_Perfil_Salud", "Perfil_Salud", "GET", "/api/perfil-salud/profile", (200, 404))
+        self._medir_paso("03_Consultar_Rutinas", "Creador_Rutinas", "GET", "/api/rutinas", (200,))
+        self._medir_paso("04_Consultar_Mi_Neceser", "Mi_Neceser", "GET", "/api/mi-neceser", (200, 404))
+        self._medir_paso("05_Consultar_Habitos_Desafios", "Habitos_Desafios", "GET", "/api/habitos-desafios", (200, 404))
+        self._medir_paso("06_Consultar_Bitacora", "Bitacora", "GET", "/api/bitacora", (200, 404))
+        self._medir_paso("07_Consultar_Comunidad", "Comunidad", "GET", "/api/comunidad", (200, 404))
+        self._medir_paso("08_Consultar_Notificaciones", "Notificaciones", "GET", "/api/notificaciones", (200, 404))
+        self._medir_paso("09_Consultar_Historial_IA", "Busqueda_IA", "GET", "/api/products/history", (200,))
 
-        # 3. Logout: eliminar credenciales de sesión y comprobar revocación de acceso
+        # 3. Logout: revocar credenciales y verificar bloqueo de sesión
         headers_sin_sesion = {"Content-Type": "application/json"}
+        actor_deslogueado = f"Sesion_Cerrada({self.clerk_test_id})@{ORIGEN_EJECUCION}"
+
         self._medir_paso(
             "10_Logout_Verificar_Auth_Bloqueado",
+            "Usuarios_Auth",
             "GET",
             "/api/auth/me",
             (401,),
-            headers=headers_sin_sesion
+            headers=headers_sin_sesion,
+            actor_override=actor_deslogueado,
         )
         self._medir_paso(
             "11_Logout_Verificar_Rutinas_Bloqueado",
+            "Creador_Rutinas",
             "GET",
             "/api/rutinas",
             (401,),
-            headers=headers_sin_sesion
+            headers=headers_sin_sesion,
+            actor_override=actor_deslogueado,
         )
 
 
@@ -223,13 +262,13 @@ class TestWorkflowUsuarioConGemini(unittest.TestCase):
                 db.session.add(user)
                 db.session.commit()
 
-        logger.info("=== INICIO DE WORKFLOW E2E CON GEMINI REAL ===")
+        logger.info(f"=== INICIO SUITE 3: WORKFLOW E2E CON GEMINI | QUIEN={cls.clerk_test_id}@{ORIGEN_EJECUCION} ===")
 
     @classmethod
     def tearDownClass(cls):
-        logger.info("=== FIN DE WORKFLOW E2E CON GEMINI ===\n")
+        logger.info("=== FIN SUITE 3: WORKFLOW E2E CON GEMINI ===\n")
 
-    def _medir_paso(self, paso, metodo, endpoint, expected_codes=(200,), payload=None):
+    def _medir_paso(self, paso, modulo, metodo, endpoint, expected_codes=(200,), payload=None):
         inicio = time.perf_counter()
         if metodo == "GET":
             resp = self.client.get(endpoint, headers=self.headers)
@@ -242,11 +281,19 @@ class TestWorkflowUsuarioConGemini(unittest.TestCase):
         exito = resp.status_code in expected_codes
         estado = "PASS" if exito else "FAIL"
         nivel = logger.info if exito else logger.error
+        detalle = "" if exito else f"Esperado {expected_codes}, recibido {resp.status_code}"
 
-        nivel(
-            f"MODULO=Workflow_Gemini | TIPO=FLUJO_IA | PASO={paso} | ENDPOINT={endpoint} | "
-            f"HTTP={resp.status_code} | LATENCIA={latencia_ms}ms | RESULTADO={estado}"
+        registrar_traza(
+            nivel=nivel,
+            quien=f"{self.clerk_test_id}@{ORIGEN_EJECUCION}",
+            que=f"[{paso}] {metodo} {endpoint}",
+            modulo=modulo,
+            http_code=resp.status_code,
+            latencia_ms=latencia_ms,
+            resultado=estado,
+            detalle=detalle,
         )
+
         self.assertIn(
             resp.status_code,
             expected_codes,
@@ -257,7 +304,8 @@ class TestWorkflowUsuarioConGemini(unittest.TestCase):
     def test_01_consulta_gemini_y_limpieza(self):
         # 1. Análisis de producto real con Gemini
         resp_analyze = self._medir_paso(
-            "01_Gemini_Analyze",
+            "01_Gemini_Analizar_Producto",
+            "Busqueda_IA",
             "POST",
             "/api/products/analyze",
             (200,),
@@ -267,7 +315,8 @@ class TestWorkflowUsuarioConGemini(unittest.TestCase):
 
         # 2. Chat de seguimiento
         self._medir_paso(
-            "02_Gemini_Chat",
+            "02_Gemini_Chat_Seguimiento",
+            "Busqueda_IA",
             "POST",
             "/api/products/chat",
             (200,),
@@ -275,12 +324,12 @@ class TestWorkflowUsuarioConGemini(unittest.TestCase):
         )
 
         # 3. Verificar guardado en historial y borrar registro de prueba
-        resp_hist = self._medir_paso("03_Verificar_Historial", "GET", "/api/products/history", (200,))
+        resp_hist = self._medir_paso("03_Verificar_Historial_IA", "Historial_IA", "GET", "/api/products/history", (200,))
         items = resp_hist.get_json().get("data", [])
         self.assertGreater(len(items), 0)
 
         history_id = items[0]["id"]
-        self._medir_paso("04_Limpiar_Historial", "DELETE", f"/api/products/history/{history_id}", (200,))
+        self._medir_paso("04_Limpiar_Registro_Prueba", "Historial_IA", "DELETE", f"/api/products/history/{history_id}", (200,))
 
 
 if __name__ == "__main__":
